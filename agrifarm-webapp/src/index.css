@@ -1,16 +1,17 @@
 :root {
-  /* Primary Palette - Matching Mobile App */
-  --primary: #00aa55;
-  --primary-light: #43d187;
-  --primary-dark: #008844;
-  --secondary: #2e7d32;
-  --accent: #f9a825;
+  /* Primary Palette - Lush Agricultural Greens */
+  --primary: #008947;
+  --primary-light: #00c853;
+  --primary-dark: #00602d;
+  --secondary: #1b5e20;
+  --accent: #ff9800;
+  --accent-light: #ffb74d;
   
-  /* Neutral Colors */
-  --bg-main: #f8fafc;
+  /* Earthy Tones & Neutrals */
+  --bg-main: #f4f7f5;
   --bg-card: #ffffff;
-  --text-main: #0f172a;
-  --text-muted: #64748b;
+  --text-main: #1a2e21;
+  --text-muted: #5c7161;
   --border: #e2e8f0;
   
   /* Semantic Colors */
@@ -19,16 +20,19 @@
   --error: #ef4444;
   --info: #3b82f6;
 
-  /* Shadows */
+  /* Premium Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-premium: 0 10px 40px -10px rgba(0, 137, 71, 0.25);
 
   /* Gradients */
-  --grad-header: linear-gradient(135deg, #00aa55 0%, #008844 100%);
-  --grad-premium: linear-gradient(135deg, #00aa55 0%, #43d187 100%);
-  --grad-surface: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 100%);
+  --grad-primary: linear-gradient(135deg, #008947 0%, #00c853 100%);
+  --grad-dark: linear-gradient(135deg, #1b5e20 0%, #008947 100%);
+  --grad-warm: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);
+  --grad-glass: linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.3) 100%);
+  --grad-overlay: linear-gradient(to bottom, transparent 30%, rgba(0, 0, 0, 0.8) 100%);
 }
 
 * {
@@ -129,15 +133,29 @@ button {
 
 .card {
   background: var(--bg-card);
-  border-radius: 20px;
-  padding: 20px;
+  border-radius: 24px;
+  padding: 24px;
   box-shadow: var(--shadow-md);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(0,0,0,0.02);
 }
 
 .card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-6px);
   box-shadow: var(--shadow-xl);
+  border-color: rgba(0, 137, 71, 0.1);
+}
+
+.premium-card {
+  background: white;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: var(--shadow-premium);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-card:hover {
+  transform: scale(1.02);
 }
 
 /* Navbar Styles */
@@ -463,14 +481,173 @@ button {
 }
 
 @media (max-width: 768px) {
-  .hero-section { border-radius: 0 0 24px 24px; }
-  .promo-banner { flex-direction: column-reverse; }
+  .hero-section { border-radius: 0 0 24px 24px; padding: 30px 0 60px 0; }
+  .promo-banner { flex-direction: column-reverse; margin-top: 0; }
   .banner-text { padding: 24px; }
-  .categories-grid { grid-template-columns: 1fr 1fr; }
+  .banner-text h2 { font-size: 1.5rem; }
+  .categories-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
   .tools-row { grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .tool-tile { padding: 12px 8px; border-radius: 16px; }
-  .tool-tile span { font-size: 0.7rem; }
+  .tool-tile { padding: 12px 4px; border-radius: 16px; }
+  .tool-tile span { font-size: 0.65rem; }
 }
+
+/* Visual Service Cards - Parity with Flutter */
+.visual-card {
+  position: relative;
+  height: 140px;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.visual-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-xl);
+}
+
+.visual-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.visual-card .overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--grad-overlay);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 14px;
+}
+
+.visual-card h4 {
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 800;
+  margin-bottom: 2px;
+}
+
+.visual-card p {
+  color: rgba(255,255,255,0.8);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* List Your Assets Section */
+.upload-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.upload-card {
+  padding: 20px 12px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.upload-card:hover {
+  filter: brightness(0.95);
+  transform: scale(0.98);
+}
+
+.upload-card h4 {
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+/* Notification Badge */
+.notification-bell {
+  position: relative;
+  background: rgba(255,255,255,0.18);
+  padding: 8px;
+  border-radius: 10px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.unread-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: #ff5722;
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #00aa55;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.modal-content {
+  background: white;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 24px 24px 0 0;
+  padding: 24px;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.location-option {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.location-option:hover {
+  background: #f8fafc;
+  border-color: var(--border);
+}
+
+.icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 
 /* Services Page Styles */
 .page-header {

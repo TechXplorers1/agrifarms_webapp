@@ -1,26 +1,40 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Tractor, Truck, Users, Sprout, ChevronLeft, Upload, Check, AlertCircle, MapPin } from 'lucide-react';
 import { useAuth } from '../services/AuthContext';
+import { apiService } from '../services/apiService';
 
 const UploadItem: React.FC = () => {
-  const [category, setCategory] = useState<'Equipment' | 'Service' | 'Vehicle' | 'Workers' | null>(null);
-  const [formData, setFormData] = useState<any>({
+  const location = useLocation();
+  const editData = location.state?.edit;
+  const initialCategory = location.state?.category;
+
+  const [category, setCategory] = useState<'Equipment' | 'Services' | 'Vehicles' | 'Workers' | null>(initialCategory || null);
+  const [formData, setFormData] = useState<any>(editData || {
     isAvailable: true,
     approvalStatus: 'PENDING',
     rating: 0,
+    village: '',
+    district: '',
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (editData) {
+      setFormData(editData);
+      if (initialCategory) setCategory(initialCategory);
+    }
+  }, [editData, initialCategory]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e as any;
     setFormData((prev: any) => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      [name]: type === 'number' ? parseFloat(value) : value
     }));
   };
 
@@ -28,15 +42,27 @@ const UploadItem: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const payload = { ...formData, ownerId: user?.id };
-      console.log('Uploading payload:', payload);
-      // In a real app, I'd have POST methods in apiService. 
-      // For this demo, I'll simulate success.
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const id = user?.id || JSON.parse(localStorage.getItem('agrifarm_user') || '{}').id;
+      const payload = { ...formData, ownerId: id };
+      
+      if (editData) {
+        const assetId = editData.vehicleId || editData.equipmentId || editData.serviceId || editData.groupId;
+        if (category === 'Equipment') await apiService.updateEquipment(assetId, payload);
+        else if (category === 'Services') await apiService.updateService(assetId, payload);
+        else if (category === 'Vehicles') await apiService.updateVehicle(assetId, payload);
+        else if (category === 'Workers') await apiService.updateWorkerGroup(assetId, payload);
+      } else {
+        if (category === 'Equipment') await apiService.createEquipment(payload);
+        else if (category === 'Services') await apiService.createService(payload);
+        else if (category === 'Vehicles') await apiService.createVehicle(payload);
+        else if (category === 'Workers') await apiService.createWorkerGroup(payload);
+      }
+
       setSuccess(true);
       setTimeout(() => navigate('/manage-assets'), 2000);
     } catch (error) {
       console.error('Error uploading item:', error);
+      alert('Error saving item. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -49,24 +75,34 @@ const UploadItem: React.FC = () => {
           <div className="form-fields grid-2">
             <div className="input-group">
               <label>Equipment Name / Brand</label>
-              <input name="brandModel" placeholder="e.g. John Deere 5310" onChange={handleInputChange} required />
+              <input name="brandModel" value={formData.brandModel || ''} placeholder="e.g. John Deere 5310" onChange={handleInputChange} required />
             </div>
             <div className="input-group">
               <label>Category</label>
-              <select name="category" onChange={handleInputChange} required>
+              <select name="category" value={formData.category || ''} onChange={handleInputChange} required>
                 <option value="">Select Category</option>
                 <option value="Tractor">Tractor</option>
                 <option value="Harvester">Harvester</option>
                 <option value="Plough">Plough</option>
+                <option value="Seeder">Seeder</option>
+                <option value="Sprayer">Sprayer</option>
               </select>
             </div>
             <div className="input-group">
+              <label>Horse Power (HP)</label>
+              <input type="number" name="hp" value={formData.hp || ''} placeholder="50" onChange={handleInputChange} required />
+            </div>
+            <div className="input-group">
               <label>Price Per Hour (₹)</label>
-              <input type="number" name="pricePerHour" placeholder="500" onChange={handleInputChange} required />
+              <input type="number" name="pricePerHour" value={formData.pricePerHour || ''} placeholder="500" onChange={handleInputChange} required />
+            </div>
+            <div className="input-group">
+              <label>Operator Price (₹/hr)</label>
+              <input type="number" name="operatorPrice" value={formData.operatorPrice || ''} placeholder="200" onChange={handleInputChange} />
             </div>
             <div className="input-group">
               <label>Condition Status</label>
-              <select name="conditionStatus" onChange={handleInputChange}>
+              <select name="conditionStatus" value={formData.conditionStatus || 'EXCELLENT'} onChange={handleInputChange}>
                 <option value="EXCELLENT">Excellent</option>
                 <option value="GOOD">Good</option>
                 <option value="FAIR">Fair</option>
@@ -74,24 +110,24 @@ const UploadItem: React.FC = () => {
             </div>
           </div>
         );
-      case 'Vehicle':
+      case 'Vehicles':
         return (
           <div className="form-fields grid-2">
             <div className="input-group">
               <label>Vehicle Type</label>
-              <input name="vehicleType" placeholder="e.g. Trolley, Pickup Truck" onChange={handleInputChange} required />
+              <input name="vehicleType" value={formData.vehicleType || ''} placeholder="e.g. Trolley, Pickup Truck" onChange={handleInputChange} required />
             </div>
             <div className="input-group">
               <label>Vehicle Number</label>
-              <input name="vehicleNumber" placeholder="PB-XX-XXXX" onChange={handleInputChange} required />
+              <input name="vehicleNumber" value={formData.vehicleNumber || ''} placeholder="PB-XX-XXXX" onChange={handleInputChange} required />
             </div>
             <div className="input-group">
               <label>Load Capacity (Tons)</label>
-              <input type="number" name="loadCapacity" placeholder="2" onChange={handleInputChange} required />
+              <input type="number" name="loadCapacity" value={formData.loadCapacity || ''} placeholder="2" onChange={handleInputChange} required />
             </div>
             <div className="input-group">
               <label>Price Per KM / Trip (₹)</label>
-              <input type="number" name="pricePerKmOrTrip" placeholder="20" onChange={handleInputChange} required />
+              <input type="number" name="pricePerKmOrTrip" value={formData.pricePerKmOrTrip || ''} placeholder="20" onChange={handleInputChange} required />
             </div>
           </div>
         );
@@ -100,40 +136,44 @@ const UploadItem: React.FC = () => {
           <div className="form-fields grid-2">
             <div className="input-group">
               <label>Group Name</label>
-              <input name="groupName" placeholder="e.g. Skilled Harvest Team" onChange={handleInputChange} required />
+              <input name="groupName" value={formData.groupName || ''} placeholder="e.g. Skilled Harvest Team" onChange={handleInputChange} required />
             </div>
             <div className="input-group">
               <label>Male Count</label>
-              <input type="number" name="maleCount" onChange={handleInputChange} required />
+              <input type="number" name="maleCount" value={formData.maleCount || ''} onChange={handleInputChange} required />
             </div>
             <div className="input-group">
               <label>Female Count</label>
-              <input type="number" name="femaleCount" onChange={handleInputChange} required />
+              <input type="number" name="femaleCount" value={formData.femaleCount || ''} onChange={handleInputChange} required />
             </div>
             <div className="input-group">
               <label>Daily Rate Per Person (₹)</label>
-              <input type="number" name="pricePerMale" onChange={handleInputChange} required />
+              <input type="number" name="pricePerMale" value={formData.pricePerMale || ''} onChange={handleInputChange} required />
             </div>
           </div>
         );
-      case 'Service':
+      case 'Services':
         return (
           <div className="form-fields grid-2">
             <div className="input-group">
               <label>Service Type</label>
-              <input name="serviceType" placeholder="e.g. Land Levelling" onChange={handleInputChange} required />
+              <input name="serviceType" value={formData.serviceType || ''} placeholder="e.g. Land Levelling" onChange={handleInputChange} required />
             </div>
             <div className="input-group">
               <label>Business Name</label>
-              <input name="businessName" onChange={handleInputChange} required />
+              <input name="businessName" value={formData.businessName || ''} onChange={handleInputChange} required />
             </div>
             <div className="input-group">
-              <label>Price Rate (₹)</label>
-              <input type="number" name="priceRate" onChange={handleInputChange} required />
+              <label>Base Price Rate (₹)</label>
+              <input type="number" name="priceRate" value={formData.priceRate || ''} onChange={handleInputChange} required />
             </div>
             <div className="input-group">
-              <label>Description</label>
-              <textarea name="description" onChange={handleInputChange} className="span-2"></textarea>
+              <label>Operator Price (₹/hr)</label>
+              <input type="number" name="operatorPrice" value={formData.operatorPrice || ''} onChange={handleInputChange} />
+            </div>
+            <div className="input-group span-2">
+              <label>Detailed Description</label>
+              <textarea name="description" value={formData.description || ''} onChange={handleInputChange} placeholder="Tell users more about your service..."></textarea>
             </div>
           </div>
         );
@@ -148,16 +188,16 @@ const UploadItem: React.FC = () => {
         <button onClick={() => navigate(-1)} className="btn-back">
           <ChevronLeft size={24} />
         </button>
-        <h1>{category ? `Add ${category}` : 'What are you listing?'}</h1>
+        <h1>{category ? (editData ? `Edit ${category}` : `Add ${category}`) : 'What are you listing?'}</h1>
       </div>
 
       {!category ? (
         <div className="category-selection-grid">
           {[
             { id: 'Equipment', icon: Tractor, label: 'Equipment', color: '#e8f5e9', fg: '#2e7d32' },
-            { id: 'Vehicle', icon: Truck, label: 'Transport', color: '#e3f2fd', fg: '#1565c0' },
+            { id: 'Vehicles', icon: Truck, label: 'Transport', color: '#e3f2fd', fg: '#1565c0' },
             { id: 'Workers', icon: Users, label: 'Workers', color: '#f3e5f5', fg: '#6a1b9a' },
-            { id: 'Service', icon: Sprout, label: 'Service', color: '#fff3e0', fg: '#e65100' },
+            { id: 'Services', icon: Sprout, label: 'Service', color: '#fff3e0', fg: '#e65100' },
           ].map((item) => (
             <motion.div
               key={item.id}
@@ -184,7 +224,7 @@ const UploadItem: React.FC = () => {
               <div className="success-icon">
                 <Check size={48} color="white" />
               </div>
-              <h2>Listing Successful!</h2>
+              <h2>{editData ? 'Update Successful!' : 'Listing Successful!'}</h2>
               <p>Your item has been submitted for moderation.</p>
             </div>
           ) : (
@@ -199,11 +239,11 @@ const UploadItem: React.FC = () => {
                 <div className="grid-2">
                   <div className="input-group">
                     <label>Village</label>
-                    <input name="village" placeholder="Enter Village" onChange={handleInputChange} required />
+                    <input name="village" value={formData.village || ''} placeholder="Enter Village" onChange={handleInputChange} required />
                   </div>
                   <div className="input-group">
                     <label>District</label>
-                    <input name="district" placeholder="Enter District" onChange={handleInputChange} required />
+                    <input name="district" value={formData.district || ''} placeholder="Enter District" onChange={handleInputChange} required />
                   </div>
                 </div>
               </div>
@@ -218,9 +258,9 @@ const UploadItem: React.FC = () => {
               </div>
 
               <div className="form-footer">
-                <button type="button" className="btn-cancel" onClick={() => setCategory(null)}>Cancel</button>
+                {!editData && <button type="button" className="btn-cancel" onClick={() => setCategory(null)}>Back</button>}
                 <button type="submit" className="btn-primary" disabled={loading}>
-                  {loading ? 'Submitting...' : 'List Item Now'}
+                  {loading ? 'Submitting...' : (editData ? 'Save Changes' : 'List Item Now')}
                 </button>
               </div>
             </form>
@@ -264,3 +304,4 @@ const UploadItem: React.FC = () => {
 };
 
 export default UploadItem;
+

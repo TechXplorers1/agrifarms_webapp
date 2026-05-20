@@ -9,16 +9,20 @@ import ManageAssets from './pages/ManageAssets';
 import UploadItem from './pages/UploadItem';
 import Login from './pages/Login';
 import VerifyOTP from './pages/VerifyOTP';
+import Activity from './pages/Activity';
+import ProtectedRoute from './components/ProtectedRoute';
+import OtpVerificationModal from './components/OtpVerificationModal';
 
 const App: React.FC = () => {
   return (
     <Router>
       <div className="app">
+        <OtpVerificationModal />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/verify-otp" element={<VerifyOTP />} />
           <Route path="*" element={
-            <>
+            <ProtectedRoute>
               <Navbar />
               <main className="main-content">
                 <Routes>
@@ -27,12 +31,12 @@ const App: React.FC = () => {
                   <Route path="/services" element={<Services />} />
                   <Route path="/manage-assets" element={<ManageAssets />} />
                   <Route path="/upload-item" element={<UploadItem />} />
-                  <Route path="/activity" element={<div className="container"><h2>Activity Page (Coming Soon)</h2></div>} />
+                  <Route path="/activity" element={<Activity />} />
                   <Route path="/notifications" element={<div className="container"><h2>Notifications Page (Coming Soon)</h2></div>} />
                   <Route path="/profile" element={<Profile />} />
                 </Routes>
               </main>
-            </>
+            </ProtectedRoute>
           } />
         </Routes>
       </div>

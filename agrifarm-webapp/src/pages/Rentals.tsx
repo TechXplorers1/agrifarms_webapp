@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { apiService } from '../services/apiService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Star, MapPin, SlidersHorizontal, Info } from 'lucide-react';
+import BookingModal from '../components/BookingModal';
+
 
 interface Equipment {
   equipmentId: string;
@@ -12,13 +15,20 @@ interface Equipment {
   rating?: number;
   village?: string;
   isAvailable: boolean;
+  hp?: number;
 }
 
 const Rentals: React.FC = () => {
+  const location = useLocation();
+  const initialFilter = location.state?.initialFilter || 'All';
+
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('All');
+  const [filter, setFilter] = useState(initialFilter);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedAsset, setSelectedAsset] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
 
   const categories = ['All', 'Tractor', 'Harvester', 'Plough', 'Seeder', 'Sprayer'];
 
@@ -37,7 +47,16 @@ const Rentals: React.FC = () => {
   }, []);
 
   const filteredEquipment = equipment.filter(item => {
-    const matchesFilter = filter === 'All' || item.category === filter;
+    const itemCat = item.category.toLowerCase();
+    const activeFilter = filter.toLowerCase();
+    
+    const matchesFilter = filter === 'All' || 
+                         itemCat === activeFilter || 
+                         itemCat === `${activeFilter}s` || 
+                         activeFilter === `${itemCat}s` ||
+                         itemCat.includes(activeFilter) ||
+                         activeFilter.includes(itemCat);
+
     const matchesSearch = item.brandModel.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           item.category.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
@@ -112,7 +131,10 @@ const Rentals: React.FC = () => {
                     </div>
                   </div>
                   <div className="asset-details">
-                    <p className="category">{item.category}</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="category">{item.category}</p>
+                      {item.hp && <span className="spec-badge">{item.hp} HP</span>}
+                    </div>
                     <div className="location">
                       <MapPin size={14} />
                       <span>{item.village || 'Local'}</span>
@@ -123,13 +145,39 @@ const Rentals: React.FC = () => {
                       <span className="amount">₹{item.pricePerHour}</span>
                       <span className="unit">/hr</span>
                     </div>
-                    <button className="btn-book">Book Now</button>
+                    <button 
+                      className="btn-book"
+                      onClick={() => {
+                        setSelectedAsset({
+                          id: item.equipmentId,
+                          name: item.brandModel,
+                          category: item.category,
+                          price: item.pricePerHour,
+                          providerId: (item as any).ownerId, // API should provide this
+                          providerName: (item as any).providerName || 'Equipment Owner',
+                          imageUrl: item.imageUrl,
+                          type: 'Equipment',
+                          operatorPrice: (item as any).operatorPrice
+                        });
+                        setIsModalOpen(true);
+                      }}
+                    >
+                      Book Now
+                    </button>
                   </div>
                 </div>
               </motion.div>
             ))}
           </AnimatePresence>
         </div>
+      )}
+
+      {selectedAsset && (
+        <BookingModal 
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          asset={selectedAsset}
+        />
       )}
 
       {!loading && filteredEquipment.length === 0 && (
@@ -277,6 +325,15 @@ const Rentals: React.FC = () => {
           0% { opacity: 0.6; }
           50% { opacity: 0.3; }
           100% { opacity: 0.6; }
+        }
+        .spec-badge {
+          background: #f1f5f9;
+          color: #475569;
+          font-size: 0.7rem;
+          font-weight: 800;
+          padding: 2px 8px;
+          border-radius: 6px;
+          border: 1px solid #e2e8f0;
         }
       `}</style>
     </div>

@@ -7,13 +7,12 @@ import { ShieldCheck, ChevronRight, ArrowLeft } from 'lucide-react';
 const VerifyOTP: React.FC = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
-  const { verifyOtp, isLoading } = useAuth();
+  const { verifyEmailOtp, resendEmailOtp, pendingEmail, isLoading } = useAuth();
   const navigate = useNavigate();
-  const phoneNumber = localStorage.getItem('pending_phone');
 
   useEffect(() => {
-    if (!phoneNumber) navigate('/login');
-  }, [phoneNumber, navigate]);
+    if (!pendingEmail) navigate('/login');
+  }, [pendingEmail, navigate]);
 
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) value = value[value.length - 1];
@@ -37,12 +36,21 @@ const VerifyOTP: React.FC = () => {
     }
   };
 
+  const handleResend = async () => {
+    try {
+      await resendEmailOtp();
+      setError('A fresh 6-digit OTP code has been sent successfully.');
+    } catch (err) {
+      setError('Failed to resend OTP. Please try again.');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const otpValue = otp.join('');
     if (otpValue.length === 6) {
       try {
-        await verifyOtp(otpValue);
+        await verifyEmailOtp(otpValue);
         navigate('/');
       } catch (err) {
         setError('Invalid OTP. Please try again.');
@@ -66,7 +74,7 @@ const VerifyOTP: React.FC = () => {
             <ShieldCheck size={40} color="var(--primary)" />
           </div>
           <h1>Verify Identity</h1>
-          <p>Enter the 6-digit code sent to<br/><strong>+91 {phoneNumber}</strong></p>
+          <p>Enter the 6-digit code sent to<br/><strong>{pendingEmail}</strong></p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
@@ -86,7 +94,7 @@ const VerifyOTP: React.FC = () => {
             ))}
           </div>
 
-          {error && <p className="error-message">{error}</p>}
+          {error && <p className={`error-message ${error.includes('successfully') ? 'success-text' : ''}`}>{error}</p>}
 
           <button 
             type="submit" 
@@ -99,7 +107,7 @@ const VerifyOTP: React.FC = () => {
         </form>
 
         <div className="login-footer">
-          <p>Didn't receive code? <span>Resend OTP</span></p>
+          <p>Didn't receive code? <span onClick={handleResend} style={{ cursor: 'pointer' }}>Resend OTP</span></p>
         </div>
       </motion.div>
 

@@ -1,284 +1,347 @@
 import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/apiService';
 import { useAuth } from '../services/AuthContext';
-import { Package, Plus, Edit2, Trash2, Search, Filter, MoreVertical, Eye, AlertCircle } from 'lucide-react';
+import { 
+  Package, Plus, Edit2, Trash2, 
+  CheckCircle, Clock, XCircle 
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+
+type AssetType = 'Vehicles' | 'Equipment' | 'Services' | 'Workers';
 
 const ManageAssets: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<AssetType>('Vehicles');
   const [assets, setAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!isAuthenticated) navigate('/login');
-    
-    const fetchMyAssets = async () => {
-      try {
-        // Fetch all types of inventory for this owner
-        const [equip, serv, veh, work] = await Promise.all([
-          apiService.getEquipment({ ownerId: user?.id }),
-          apiService.getServices({ ownerId: user?.id }),
-          apiService.getVehicles({ ownerId: user?.id }),
-          apiService.getWorkerGroups({ ownerId: user?.id })
-        ]);
-        
-        setAssets([
-          ...equip.data.map((a: any) => ({ ...a, type: 'Equipment', id: a.equipmentId, name: a.brandModel })),
-          ...serv.data.map((a: any) => ({ ...a, type: 'Service', id: a.serviceId, name: a.serviceType })),
-          ...veh.data.map((a: any) => ({ ...a, type: 'Vehicle', id: a.vehicleId, name: a.vehicleType })),
-          ...work.data.map((a: any) => ({ ...a, type: 'Worker Group', id: a.groupId, name: a.groupName }))
-        ]);
-      } catch (error) {
-        console.error('Error fetching assets:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchAssets = async () => {
+    setLoading(true);
+    try {
+      const id = user?.id || JSON.parse(localStorage.getItem('agrifarm_user') || '{}').id;
+      if (!id) return;
 
-    if (user?.id) fetchMyAssets();
-  }, [user, isAuthenticated, navigate]);
+      const [veh, equip, serv, work] = await Promise.all([
+        apiService.getVehicles({ ownerId: id }),
+        apiService.getEquipment({ ownerId: id }),
+        apiService.getServices({ ownerId: id }),
+        apiService.getWorkerGroups({ ownerId: id })
+      ]);
+
+      const allAssets = {
+        'Vehicles': veh.data || [],
+        'Equipment': equip.data || [],
+        'Services': serv.data || [],
+        'Workers': work.data || []
+      };
+
+      setAssets((allAssets as any)[activeTab]);
+    } catch (error) {
+      console.error('Error fetching assets:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isAuthenticated && !localStorage.getItem('agrifarm_user')) navigate('/login');
+    fetchAssets();
+  }, [user, isAuthenticated, navigate, activeTab]);
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this item?')) return;
+    
+    try {
+      if (activeTab === 'Vehicles') await apiService.deleteVehicle(id);
+      else if (activeTab === 'Equipment') await apiService.deleteEquipment(id);
+      else if (activeTab === 'Services') await apiService.deleteService(id);
+      else if (activeTab === 'Workers') await apiService.deleteWorkerGroup(id);
+      
+      fetchAssets();
+    } catch (error) {
+      alert('Failed to delete item');
+    }
+  };
+
+  const getStatusInfo = (status?: string) => {
+    switch (status?.toLowerCase()) {
+      case 'approved':
+        return { color: '#2e7d32', bg: '#e8f5e9', icon: CheckCircle, label: 'APPROVED' };
+      case 'rejected':
+        return { color: '#c62828', bg: '#ffebee', icon: XCircle, label: 'REJECTED' };
+      default:
+        return { color: '#ef6c00', bg: '#fff3e0', icon: Clock, label: 'PENDING' };
+    }
+  };
+
+  const renderStatusBadge = (status?: string) => {
+    const info = getStatusInfo(status);
+    return (
+      <div className="status-badge" style={{ backgroundColor: info.bg, color: info.color }}>
+        <info.icon size={12} />
+        <span>{info.label}</span>
+      </div>
+    );
+  };
 
   return (
     <div className="manage-assets container fade-in">
       <div className="page-header">
         <div>
-          <h1 className="text-3xl font-bold">Manage My Assets</h1>
-          <p className="text-slate-500">Track and update your listed equipment & services</p>
+          <h1>Manage Assets</h1>
+          <p>Track and update your listed resources</p>
         </div>
         <button className="btn-primary" onClick={() => navigate('/upload-item')}>
           <Plus size={20} />
-          <span>Add New Asset</span>
+          <span>Add Asset</span>
         </button>
       </div>
 
-      <div className="stats-row">
-        <div className="stat-card card">
-          <div className="stat-info">
-            <span className="label">Total Assets</span>
-            <span className="value">{assets.length}</span>
-          </div>
-          <div className="stat-icon bg-green-50 text-green-600">
-            <Package size={24} />
-          </div>
-        </div>
-        <div className="stat-card card">
-          <div className="stat-info">
-            <span className="label">Active Bookings</span>
-            <span className="value">2</span>
-          </div>
-          <div className="stat-icon bg-blue-50 text-blue-600">
-            <Eye size={24} />
-          </div>
-        </div>
-        <div className="stat-card card">
-          <div className="stat-info">
-            <span className="label">Total Earnings</span>
-            <span className="value">₹12,450</span>
-          </div>
-          <div className="stat-icon bg-amber-50 text-amber-600">
-            <AlertCircle size={24} />
-          </div>
+      {/* Tabs */}
+      <div className="tab-bar-container">
+        <div className="tab-bar">
+          {['Vehicles', 'Equipment', 'Services', 'Workers'].map((tab) => (
+            <button 
+              key={tab}
+              className={`tab-item ${activeTab === tab ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab as any)}
+            >
+              {tab}
+              {activeTab === tab && <motion.div layoutId="tab-underline" className="tab-underline" />}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="table-container card">
-        <div className="table-header">
-          <div className="search-box">
-            <Search size={18} />
-            <input type="text" placeholder="Filter assets..." />
+      <div className="assets-content">
+        {loading ? (
+          <div className="loading-state">
+            <div className="spinner" />
           </div>
-          <button className="filter-btn-sm">
-            <Filter size={16} />
-            <span>Filter</span>
-          </button>
-        </div>
-
-        <table className="assets-table">
-          <thead>
-            <tr>
-              <th>Asset Info</th>
-              <th>Category</th>
-              <th>Price</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              [1, 2, 3].map(i => (
-                <tr key={i} className="skeleton-row">
-                  <td colSpan={5}><div className="skeleton-bar"></div></td>
-                </tr>
-              ))
-            ) : assets.length > 0 ? (
-              assets.map((asset) => (
-                <tr key={asset.id}>
-                  <td>
-                    <div className="asset-cell">
-                      <div className="asset-img-sm">
-                        <img src={asset.imageUrl || 'https://images.unsplash.com/photo-1594913785162-e6785b493bd2?auto=format&fit=crop&q=80&w=100'} alt="" />
+        ) : assets.length > 0 ? (
+          <div className="assets-list">
+            <AnimatePresence mode="popLayout">
+              {assets.map((asset) => {
+                const id = asset.vehicleId || asset.equipmentId || asset.serviceId || asset.groupId;
+                const title = asset.vehicleType || asset.brandModel || asset.businessName || asset.groupName;
+                const subtitle = asset.vehicleNumber || asset.category || asset.serviceType || `${asset.maleCount} Men, ${asset.femaleCount} Women`;
+                const price = asset.pricePerKmOrTrip || asset.pricePerHour || asset.priceRate || asset.pricePerMale;
+                
+                return (
+                  <motion.div 
+                    key={id}
+                    layout
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="asset-card-managed"
+                  >
+                    <div className="card-main">
+                      <div className="asset-img-managed">
+                        <img 
+                          src={apiService.getFullImageUrl(asset.imageUrl)} 
+                          alt="" 
+                          onError={(e) => (e.currentTarget.src = 'https://images.unsplash.com/photo-1594913785162-e6785b493bd2?auto=format&fit=crop&q=80&w=200')}
+                        />
                       </div>
-                      <div>
-                        <div className="font-bold">{asset.name}</div>
-                        <div className="text-xs text-slate-400">{asset.id}</div>
+                      <div className="asset-details-managed">
+                        <h4>{title}</h4>
+                        <p>{subtitle} • ₹{price}</p>
+                        {renderStatusBadge(asset.approvalStatus)}
                       </div>
                     </div>
-                  </td>
-                  <td>
-                    <span className="badge-type">{asset.type}</span>
-                  </td>
-                  <td>
-                    <span className="font-semibold">₹{asset.pricePerHour || asset.pricePerKmOrTrip || asset.priceRate || asset.pricePerMale}</span>
-                  </td>
-                  <td>
-                    <span className={`status-pill ${asset.isAvailable ? 'online' : 'offline'}`}>
-                      {asset.isAvailable ? 'Available' : 'Booked'}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="action-buttons">
-                      <button className="btn-icon"><Edit2 size={16} /></button>
-                      <button className="btn-icon text-red-500"><Trash2 size={16} /></button>
-                      <button className="btn-icon"><MoreVertical size={16} /></button>
+                    <div className="card-actions">
+                      <button className="action-btn edit" onClick={() => navigate(`/upload-item`, { state: { edit: asset, category: activeTab } })}>
+                        <Edit2 size={18} />
+                      </button>
+                      <button className="action-btn delete" onClick={() => handleDelete(id)}>
+                        <Trash2 size={18} />
+                      </button>
                     </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={5} className="text-center py-12 text-slate-400">
-                  <Package size={48} className="mx-auto mb-4 opacity-20" />
-                  <p>No assets listed yet. Start by adding your first item!</p>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        ) : (
+          <div className="empty-state">
+            <div className="empty-icon">
+              <Package size={48} />
+            </div>
+            <h3>No {activeTab} registered</h3>
+            <p>Add your assets to start earning on the platform</p>
+          </div>
+        )}
       </div>
 
       <style>{`
-        .manage-assets {
-          padding-top: 32px;
-        }
-        .stats-row {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 24px;
-          margin: 32px 0;
-        }
-        .stat-card {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 24px;
-        }
-        .stat-info .label {
-          display: block;
-          font-size: 0.875rem;
-          color: var(--text-muted);
-          margin-bottom: 4px;
-        }
-        .stat-info .value {
-          font-size: 1.5rem;
-          font-weight: 800;
-        }
-        .stat-icon {
-          width: 48px;
-          height: 48px;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .bg-green-50 { background: #ecfdf5; }
-        .bg-blue-50 { background: #eff6ff; }
-        .bg-amber-50 { background: #fffbeb; }
+        .manage-assets { padding-top: 20px; }
         
-        .table-container {
-          padding: 0;
-          overflow: hidden;
+        .tab-bar-container {
+          margin: 24px 0;
+          border-bottom: 1px solid var(--border);
+          overflow-x: auto;
+          scrollbar-width: none;
         }
-        .table-header {
-          padding: 20px;
+        .tab-bar-container::-webkit-scrollbar { display: none; }
+        
+        .tab-bar {
+          display: flex;
+          gap: 32px;
+          padding: 0 4px;
+        }
+        
+        .tab-item {
+          padding: 12px 4px;
+          font-weight: 700;
+          color: var(--text-muted);
+          position: relative;
+          white-space: nowrap;
+          font-size: 0.95rem;
+        }
+        
+        .tab-item.active {
+          color: var(--primary);
+        }
+        
+        .tab-underline {
+          position: absolute;
+          bottom: -1px;
+          left: 0;
+          right: 0;
+          height: 3px;
+          background: var(--primary);
+          border-radius: 3px 3px 0 0;
+        }
+        
+        .assets-list {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+          gap: 16px;
+        }
+        
+        @media (max-width: 768px) {
+          .assets-list { grid-template-columns: 1fr; }
+        }
+        
+        .asset-card-managed {
+          background: white;
+          padding: 12px;
+          border-radius: 24px;
           display: flex;
           justify-content: space-between;
-          border-bottom: 1px solid var(--border);
+          align-items: center;
+          box-shadow: var(--shadow-md);
         }
-        .assets-table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-        .assets-table th {
-          text-align: left;
-          padding: 16px 20px;
-          font-size: 0.75rem;
-          text-transform: uppercase;
-          color: var(--text-muted);
-          letter-spacing: 0.05em;
-          background: #f8fafc;
-        }
-        .assets-table td {
-          padding: 16px 20px;
-          border-bottom: 1px solid var(--border);
-        }
-        .asset-cell {
+        
+        .card-main {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 16px;
+          flex: 1;
         }
-        .asset-img-sm {
-          width: 40px;
-          height: 40px;
-          border-radius: 8px;
+        
+        .asset-img-managed {
+          width: 75px;
+          height: 75px;
+          border-radius: 16px;
           overflow: hidden;
+          background: #f1f8f1;
         }
-        .asset-img-sm img {
+        
+        .asset-img-managed img {
           width: 100%;
           height: 100%;
           object-fit: cover;
         }
-        .badge-type {
-          background: #f1f5f9;
-          padding: 4px 10px;
-          border-radius: 8px;
-          font-size: 0.75rem;
-          font-weight: 700;
+        
+        .asset-details-managed h4 {
+          font-size: 1rem;
+          font-weight: 800;
+          color: #1b5e20;
+          margin-bottom: 2px;
         }
-        .status-pill {
-          padding: 4px 10px;
-          border-radius: 20px;
-          font-size: 0.75rem;
-          font-weight: 700;
+        
+        .asset-details-managed p {
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: var(--text-muted);
+          margin-bottom: 8px;
+        }
+        
+        .status-badge {
           display: inline-flex;
           align-items: center;
-          gap: 6px;
-        }
-        .status-pill.online { background: #ecfdf5; color: #10b981; }
-        .status-pill.offline { background: #fef2f2; color: #ef4444; }
-        
-        .action-buttons {
-          display: flex;
-          gap: 8px;
-        }
-        .btn-icon {
-          width: 32px;
-          height: 32px;
+          gap: 4px;
+          padding: 4px 8px;
           border-radius: 8px;
+          font-size: 0.65rem;
+          font-weight: 800;
+          letter-spacing: 0.5px;
+        }
+        
+        .card-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        
+        .action-btn {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: background 0.2s;
+          transition: all 0.2s;
         }
-        .btn-icon:hover { background: #f1f5f9; }
-
-        @media (max-width: 768px) {
-          .stats-row { grid-template-columns: 1fr; }
-          .assets-table th:nth-child(3), .assets-table td:nth-child(3) { display: none; }
+        
+        .action-btn.edit { color: var(--primary); background: #e8f5e9; }
+        .action-btn.delete { color: #e57373; background: #ffebee; }
+        
+        .loading-state {
+          display: flex;
+          justify-content: center;
+          padding: 60px 0;
         }
+        
+        .spinner {
+          width: 32px;
+          height: 32px;
+          border: 3px solid #e2e8f0;
+          border-top-color: var(--primary);
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .empty-state {
+          text-align: center;
+          padding: 60px 20px;
+        }
+        
+        .empty-icon {
+          width: 80px;
+          height: 80px;
+          background: white;
+          border-radius: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 24px auto;
+          color: #cbd5e1;
+          box-shadow: var(--shadow-sm);
+        }
+        
+        .empty-state h3 { color: #1b5e20; font-weight: 800; margin-bottom: 8px; }
+        .empty-state p { color: var(--text-muted); font-size: 0.9rem; }
       `}</style>
     </div>
   );
 };
 
 export default ManageAssets;
+
