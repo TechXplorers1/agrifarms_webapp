@@ -56,7 +56,23 @@ export const apiService = {
   verifyOtp: (email: string, otp: string) => api.post('/api/auth/verify-otp', { email, otp }),
 
   // Image Helper
-  getFullImageUrl: (path?: string) => path ? `${BASE_URL}/api/uploads/${path}` : '',
+  getFullImageUrl: (path?: string) => {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    if (path.startsWith('/api/')) return `${BASE_URL}${path}`;
+    return `${BASE_URL}/api/media/download/${path}`;
+  },
+
+  // Media Upload
+  uploadMedia: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/api/media/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };
 
 export default api;

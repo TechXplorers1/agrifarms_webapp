@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../services/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, MapPin, Phone, LogOut, Settings, Shield, ChevronRight, 
   Package, Calendar, Mail, Edit2, Save, X, Building2, Map, Globe2, 
-  Pin, Compass, AlertCircle, CheckCircle2, UserCheck
+  Pin, Compass, AlertCircle, CheckCircle2, UserCheck, Camera, Loader2
 } from 'lucide-react';
 import { apiService } from '../services/apiService';
+import { resolveCoordinates } from '../services/locationHelper';
 
 const Profile: React.FC = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -20,6 +21,8 @@ const Profile: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   const [profile, setProfile] = useState<any>(null);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     phoneNumber: '',
@@ -34,6 +37,91 @@ const Profile: React.FC = () => {
     latitude: '',
     longitude: ''
   });
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrorMsg('Please select a valid image file (PNG/JPEG/GIF).');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMsg('Selected file exceeds the 5MB size limit.');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    try {
+      const response = await apiService.uploadMedia(file);
+      if (response && response.data && response.data.url) {
+        const uploadedUrl = response.data.url;
+        setFormData((prev) => ({
+          ...prev,
+          profileImageUrl: uploadedUrl
+        }));
+
+        if (user?.id && profile) {
+          const lat = formData.latitude ? parseFloat(formData.latitude) : (profile.latitude ? parseFloat(profile.latitude) : null);
+          const lon = formData.longitude ? parseFloat(formData.longitude) : (profile.longitude ? parseFloat(profile.longitude) : null);
+          
+          const payload = {
+            ...profile,
+            fullName: formData.fullName || profile.fullName,
+            phoneNumber: formData.phoneNumber || profile.phoneNumber,
+            houseNo: formData.houseNo || profile.houseNo,
+            street: formData.street || profile.street,
+            village: formData.village || profile.village,
+            district: formData.district || profile.district,
+            state: formData.state || profile.state,
+            country: formData.country || profile.country || 'India',
+            pincode: formData.pincode || profile.pincode,
+            profileImageUrl: uploadedUrl,
+            latitude: lat,
+            longitude: lon
+          };
+
+          const responseUpdate = await apiService.updateUser(user.id, payload);
+          if (responseUpdate && responseUpdate.data) {
+            setProfile(responseUpdate.data);
+            
+            // Sync session cache
+            const storedUser = localStorage.getItem('agrifarm_user');
+            if (storedUser) {
+              const parsed = JSON.parse(storedUser);
+              parsed.profileImageUrl = responseUpdate.data.profileImageUrl;
+              localStorage.setItem('agrifarm_user', JSON.stringify(parsed));
+            }
+            setSuccessMsg('Profile picture successfully uploaded and saved in database!');
+            setTimeout(() => setSuccessMsg(''), 4000);
+          }
+        } else {
+          setSuccessMsg('Profile image uploaded successfully! Save profile to persist changes.');
+          setTimeout(() => setSuccessMsg(''), 4000);
+        }
+      } else {
+        throw new Error('Image upload failed.');
+      }
+    } catch (err: any) {
+      console.error('Failed to upload image:', err);
+      setErrorMsg(err?.response?.data?.message || 'Failed to upload profile image.');
+    } finally {
+      setIsUploadingImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -83,13 +171,126 @@ const Profile: React.FC = () => {
     }));
   };
 
+  const handleDetectGpsLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    setIsDetectingLocation(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
+            {
+              headers: {
+                'User-Agent': 'AgriFarmsApp/1.0'
+              }
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error('Nominatim request failed');
+          }
+
+          const data = await response.json();
+          if (data && data.address) {
+            const addr = data.address;
+            
+            // Geocoding extraction optimized to isolate city/village vs suburb/area name correctly
+            const village = addr.city || addr.town || addr.village || addr.municipality || addr.suburb || addr.neighbourhood || addr.city_district || '';
+            const district = addr.district || addr.county || addr.city || '';
+            
+            const areaParts = [];
+            if (addr.road) areaParts.push(addr.road);
+            const areaName = addr.suburb || addr.neighbourhood || addr.quarter;
+            if (areaName && areaName !== village) {
+              areaParts.push(areaName);
+            }
+            const street = areaParts.join(', ') || addr.road || addr.suburb || '';
+            
+            const state = addr.state || '';
+            const pincode = addr.postcode || '';
+
+            setFormData((prev) => ({
+              ...prev,
+              street: street,
+              village: village,
+              district: district,
+              state: state,
+              pincode: pincode,
+              latitude: latitude.toFixed(6),
+              longitude: longitude.toFixed(6)
+            }));
+
+            alert(`GPS location detected! Auto-populated fields successfully.`);
+          }
+        } catch (err) {
+          console.error("GPS Reverse-geocoding failed:", err);
+          alert("Failed to reverse-geocode coordinates. Filled in lat/lng coordinates only.");
+          setFormData((prev) => ({
+            ...prev,
+            latitude: latitude.toFixed(6),
+            longitude: longitude.toFixed(6)
+          }));
+        } finally {
+          setIsDetectingLocation(false);
+        }
+      },
+      (geoErr) => {
+        console.error("GPS detection error:", geoErr);
+        alert(`Failed to detect GPS location: ${geoErr.message}`);
+        setIsDetectingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  };
+
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.id) return;
 
     setErrorMsg('');
     setSuccessMsg('');
+    
+    // Validate phone number: must be exactly 10 digits
+    const cleanedPhone = (formData.phoneNumber || '').replace(/\D/g, '');
+    if (cleanedPhone.length !== 10) {
+      setErrorMsg('Phone number must be exactly 10 digits.');
+      return;
+    }
+
     setIsSaving(true);
+
+    let lat = formData.latitude ? parseFloat(formData.latitude) : null;
+    let lon = formData.longitude ? parseFloat(formData.longitude) : null;
+
+    // Auto-resolve coordinates for manual changes
+    const locationChanged = formData.village !== profile?.village || formData.district !== profile?.district;
+    if ((locationChanged && (!formData.latitude || formData.latitude.trim() === '')) || (!lat || !lon)) {
+      try {
+        const coords = await resolveCoordinates(formData.village, formData.district, formData.state);
+        if (coords) {
+          lat = coords.latitude;
+          lon = coords.longitude;
+          // Sync back to form state for completeness
+          setFormData(prev => ({
+            ...prev,
+            latitude: String(coords.latitude),
+            longitude: String(coords.longitude)
+          }));
+        }
+      } catch (err) {
+        console.error("Profile manual address geocoding failed:", err);
+      }
+    }
 
     try {
       const payload = {
@@ -104,8 +305,8 @@ const Profile: React.FC = () => {
         country: formData.country,
         pincode: formData.pincode,
         profileImageUrl: formData.profileImageUrl,
-        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-        longitude: formData.longitude ? parseFloat(formData.longitude) : null
+        latitude: lat,
+        longitude: lon
       };
 
       const response = await apiService.updateUser(user.id, payload);
@@ -133,6 +334,34 @@ const Profile: React.FC = () => {
 
   if (!isAuthenticated) return null;
 
+  if (isLoadingProfile) {
+    return (
+      <div style={{ 
+        minHeight: '60vh', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        gap: '20px' 
+      }}>
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+          style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            border: '3px solid rgba(46, 125, 50, 0.15)',
+            borderTop: '3px solid var(--primary)',
+          }}
+        />
+        <span style={{ color: 'var(--text-light)', fontSize: '1rem', fontWeight: 600, letterSpacing: '0.5px' }}>
+          Retrieving Agri Profile...
+        </span>
+      </div>
+    );
+  }
+
   const menuItems = [
     { name: 'My Assets', icon: Package, color: '#e8f5e9', fg: '#2e7d32', path: '/manage-assets' },
     { name: 'Booking History', icon: Calendar, color: '#e3f2fd', fg: '#1565c0', path: '/activity' },
@@ -149,13 +378,40 @@ const Profile: React.FC = () => {
           className="profile-info-card card glass-profile"
         >
           <div className="profile-main-row">
-            <div className="avatar-large">
-              {profile?.profileImageUrl ? (
-                <img src={profile.profileImageUrl} alt={profile.fullName} />
+            <div 
+              className="avatar-large editable"
+              onClick={handleAvatarClick}
+              title="Click to select and upload a new profile picture immediately"
+            >
+              {isUploadingImage ? (
+                <div className="avatar-loader">
+                  <Loader2 size={32} className="animate-spin" color="white" />
+                </div>
               ) : (
-                <User size={48} color="white" />
+                <>
+                  {formData.profileImageUrl || profile?.profileImageUrl ? (
+                    <img 
+                      src={apiService.getFullImageUrl(formData.profileImageUrl || profile?.profileImageUrl)} 
+                      alt={formData.fullName || profile?.fullName} 
+                    />
+                  ) : (
+                    <User size={48} color="white" />
+                  )}
+                  <div className="avatar-edit-overlay">
+                    <Camera size={20} color="white" />
+                    <span>Change Photo</span>
+                  </div>
+                </>
               )}
             </div>
+            
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              accept="image/*" 
+              style={{ display: 'none' }} 
+            />
             
             <div className="info-details">
               <div className="name-badge-row">
@@ -291,9 +547,36 @@ const Profile: React.FC = () => {
 
                 {/* Address & Location Information Section */}
                 <div className="form-section">
-                  <h4 className="section-subtitle">
-                    <MapPin size={16} /> Contact Address Details
-                  </h4>
+                  <div className="flex justify-between items-center" style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h4 className="section-subtitle" style={{ margin: 0, borderBottom: 'none', paddingBottom: 0 }}>
+                      <MapPin size={16} /> Contact Address Details
+                    </h4>
+                    {isEditing && (
+                      <button
+                        type="button"
+                        className="btn-gps-detect"
+                        onClick={handleDetectGpsLocation}
+                        disabled={isDetectingLocation}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          background: 'rgba(0, 137, 71, 0.1)',
+                          color: 'var(--primary)',
+                          padding: '8px 16px',
+                          borderRadius: '100px',
+                          fontWeight: 700,
+                          fontSize: '0.85rem',
+                          border: '1px solid rgba(0, 137, 71, 0.2)',
+                          transition: 'all 0.2s',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <Compass size={14} className={isDetectingLocation ? 'animate-spin' : ''} />
+                        <span>{isDetectingLocation ? 'Detecting...' : 'Detect GPS Location'}</span>
+                      </button>
+                    )}
+                  </div>
 
                   <div className="form-row-2">
                     <div className="form-group">
@@ -504,7 +787,7 @@ const Profile: React.FC = () => {
       <style>{`
         .profile-page {
           padding-top: 40px;
-          max-width: 850px !important;
+          max-width: 1440px !important;
           padding-bottom: 80px;
         }
         .profile-header {
@@ -537,11 +820,56 @@ const Profile: React.FC = () => {
           box-shadow: 0 8px 20px rgba(0, 137, 71, 0.2);
           border: 2px solid white;
           flex-shrink: 0;
+          position: relative;
+          transition: all 0.3s ease;
+        }
+        .avatar-large.editable {
+          cursor: pointer;
+        }
+        .avatar-large.editable:hover {
+          transform: scale(1.02);
+          box-shadow: 0 10px 25px rgba(0, 137, 71, 0.3);
+          border-color: var(--primary);
         }
         .avatar-large img {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          transition: all 0.3s ease;
+        }
+        .avatar-large.editable:hover img {
+          filter: brightness(0.6) blur(1px);
+        }
+        .avatar-edit-overlay {
+          position: absolute;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.45);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+          pointer-events: none;
+        }
+        .avatar-large.editable:hover .avatar-edit-overlay {
+          opacity: 1;
+        }
+        .avatar-edit-overlay span {
+          color: white;
+          font-size: 0.65rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .avatar-loader {
+          position: absolute;
+          inset: 0;
+          background: rgba(0, 137, 71, 0.7);
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         .info-details {
           flex: 1;
@@ -787,6 +1115,7 @@ const Profile: React.FC = () => {
 
         .grid-menu {
           display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
           gap: 16px;
           margin-bottom: 32px;
         }

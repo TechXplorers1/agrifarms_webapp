@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../services/AuthContext';
 import { apiService } from '../services/apiService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Star, MapPin, SlidersHorizontal, Info } from 'lucide-react';
@@ -20,12 +21,14 @@ interface Equipment {
 
 const Rentals: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const initialFilter = location.state?.initialFilter || 'All';
 
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState(initialFilter);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(location.state?.initialSearch || '');
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -148,6 +151,10 @@ const Rentals: React.FC = () => {
                     <button 
                       className="btn-book"
                       onClick={() => {
+                        if (!isAuthenticated) {
+                          navigate('/login');
+                          return;
+                        }
                         setSelectedAsset({
                           id: item.equipmentId,
                           name: item.brandModel,

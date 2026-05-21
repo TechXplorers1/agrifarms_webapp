@@ -24,6 +24,7 @@ interface AuthContextType {
   setPendingEmail: (email: string) => void;
   verifyEmailOtp: (otp: string) => Promise<void>;
   resendEmailOtp: () => Promise<void>;
+  updateUserLocation: (village: string, district: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,7 +56,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   id: profile.userId || profile.id,
                   name: profile.fullName || 'User',
                   phoneNumber: profile.phoneNumber || '',
-                  role: profile.role || 'FARMER'
+                  role: profile.role || 'FARMER',
+                  village: profile.village || '',
+                  district: profile.district || ''
                 };
                 setUser(activeUser);
                 localStorage.setItem('agrifarm_user', JSON.stringify(activeUser));
@@ -93,7 +96,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: loginData.userId,
           name: loginData.fullName || 'User',
           phoneNumber: loginData.phoneNumber || '',
-          role: loginData.role || 'FARMER'
+          role: loginData.role || 'FARMER',
+          village: loginData.village || '',
+          district: loginData.district || ''
         };
         setUser(activeUser);
         localStorage.setItem('agrifarm_user', JSON.stringify(activeUser));
@@ -139,7 +144,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: profile.userId || profile.id,
           name: profile.fullName || 'User',
           phoneNumber: profile.phoneNumber || '',
-          role: profile.role || 'FARMER'
+          role: profile.role || 'FARMER',
+          village: profile.village || '',
+          district: profile.district || ''
         };
         setUser(activeUser);
         localStorage.setItem('agrifarm_user', JSON.stringify(activeUser));
@@ -169,6 +176,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   };
 
+  const updateUserLocation = (village: string, district: string) => {
+    setUser((prev) => {
+      if (!prev) return null;
+      const updated = { ...prev, village, district };
+      localStorage.setItem('agrifarm_user', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -182,7 +198,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       pendingEmail,
       setPendingEmail,
       verifyEmailOtp,
-      resendEmailOtp
+      resendEmailOtp,
+      updateUserLocation
     }}>
       {children}
     </AuthContext.Provider>

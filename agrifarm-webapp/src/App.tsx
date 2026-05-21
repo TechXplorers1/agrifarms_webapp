@@ -22,21 +22,24 @@ const App: React.FC = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/verify-otp" element={<VerifyOTP />} />
           <Route path="*" element={
-            <ProtectedRoute>
+            <>
               <Navbar />
               <main className="main-content">
                 <Routes>
+                  {/* Public routes */}
                   <Route path="/" element={<Home />} />
                   <Route path="/rentals" element={<Rentals />} />
                   <Route path="/services" element={<Services />} />
-                  <Route path="/manage-assets" element={<ManageAssets />} />
-                  <Route path="/upload-item" element={<UploadItem />} />
-                  <Route path="/activity" element={<Activity />} />
-                  <Route path="/notifications" element={<div className="container"><h2>Notifications Page (Coming Soon)</h2></div>} />
-                  <Route path="/profile" element={<Profile />} />
+
+                  {/* Protected routes */}
+                  <Route path="/manage-assets" element={<ProtectedRoute><ManageAssets /></ProtectedRoute>} />
+                  <Route path="/upload-item" element={<ProtectedRoute><UploadItem /></ProtectedRoute>} />
+                  <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
+                  <Route path="/notifications" element={<ProtectedRoute><div className="container"><h2>Notifications Page (Coming Soon)</h2></div></ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 </Routes>
               </main>
-            </ProtectedRoute>
+            </>
           } />
         </Routes>
       </div>

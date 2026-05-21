@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Tractor, Truck, Users, Sprout, ChevronLeft, Upload, Check, AlertCircle, MapPin } from 'lucide-react';
+import { Tractor, Truck, Users, Sprout, ChevronLeft, Upload, Check, AlertCircle, MapPin, Compass } from 'lucide-react';
 import { useAuth } from '../services/AuthContext';
 import { apiService } from '../services/apiService';
+import { resolveCoordinates } from '../services/locationHelper';
 
 const UploadItem: React.FC = () => {
   const location = useLocation();
@@ -11,6 +12,7 @@ const UploadItem: React.FC = () => {
   const initialCategory = location.state?.category;
 
   const [category, setCategory] = useState<'Equipment' | 'Services' | 'Vehicles' | 'Workers' | null>(initialCategory || null);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [formData, setFormData] = useState<any>(editData || {
     isAvailable: true,
     approvalStatus: 'PENDING',
@@ -31,11 +33,92 @@ const UploadItem: React.FC = () => {
   }, [editData, initialCategory]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e as any;
+    const { name, value, type } = e.target;
     setFormData((prev: any) => ({
       ...prev,
       [name]: type === 'number' ? parseFloat(value) : value
     }));
+  };
+
+  const handleDetectGpsLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    setIsDetectingLocation(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
+            {
+              headers: {
+                'User-Agent': 'AgriFarmsApp/1.0'
+              }
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error('Nominatim request failed');
+          }
+
+          const data = await response.json();
+          if (data && data.address) {
+            const addr = data.address;
+            
+            // Geocoding extraction optimized to isolate city/village vs suburb/area name correctly
+            const village = addr.city || addr.town || addr.village || addr.municipality || addr.suburb || addr.neighbourhood || addr.city_district || '';
+            const district = addr.district || addr.county || addr.city || '';
+            
+            const areaParts = [];
+            if (addr.road) areaParts.push(addr.road);
+            const areaName = addr.suburb || addr.neighbourhood || addr.quarter;
+            if (areaName && areaName !== village) {
+              areaParts.push(areaName);
+            }
+            const street = areaParts.join(', ') || addr.road || addr.suburb || '';
+            const state = addr.state || '';
+            const pincode = addr.postcode || '';
+
+            setFormData((prev: any) => ({
+              ...prev,
+              street: street,
+              village: village,
+              district: district,
+              state: state,
+              pincode: pincode,
+              latitude: latitude.toFixed(6),
+              longitude: longitude.toFixed(6)
+            }));
+
+            alert(`GPS location detected! Village & District auto-populated successfully.`);
+          }
+        } catch (err) {
+          console.error("GPS Reverse-geocoding failed:", err);
+          alert("Failed to reverse-geocode coordinates. Using coordinates directly.");
+          setFormData((prev: any) => ({
+            ...prev,
+            latitude: latitude.toFixed(6),
+            longitude: longitude.toFixed(6)
+          }));
+        } finally {
+          setIsDetectingLocation(false);
+        }
+      },
+      (geoErr) => {
+        console.error("GPS detection error:", geoErr);
+        alert(`Failed to detect GPS location: ${geoErr.message}`);
+        setIsDetectingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,19 +126,32 @@ const UploadItem: React.FC = () => {
     setLoading(true);
     try {
       const id = user?.id || JSON.parse(localStorage.getItem('agrifarm_user') || '{}').id;
-      const payload = { ...formData, ownerId: id };
+      let finalPayload = { ...formData, ownerId: id };
+
+      // Auto-resolve manual coordinates if not detected via GPS already
+      if (!formData.latitude || !formData.longitude || String(formData.latitude).trim() === '' || String(formData.longitude).trim() === '') {
+        try {
+          const coords = await resolveCoordinates(formData.village, formData.district, formData.state);
+          if (coords) {
+            finalPayload.latitude = coords.latitude;
+            finalPayload.longitude = coords.longitude;
+          }
+        } catch (err) {
+          console.error("Upload manual address geocoding failed:", err);
+        }
+      }
       
       if (editData) {
         const assetId = editData.vehicleId || editData.equipmentId || editData.serviceId || editData.groupId;
-        if (category === 'Equipment') await apiService.updateEquipment(assetId, payload);
-        else if (category === 'Services') await apiService.updateService(assetId, payload);
-        else if (category === 'Vehicles') await apiService.updateVehicle(assetId, payload);
-        else if (category === 'Workers') await apiService.updateWorkerGroup(assetId, payload);
+        if (category === 'Equipment') await apiService.updateEquipment(assetId, finalPayload);
+        else if (category === 'Services') await apiService.updateService(assetId, finalPayload);
+        else if (category === 'Vehicles') await apiService.updateVehicle(assetId, finalPayload);
+        else if (category === 'Workers') await apiService.updateWorkerGroup(assetId, finalPayload);
       } else {
-        if (category === 'Equipment') await apiService.createEquipment(payload);
-        else if (category === 'Services') await apiService.createService(payload);
-        else if (category === 'Vehicles') await apiService.createVehicle(payload);
-        else if (category === 'Workers') await apiService.createWorkerGroup(payload);
+        if (category === 'Equipment') await apiService.createEquipment(finalPayload);
+        else if (category === 'Services') await apiService.createService(finalPayload);
+        else if (category === 'Vehicles') await apiService.createVehicle(finalPayload);
+        else if (category === 'Workers') await apiService.createWorkerGroup(finalPayload);
       }
 
       setSuccess(true);
@@ -235,7 +331,32 @@ const UploadItem: React.FC = () => {
               </div>
 
               <div className="form-section">
-                <h3><MapPin size={18} /> Location Details</h3>
+                <div className="flex justify-between items-center" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
+                  <h3 style={{ border: 'none', margin: 0, padding: 0 }}><MapPin size={18} /> Location Details</h3>
+                  <button
+                    type="button"
+                    className="btn-gps-detect"
+                    onClick={handleDetectGpsLocation}
+                    disabled={isDetectingLocation}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: 'rgba(0, 137, 71, 0.1)',
+                      color: 'var(--primary)',
+                      padding: '8px 16px',
+                      borderRadius: '100px',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      border: '1px solid rgba(0, 137, 71, 0.2)',
+                      transition: 'all 0.2s',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Compass size={14} className={isDetectingLocation ? 'animate-spin' : ''} />
+                    <span>{isDetectingLocation ? 'Detecting...' : 'Detect GPS'}</span>
+                  </button>
+                </div>
                 <div className="grid-2">
                   <div className="input-group">
                     <label>Village</label>
