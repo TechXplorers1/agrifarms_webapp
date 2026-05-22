@@ -12,6 +12,7 @@ import VerifyOTP from './pages/VerifyOTP';
 import Activity from './pages/Activity';
 import ProtectedRoute from './components/ProtectedRoute';
 import OtpVerificationModal from './components/OtpVerificationModal';
+import BookAsset from './pages/BookAsset';
 
 const App: React.FC = () => {
   return (
@@ -34,6 +35,7 @@ const App: React.FC = () => {
                   {/* Protected routes */}
                   <Route path="/manage-assets" element={<ProtectedRoute><ManageAssets /></ProtectedRoute>} />
                   <Route path="/upload-item" element={<ProtectedRoute><UploadItem /></ProtectedRoute>} />
+                  <Route path="/book" element={<ProtectedRoute><BookAsset /></ProtectedRoute>} />
                   <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
                   <Route path="/notifications" element={<ProtectedRoute><div className="container"><h2>Notifications Page (Coming Soon)</h2></div></ProtectedRoute>} />
                   <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

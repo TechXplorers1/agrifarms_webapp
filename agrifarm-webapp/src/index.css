@@ -235,6 +235,16 @@ button {
   display: none;
 }
 
+@media (min-width: 769px) and (max-width: 1100px) {
+  .nav-links {
+    gap: 16px;
+  }
+  .nav-item {
+    font-size: 0.9rem;
+    gap: 6px;
+  }
+}
+
 /* Responsive Navbar */
 @media (max-width: 768px) {
   .nav-links { display: none; }
@@ -528,8 +538,8 @@ button {
 }
 
 .tool-tile {
-  padding: 24px !important;
-  border-radius: 24px;
+  padding: 12px 20px;
+  border-radius: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -857,3 +867,117 @@ button {
   font-weight: 700;
   font-size: 0.875rem;
 }
+
+/* ==========================================
+   Premium Aesthetic Styling & Animations Overrides
+   ========================================== */
+
+.ambient-bg {
+  position: fixed;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.07) 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(90px);
+  z-index: -1;
+  pointer-events: none;
+}
+.ambient-bg-1 {
+  top: -10%;
+  left: -10%;
+  animation: floatBg 28s infinite alternate ease-in-out;
+}
+.ambient-bg-2 {
+  bottom: -15%;
+  right: -10%;
+  animation: floatBg 22s infinite alternate-reverse ease-in-out;
+}
+@keyframes floatBg {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(90px, 60px) scale(1.2); }
+}
+
+@keyframes meshGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.hero-mesh {
+  background-image: 
+    linear-gradient(135deg, rgba(15, 23, 42, 0.65) 0%, rgba(15, 23, 42, 0.3) 50%, rgba(15, 23, 42, 0.75) 100%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0) 70%),
+    url('/crop_sowing_banner.png') !important;
+  background-size: cover !important;
+  background-position: center 35% !important;
+  background-repeat: no-repeat !important;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.25) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.glossy-search {
+  background: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.12), inset 0 2px 4px rgba(255,255,255,0.8) !important;
+}
+.glossy-search:focus-within {
+  border-color: rgba(16, 185, 129, 0.6) !important;
+  box-shadow: 0 20px 45px -5px rgba(16, 185, 129, 0.22), inset 0 2px 4px rgba(255,255,255,0.8) !important;
+}
+
+.frosted-tool-tile {
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.05) !important;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer;
+}
+.frosted-tool-tile:hover {
+  transform: translateY(-8px) scale(1.025) !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
+}
+.frosted-tool-tile-weather:hover { box-shadow: 0 25px 45px -10px rgba(245, 158, 11, 0.2) !important; }
+.frosted-tool-tile-crop:hover { box-shadow: 0 25px 45px -10px rgba(16, 185, 129, 0.2) !important; }
+.frosted-tool-tile-mandi:hover { box-shadow: 0 25px 45px -10px rgba(59, 130, 246, 0.2) !important; }
+.frosted-tool-tile-calc:hover { box-shadow: 0 25px 45px -10px rgba(168, 85, 247, 0.2) !important; }
+
+@keyframes activePulse {
+  0% { transform: scale(0.9); opacity: 0.6; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.9); opacity: 0.6; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+.pulse-dot {
+  width: 10px;
+  height: 10px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: activePulse 2s infinite;
+}
+
+.visual-card {
+  border-radius: 28px !important;
+  height: 280px !important;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.visual-card img {
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.visual-card:hover img {
+  transform: scale(1.08) rotate(0.5deg);
+}
+.visual-card .overlay {
+  background: linear-gradient(to bottom, rgba(15, 23, 42, 0.05) 0%, rgba(15, 23, 42, 0.4) 50%, rgba(15, 23, 42, 0.95) 100%) !important;
+}
+.visual-card .rent-badge-btn {
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.visual-card:hover .rent-badge-btn {
+  background: var(--primary) !important;
+  padding-left: 18px !important;
+  padding-right: 18px !important;
+  box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4);
+}
+

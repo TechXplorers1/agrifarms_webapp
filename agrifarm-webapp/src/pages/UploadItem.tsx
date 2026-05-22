@@ -128,6 +128,10 @@ const UploadItem: React.FC = () => {
       const id = user?.id || JSON.parse(localStorage.getItem('agrifarm_user') || '{}').id;
       let finalPayload = { ...formData, ownerId: id };
 
+      if (category === 'Equipment') {
+        finalPayload.operatorAvailable = !!formData.operatorPrice && parseFloat(String(formData.operatorPrice)) > 0;
+      }
+
       // Auto-resolve manual coordinates if not detected via GPS already
       if (!formData.latitude || !formData.longitude || String(formData.latitude).trim() === '' || String(formData.longitude).trim() === '') {
         try {

@@ -4,7 +4,6 @@ import { useAuth } from '../services/AuthContext';
 import { apiService } from '../services/apiService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Star, MapPin, SlidersHorizontal, Info, Hammer, Truck, Users } from 'lucide-react';
-import BookingModal from '../components/BookingModal';
 
 
 interface ServiceItem {
@@ -17,6 +16,10 @@ interface ServiceItem {
   location?: string;
   type: 'Service' | 'Transport' | 'Worker';
   specs?: string;
+  providerId?: string;
+  providerName?: string;
+  operatorPrice?: number;
+  operatorAvailable?: boolean;
 }
 
 const Services: React.FC = () => {
@@ -29,8 +32,6 @@ const Services: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState(initialFilter);
   const [searchQuery, setSearchQuery] = useState(location.state?.initialSearch || '');
-  const [selectedAsset, setSelectedAsset] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
 
   const categories = ['All', 'Services', 'Transport', 'Workers'];
@@ -52,7 +53,11 @@ const Services: React.FC = () => {
             price: `₹${s.priceRate}`,
             imageUrl: s.imageUrl,
             type: 'Service',
-            location: s.village
+            location: s.village,
+            providerId: s.ownerId,
+            providerName: s.ownerName,
+            operatorPrice: s.operatorPrice,
+            operatorAvailable: s.operatorIncluded
           })),
           ...veh.data.map((v: any) => ({
             id: v.vehicleId,
@@ -62,7 +67,9 @@ const Services: React.FC = () => {
             imageUrl: v.imageUrl,
             type: 'Transport',
             location: v.village,
-            specs: v.tonnage ? `${v.tonnage} Ton` : undefined
+            specs: v.tonnage ? `${v.tonnage} Ton` : undefined,
+            providerId: v.ownerId,
+            providerName: v.ownerName
           })),
           ...work.data.map((w: any) => ({
             id: w.groupId,
@@ -72,7 +79,9 @@ const Services: React.FC = () => {
             imageUrl: w.imageUrl,
             type: 'Worker',
             location: w.village,
-            specs: `${(w.numMales || 0) + (w.numFemales || 0)} People`
+            specs: `${(w.numMales || 0) + (w.numFemales || 0)} People`,
+            providerId: w.ownerId,
+            providerName: w.ownerName
           }))
         ];
 
@@ -189,18 +198,19 @@ const Services: React.FC = () => {
                           navigate('/login');
                           return;
                         }
-                        setSelectedAsset({
+                        const assetData = {
                           id: item.id,
                           name: item.name,
                           category: item.category,
                           price: parseFloat(item.price.replace(/[^0-9.]/g, '')),
-                          providerId: (item as any).providerId || 'owner123',
-                          providerName: (item as any).providerName || 'Service Provider',
+                          providerId: item.providerId || 'owner123',
+                          providerName: item.providerName || 'Service Provider',
                           imageUrl: item.imageUrl,
                           type: item.type,
-                          operatorPrice: (item as any).operatorPrice
-                        });
-                        setIsModalOpen(true);
+                          operatorPrice: item.operatorPrice,
+                          operatorAvailable: item.operatorAvailable
+                        };
+                        navigate('/book', { state: { asset: assetData } });
                       }}
                     >
                       Book Now
@@ -211,14 +221,6 @@ const Services: React.FC = () => {
             ))}
           </AnimatePresence>
         </div>
-      )}
-
-      {selectedAsset && (
-        <BookingModal 
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          asset={selectedAsset}
-        />
       )}
 
       {!loading && filteredItems.length === 0 && (

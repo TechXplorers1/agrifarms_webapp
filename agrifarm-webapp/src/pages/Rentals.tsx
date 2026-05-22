@@ -4,7 +4,6 @@ import { useAuth } from '../services/AuthContext';
 import { apiService } from '../services/apiService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Star, MapPin, SlidersHorizontal, Info } from 'lucide-react';
-import BookingModal from '../components/BookingModal';
 
 
 interface Equipment {
@@ -17,6 +16,10 @@ interface Equipment {
   village?: string;
   isAvailable: boolean;
   hp?: number;
+  ownerId?: string;
+  ownerName?: string;
+  operatorPrice?: number;
+  operatorAvailable?: boolean;
 }
 
 const Rentals: React.FC = () => {
@@ -29,8 +32,6 @@ const Rentals: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState(initialFilter);
   const [searchQuery, setSearchQuery] = useState(location.state?.initialSearch || '');
-  const [selectedAsset, setSelectedAsset] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
 
   const categories = ['All', 'Tractor', 'Harvester', 'Plough', 'Seeder', 'Sprayer'];
@@ -155,18 +156,19 @@ const Rentals: React.FC = () => {
                           navigate('/login');
                           return;
                         }
-                        setSelectedAsset({
+                        const assetData = {
                           id: item.equipmentId,
                           name: item.brandModel,
                           category: item.category,
                           price: item.pricePerHour,
-                          providerId: (item as any).ownerId, // API should provide this
-                          providerName: (item as any).providerName || 'Equipment Owner',
+                          providerId: item.ownerId || 'owner123',
+                          providerName: item.ownerName || 'Equipment Owner',
                           imageUrl: item.imageUrl,
                           type: 'Equipment',
-                          operatorPrice: (item as any).operatorPrice
-                        });
-                        setIsModalOpen(true);
+                          operatorPrice: item.operatorPrice,
+                          operatorAvailable: item.operatorAvailable
+                        };
+                        navigate('/book', { state: { asset: assetData } });
                       }}
                     >
                       Book Now
@@ -177,14 +179,6 @@ const Rentals: React.FC = () => {
             ))}
           </AnimatePresence>
         </div>
-      )}
-
-      {selectedAsset && (
-        <BookingModal 
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          asset={selectedAsset}
-        />
       )}
 
       {!loading && filteredEquipment.length === 0 && (
