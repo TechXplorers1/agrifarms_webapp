@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/apiService';
 import { useAuth } from '../services/AuthContext';
+import { useLanguage } from '../services/LanguageContext';
 import { 
   Package, Plus, Edit2, Trash2, 
   CheckCircle, Clock, XCircle 
@@ -11,6 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 type AssetType = 'Vehicles' | 'Equipment' | 'Services' | 'Workers';
 
 const ManageAssets: React.FC = () => {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<AssetType>('Vehicles');
   const [assets, setAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +53,7 @@ const ManageAssets: React.FC = () => {
   }, [user, isAuthenticated, navigate, activeTab]);
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this item?')) return;
+    if (!window.confirm(t('manage.confirmDelete'))) return;
     
     try {
       if (activeTab === 'Vehicles') await apiService.deleteVehicle(id);
@@ -61,18 +63,18 @@ const ManageAssets: React.FC = () => {
       
       fetchAssets();
     } catch (error) {
-      alert('Failed to delete item');
+      alert(t('manage.failedDelete'));
     }
   };
 
   const getStatusInfo = (status?: string) => {
     switch (status?.toLowerCase()) {
       case 'approved':
-        return { color: '#2e7d32', bg: '#e8f5e9', icon: CheckCircle, label: 'APPROVED' };
+        return { color: '#2e7d32', bg: '#e8f5e9', icon: CheckCircle, label: t('manage.status.approved') };
       case 'rejected':
-        return { color: '#c62828', bg: '#ffebee', icon: XCircle, label: 'REJECTED' };
+        return { color: '#c62828', bg: '#ffebee', icon: XCircle, label: t('manage.status.rejected') };
       default:
-        return { color: '#ef6c00', bg: '#fff3e0', icon: Clock, label: 'PENDING' };
+        return { color: '#ef6c00', bg: '#fff3e0', icon: Clock, label: t('manage.status.pending') };
     }
   };
 
@@ -86,30 +88,37 @@ const ManageAssets: React.FC = () => {
     );
   };
 
+  const tabs = [
+    { value: 'Vehicles', label: t('manage.tab.vehicles') },
+    { value: 'Equipment', label: t('manage.tab.equipment') },
+    { value: 'Services', label: t('manage.tab.services') },
+    { value: 'Workers', label: t('manage.tab.workers') }
+  ];
+
   return (
     <div className="manage-assets container fade-in">
       <div className="page-header">
         <div>
-          <h1>Manage Assets</h1>
-          <p>Track and update your listed resources</p>
+          <h1>{t('manage.title')}</h1>
+          <p>{t('manage.subtitle')}</p>
         </div>
         <button className="btn-primary" onClick={() => navigate('/upload-item')}>
           <Plus size={20} />
-          <span>Add Asset</span>
+          <span>{t('manage.addBtn')}</span>
         </button>
       </div>
 
       {/* Tabs */}
       <div className="tab-bar-container">
         <div className="tab-bar">
-          {['Vehicles', 'Equipment', 'Services', 'Workers'].map((tab) => (
+          {tabs.map((tab) => (
             <button 
-              key={tab}
-              className={`tab-item ${activeTab === tab ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab as any)}
+              key={tab.value}
+              className={`tab-item ${activeTab === tab.value ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.value as any)}
             >
-              {tab}
-              {activeTab === tab && <motion.div layoutId="tab-underline" className="tab-underline" />}
+              {tab.label}
+              {activeTab === tab.value && <motion.div layoutId="tab-underline" className="tab-underline" />}
             </button>
           ))}
         </div>
@@ -170,8 +179,8 @@ const ManageAssets: React.FC = () => {
             <div className="empty-icon">
               <Package size={48} />
             </div>
-            <h3>No {activeTab} registered</h3>
-            <p>Add your assets to start earning on the platform</p>
+            <h3>{t('manage.emptyTitle').replace('{tab}', t('manage.tab.' + activeTab.toLowerCase()))}</h3>
+            <p>{t('manage.emptyDesc')}</p>
           </div>
         )}
       </div>

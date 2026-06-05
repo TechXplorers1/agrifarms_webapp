@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Home, History, User, LayoutGrid, LogIn, Sprout, Bell, ClipboardList, 
-  X, CheckCheck, Info, Tag 
+  X, CheckCheck, Info, Tag
 } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
 import { apiService } from '../services/apiService';
+import { useLanguage } from '../services/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Navbar: React.FC = () => {
+  const { t } = useLanguage();
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -51,13 +55,16 @@ const Navbar: React.FC = () => {
       try {
         const res = await apiService.getNotifications(user.id);
         if (res && res.data && res.data.length > 0) {
-          setNotifications(res.data);
+          const unread = res.data.filter((n: any) => n.read === false || n.isRead === false);
+          setNotifications(unread);
         } else {
-          setNotifications(defaultNotifications);
+          const unreadDefaults = defaultNotifications.filter((n: any) => n.read === false || n.isRead === false);
+          setNotifications(unreadDefaults);
         }
       } catch (err) {
         console.error("Error fetching notifications:", err);
-        setNotifications(defaultNotifications);
+        const unreadDefaults = defaultNotifications.filter((n: any) => n.read === false || n.isRead === false);
+        setNotifications(unreadDefaults);
       }
     };
 
@@ -68,8 +75,8 @@ const Navbar: React.FC = () => {
   }, [isAuthenticated, user]);
 
   const handleMarkAsRead = async (id: string) => {
-    // Optimistic UI update
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    // Optimistic UI update - filter out read items immediately
+    setNotifications(prev => prev.filter(n => n.id !== id));
     try {
       await apiService.markAsRead(id);
     } catch (err) {
@@ -77,10 +84,49 @@ const Navbar: React.FC = () => {
     }
   };
 
+  const handleNotificationClick = async (notif: any) => {
+    // 1. Mark as read if unread
+    if (notif.read === false || notif.isRead === false) {
+      await handleMarkAsRead(notif.id);
+    }
+    
+    // 2. Close notifications panel
+    setIsNotificationsOpen(false);
+    
+    // 3. Determine target route based on type, title, and message
+    const type = (notif.type || '').toLowerCase();
+    const title = (notif.title || '').toLowerCase();
+    const message = (notif.message || '').toLowerCase();
+    const relatedId = notif.relatedId || notif.bookingId || '';
+    
+    if (type.includes('booking') || title.includes('booking') || message.includes('booking') || message.includes('confirmed') || message.includes('requested')) {
+      if (relatedId) {
+        navigate(`/activity?bookingId=${relatedId}`);
+      } else {
+        navigate('/activity');
+      }
+    } else if (type.includes('approval') || type.includes('asset') || title.includes('approved') || title.includes('rejected') || message.includes('approved') || message.includes('rejected')) {
+      navigate('/manage-assets');
+    } else if (type.includes('advice') || type.includes('crop') || title.includes('advice') || title.includes('crop') || message.includes('pesticide') || message.includes('crop')) {
+      navigate('/services');
+    } else if (type.includes('price') || type.includes('mandi') || title.includes('price') || title.includes('mandi') || message.includes('price') || message.includes('mandi')) {
+      navigate('/');
+    } else if (type.includes('equipment') || type.includes('rental') || title.includes('equipment') || title.includes('rental') || message.includes('rent')) {
+      navigate('/rentals');
+    } else {
+      // Fallback
+      if (relatedId) {
+        navigate(`/activity?bookingId=${relatedId}`);
+      } else {
+        navigate('/activity');
+      }
+    }
+  };
+
   const handleMarkAllAsRead = async () => {
     if (!user?.id) return;
-    // Optimistic UI update
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    // Clear notifications list (they all disappear)
+    setNotifications([]);
     try {
       await apiService.markAllNotificationsAsRead(user.id);
     } catch (err) {
@@ -89,14 +135,14 @@ const Navbar: React.FC = () => {
   };
 
   const navItems = [
-    { name: 'Home', path: '/', icon: Home },
-    { name: 'Rentals', path: '/rentals', icon: LayoutGrid },
-    { name: 'Services', path: '/services', icon: Sprout },
-    { name: 'Activity', path: '/activity', icon: History },
+    { name: t('nav.home'), path: '/', icon: Home, state: undefined },
+    { name: t('nav.rentals'), path: '/rentals', icon: LayoutGrid, state: undefined },
+    { name: t('nav.services'), path: '/services', icon: Sprout, state: { initialFilter: 'Services' } },
+    { name: t('nav.activity'), path: '/activity', icon: History, state: undefined },
   ];
 
   const showManageAssets = isAuthenticated && ['OWNER', 'PROVIDER'].includes(user?.role || '');
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.length;
 
   return (
     <nav className="web-navbar">
@@ -105,13 +151,14 @@ const Navbar: React.FC = () => {
           <div className="logo-box">
             <Sprout size={24} color="var(--primary)" />
           </div>
-          <span className="logo-text">Agri Farms</span>
+          <span className="logo-text">{t('logo.title')}</span>
         </Link>
         <div className="nav-links">
           {navItems.map((item) => (
             <Link
               key={item.name}
               to={item.path}
+              state={item.state}
               className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
             >
               <item.icon size={20} />
@@ -125,7 +172,7 @@ const Navbar: React.FC = () => {
               className={`nav-item ${location.pathname === '/manage-assets' ? 'active' : ''}`}
             >
               <ClipboardList size={20} />
-              <span>Manage Assets</span>
+              <span>{t('nav.manage')}</span>
             </Link>
           )}
 
@@ -134,7 +181,6 @@ const Navbar: React.FC = () => {
               onClick={() => setIsNotificationsOpen(true)}
               className={`nav-item ${isNotificationsOpen ? 'active' : ''}`}
               style={{ 
-                position: 'relative', 
                 background: 'none', 
                 border: 'none', 
                 font: 'inherit', 
@@ -148,25 +194,29 @@ const Navbar: React.FC = () => {
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <Bell size={20} />
                 {unreadCount > 0 && (
-                  <span className="nav-badge" style={{
+                  <span className="nav-badge-count" style={{
                     position: 'absolute',
                     top: '-8px',
                     right: '-8px',
                     background: '#ef4444',
                     color: 'white',
-                    fontSize: '0.65rem',
-                    fontWeight: 900,
-                    width: '16px',
+                    fontSize: '10px',
+                    fontWeight: 800,
+                    minWidth: '16px',
                     height: '16px',
                     borderRadius: '50%',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-                  }}>{unreadCount}</span>
+                    padding: '0 4px',
+                    boxShadow: '0 0 8px rgba(239, 68, 68, 0.8)',
+                    border: '1.5px solid white'
+                  }}>
+                    {unreadCount}
+                  </span>
                 )}
               </div>
-              <span>Notifications</span>
+              <span>{t('nav.notifications')}</span>
             </button>
           )}
 
@@ -174,14 +224,29 @@ const Navbar: React.FC = () => {
             <Link
               to="/profile"
               className={`nav-item ${location.pathname === '/profile' ? 'active' : ''}`}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
             >
-              <User size={20} />
-              <span>{user?.name || 'Profile'}</span>
+              {user?.profilePic ? (
+                <img 
+                  src={apiService.getFullImageUrl(user.profilePic)} 
+                  alt={user?.name || 'Profile'} 
+                  style={{ 
+                    width: '24px', 
+                    height: '24px', 
+                    borderRadius: '50%', 
+                    objectFit: 'cover', 
+                    border: '1.5px solid var(--primary-light)' 
+                  }} 
+                />
+              ) : (
+                <User size={20} />
+              )}
+              <span>{user?.name || t('nav.profile')}</span>
             </Link>
           ) : (
             <Link to="/login" className="btn-primary" style={{ padding: '8px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <LogIn size={18} />
-              <span>Login</span>
+              <span>{t('nav.login')}</span>
             </Link>
           )}
         </div>
@@ -190,28 +255,66 @@ const Navbar: React.FC = () => {
         <div className="mobile-nav">
           {[
             ...navItems,
-            ...(showManageAssets ? [{ name: 'Manage', path: '/manage-assets', icon: ClipboardList }] : []),
-            ...(isAuthenticated ? [{ name: 'Alerts', path: '/notifications', icon: Bell }] : []),
-            { name: 'Profile', path: '/profile', icon: User }
+            ...(showManageAssets ? [{ name: t('nav.manage'), path: '/manage-assets', icon: ClipboardList }] : []),
+            ...(isAuthenticated ? [{ name: t('nav.notifications'), path: '/notifications', icon: Bell }] : []),
+            { name: t('nav.profile'), path: '/profile', icon: User }
           ].map((item) => {
-            const isAlerts = item.name === 'Alerts';
+            const isAlerts = item.name === t('nav.notifications');
             return isAlerts ? (
-              <button
+              <Link
                 key={item.name}
-                onClick={() => setIsNotificationsOpen(true)}
-                className={`mobile-nav-item ${isNotificationsOpen ? 'active' : ''}`}
-                style={{ background: 'none', border: 'none', font: 'inherit', cursor: 'pointer' }}
+                to="/notifications"
+                className={`mobile-nav-item ${location.pathname === '/notifications' ? 'active' : ''}`}
               >
-                <item.icon size={22} />
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <item.icon size={22} />
+                  {unreadCount > 0 && (
+                    <span className="mobile-badge-count" style={{
+                      position: 'absolute',
+                      top: '-6px',
+                      right: '-6px',
+                      background: '#ef4444',
+                      color: 'white',
+                      fontSize: '9px',
+                      fontWeight: 800,
+                      minWidth: '14px',
+                      height: '14px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0 3px',
+                      boxShadow: '0 0 8px rgba(239, 68, 68, 0.8)',
+                      border: '1.5px solid white'
+                    }}>
+                      {unreadCount}
+                    </span>
+                  )}
+                </div>
                 <span>{item.name}</span>
-              </button>
+              </Link>
             ) : (
               <Link
                 key={item.name}
                 to={item.path}
                 className={`mobile-nav-item ${location.pathname === item.path ? 'active' : ''}`}
               >
-                <item.icon size={22} />
+                {item.name === t('nav.profile') && isAuthenticated && user?.profilePic ? (
+                  <img
+                    src={apiService.getFullImageUrl(user.profilePic)}
+                    alt="Profile"
+                    style={{
+                      width: '22px',
+                      height: '22px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '1.5px solid var(--primary-light)',
+                      marginBottom: '4px'
+                    }}
+                  />
+                ) : (
+                  <item.icon size={22} />
+                )}
                 <span>{item.name}</span>
               </Link>
             );
@@ -219,50 +322,51 @@ const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Premium Sliding Notifications Drawer Panel */}
-      <AnimatePresence>
-        {isNotificationsOpen && (
-          <>
-            {/* Backdrop Blur Overlay */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsNotificationsOpen(false)}
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'rgba(15, 23, 42, 0.4)',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-                zIndex: 9999
-              }}
-            />
+      {/* Premium Sliding Notifications Drawer Panel - portaled to body to escape nav stacking context */}
+      {createPortal(
+        <AnimatePresence>
+          {isNotificationsOpen && (
+            <>
+              {/* Backdrop Blur Overlay */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsNotificationsOpen(false)}
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'rgba(15, 23, 42, 0.4)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                  zIndex: 9999
+                }}
+              />
 
-            {/* Drawer Panel */}
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              style={{
-                position: 'fixed',
-                top: 0,
-                right: 0,
-                height: '100vh',
-                width: '100%',
-                maxWidth: '420px',
-                background: '#ffffff',
-                boxShadow: '-10px 0 40px rgba(15, 23, 42, 0.15)',
-                display: 'flex',
-                flexDirection: 'column',
-                zIndex: 10000,
-                overflow: 'hidden'
-              }}
-            >
+              {/* Drawer Panel */}
+              <motion.div
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  right: 0,
+                  height: '100vh',
+                  width: '100%',
+                  maxWidth: '420px',
+                  background: '#ffffff',
+                  boxShadow: '-10px 0 40px rgba(15, 23, 42, 0.15)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  zIndex: 10000,
+                  overflow: 'hidden'
+                }}
+              >
               {/* Header */}
               <div style={{
                 padding: '24px 20px',
@@ -275,9 +379,9 @@ const Navbar: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <Bell size={22} color="var(--primary)" />
                   <div>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>Notifications</h3>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>{t('notifications.title')}</h3>
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                      {unreadCount} unread alerts
+                      {t('notifications.unreadAlerts').replace('{count}', String(unreadCount))}
                     </p>
                   </div>
                 </div>
@@ -302,7 +406,7 @@ const Navbar: React.FC = () => {
                       title="Mark all as read"
                     >
                       <CheckCheck size={14} />
-                      <span>Read All</span>
+                      <span>{t('notifications.readAll')}</span>
                     </button>
                   )}
                   <button
@@ -349,34 +453,38 @@ const Navbar: React.FC = () => {
                       <Bell size={36} style={{ opacity: 0.4 }} />
                     </div>
                     <div>
-                      <h4 style={{ fontWeight: 800, color: 'var(--text-main)' }}>All caught up!</h4>
-                      <p style={{ fontSize: '0.85rem', marginTop: '4px' }}>No new notifications or alerts at this moment.</p>
+                      <h4 style={{ fontWeight: 800, color: 'var(--text-main)' }}>{t('notifications.emptyTitle')}</h4>
+                      <p style={{ fontSize: '0.85rem', marginTop: '4px' }}>{t('notifications.emptyDesc')}</p>
                     </div>
                   </div>
                 ) : (
                   notifications.map((notif, index) => {
-                    const iconBg = notif.type === 'booking' ? '#e8f5e9' : notif.type === 'advice' ? '#e3f2fd' : '#fff8e1';
-                    const iconColor = notif.type === 'booking' ? '#2e7d32' : notif.type === 'advice' ? '#1565c0' : '#b78103';
-                    const IconComp = notif.type === 'booking' ? CheckCheck : notif.type === 'advice' ? Info : Tag;
+                    const tLower = (notif.type || '').toLowerCase();
+                    const isApproval = tLower === 'asset_approval' || tLower.includes('approval') || tLower.includes('approve') || tLower.includes('reject');
+                    const isRejected = (notif.title || '').toLowerCase().includes('reject') || (notif.message || '').toLowerCase().includes('reject');
+
+                    const iconBg = isApproval ? (isRejected ? '#fde8e8' : '#e8f5e9') : notif.type === 'booking' ? '#e8f5e9' : notif.type === 'advice' ? '#e3f2fd' : '#fff8e1';
+                    const iconColor = isApproval ? (isRejected ? '#dc2626' : '#2e7d32') : notif.type === 'booking' ? '#2e7d32' : notif.type === 'advice' ? '#1565c0' : '#b78103';
+                    const IconComp = isApproval ? (isRejected ? X : CheckCheck) : notif.type === 'booking' ? CheckCheck : notif.type === 'advice' ? Info : Tag;
 
                     return (
                       <div
                         key={notif.id || `notif-${index}`}
-                        onClick={() => handleMarkAsRead(notif.id)}
+                        onClick={() => handleNotificationClick(notif)}
                         style={{
                           display: 'flex',
                           gap: '14px',
                           padding: '16px',
                           borderRadius: '16px',
-                          background: notif.read ? '#ffffff' : '#f8fafc',
-                          border: notif.read ? '1px solid #f1f5f9' : '1px solid rgba(16, 185, 129, 0.15)',
+                          background: (notif.read || notif.isRead) ? '#ffffff' : '#f8fafc',
+                          border: (notif.read || notif.isRead) ? '1px solid #f1f5f9' : '1px solid rgba(16, 185, 129, 0.15)',
                           cursor: 'pointer',
                           position: 'relative',
                           transition: 'all 0.2s ease',
                           textAlign: 'left'
                         }}
                       >
-                        {!notif.read && (
+                        {!(notif.read || notif.isRead) && (
                           <div style={{
                             position: 'absolute',
                             top: '16px',
@@ -405,7 +513,7 @@ const Navbar: React.FC = () => {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           <h4 style={{
                             fontSize: '0.95rem',
-                            fontWeight: notif.read ? 700 : 900,
+                            fontWeight: (notif.read || notif.isRead) ? 700 : 900,
                             color: 'var(--text-main)',
                             margin: 0
                           }}>{notif.title}</h4>
@@ -452,13 +560,15 @@ const Navbar: React.FC = () => {
                     textAlign: 'center'
                   }}
                 >
-                  Close Panel
+                  {t('notifications.close')}
                 </button>
               </div>
             </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </nav>
   );
 };

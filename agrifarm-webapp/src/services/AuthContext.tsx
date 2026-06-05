@@ -25,12 +25,28 @@ interface AuthContextType {
   verifyEmailOtp: (otp: string) => Promise<void>;
   resendEmailOtp: () => Promise<void>;
   updateUserLocation: (village: string, district: string) => void;
+  updateUserProfile: (name: string, phoneNumber: string, profilePic?: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    const storedUser = localStorage.getItem('agrifarm_user');
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        // Seamlessly map old profileImageUrl cache keys to profilePic to support already existing logins
+        if (parsed && !parsed.profilePic && parsed.profileImageUrl) {
+          parsed.profilePic = parsed.profileImageUrl;
+        }
+        return parsed;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [pendingEmail, setPendingEmail] = useState('');
@@ -41,6 +57,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
+        // Map old cache keys for in-memory session mapping also
+        if (parsedUser && !parsedUser.profilePic && parsedUser.profileImageUrl) {
+          parsedUser.profilePic = parsedUser.profileImageUrl;
+        }
         // Direct DB double check to guarantee status integrity
         apiService.getUser(parsedUser.id || parsedUser.userId)
           .then((response) => {
@@ -57,6 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   name: profile.fullName || 'User',
                   phoneNumber: profile.phoneNumber || '',
                   role: profile.role || 'FARMER',
+                  profilePic: profile.profileImageUrl || '',
                   village: profile.village || '',
                   district: profile.district || ''
                 };
@@ -67,7 +88,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           })
           .catch((err) => {
             console.error("Database session status check failed on reload:", err);
-            setUser(parsedUser); // Keep cached local session
+            // Already initialized synchronously, keep the parsed local session with mapped photo
+            setUser(parsedUser);
           });
       } catch (err) {
         localStorage.removeItem('agrifarm_user');
@@ -91,14 +113,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
 
+        // Fetch full user details from DB to get the profileImageUrl and address properties
+        let profile: any = {};
+        try {
+          const profileRes = await apiService.getUser(loginData.userId);
+          if (profileRes && profileRes.data) {
+            profile = profileRes.data;
+          }
+        } catch (dbErr) {
+          console.error("Failed to fetch full user profile on login:", dbErr);
+        }
+
         // Successfully logged in via PostgreSQL credentials verification
         const activeUser: User = {
           id: loginData.userId,
-          name: loginData.fullName || 'User',
-          phoneNumber: loginData.phoneNumber || '',
-          role: loginData.role || 'FARMER',
-          village: loginData.village || '',
-          district: loginData.district || ''
+          name: profile.fullName || loginData.fullName || 'User',
+          phoneNumber: profile.phoneNumber || loginData.phoneNumber || '',
+          role: profile.role || loginData.role || 'FARMER',
+          profilePic: profile.profileImageUrl || '',
+          village: profile.village || '',
+          district: profile.district || ''
         };
         setUser(activeUser);
         localStorage.setItem('agrifarm_user', JSON.stringify(activeUser));
@@ -145,6 +179,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           name: profile.fullName || 'User',
           phoneNumber: profile.phoneNumber || '',
           role: profile.role || 'FARMER',
+          profilePic: profile.profileImageUrl || '',
           village: profile.village || '',
           district: profile.district || ''
         };
@@ -185,6 +220,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  const updateUserProfile = (name: string, phoneNumber: string, profilePic?: string) => {
+    setUser((prev) => {
+      if (!prev) return null;
+      const updated = { 
+        ...prev, 
+        name, 
+        phoneNumber, 
+        profilePic: profilePic !== undefined ? profilePic : prev.profilePic 
+      };
+      localStorage.setItem('agrifarm_user', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -199,7 +248,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setPendingEmail,
       verifyEmailOtp,
       resendEmailOtp,
-      updateUserLocation
+      updateUserLocation,
+      updateUserProfile
     }}>
       {children}
     </AuthContext.Provider>

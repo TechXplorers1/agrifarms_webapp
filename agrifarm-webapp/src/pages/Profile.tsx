@@ -9,9 +9,11 @@ import {
 } from 'lucide-react';
 import { apiService } from '../services/apiService';
 import { resolveCoordinates } from '../services/locationHelper';
+import { useLanguage } from '../services/LanguageContext';
 
 const Profile: React.FC = () => {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, updateUserProfile } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
   const navigate = useNavigate();
 
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
@@ -91,15 +93,18 @@ const Profile: React.FC = () => {
             longitude: lon
           };
 
+          console.log("handleFileChange - PUT payload:", payload);
           const responseUpdate = await apiService.updateUser(user.id, payload);
           if (responseUpdate && responseUpdate.data) {
             setProfile(responseUpdate.data);
             
             // Sync session cache
+            updateUserProfile(responseUpdate.data.fullName, responseUpdate.data.phoneNumber, responseUpdate.data.profileImageUrl);
             const storedUser = localStorage.getItem('agrifarm_user');
             if (storedUser) {
               const parsed = JSON.parse(storedUser);
               parsed.profileImageUrl = responseUpdate.data.profileImageUrl;
+              parsed.profilePic = responseUpdate.data.profileImageUrl;
               localStorage.setItem('agrifarm_user', JSON.stringify(parsed));
             }
             setSuccessMsg('Profile picture successfully uploaded and saved in database!');
@@ -114,6 +119,9 @@ const Profile: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Failed to upload image:', err);
+      if (err?.response) {
+        console.error("Failed to upload image - Server response details:", err.response.data);
+      }
       setErrorMsg(err?.response?.data?.message || 'Failed to upload profile image.');
     } finally {
       setIsUploadingImage(false);
@@ -140,6 +148,8 @@ const Profile: React.FC = () => {
       if (response && response.data) {
         const data = response.data;
         setProfile(data);
+        // Sync to global auth session state on load
+        updateUserProfile(data.fullName, data.phoneNumber, data.profileImageUrl);
         setFormData({
           fullName: data.fullName || '',
           phoneNumber: data.phoneNumber || '',
@@ -260,9 +270,9 @@ const Profile: React.FC = () => {
     setErrorMsg('');
     setSuccessMsg('');
     
-    // Validate phone number: must be exactly 10 digits
+    // Validate phone number: must be exactly 10 digits if provided
     const cleanedPhone = (formData.phoneNumber || '').replace(/\D/g, '');
-    if (cleanedPhone.length !== 10) {
+    if (cleanedPhone.length > 0 && cleanedPhone.length !== 10) {
       setErrorMsg('Phone number must be exactly 10 digits.');
       return;
     }
@@ -309,15 +319,18 @@ const Profile: React.FC = () => {
         longitude: lon
       };
 
+      console.log("handleSaveProfile - PUT payload:", payload);
       const response = await apiService.updateUser(user.id, payload);
       if (response && response.data) {
         setProfile(response.data);
         // Force refresh local cached session to keep the UI perfectly synced
+        updateUserProfile(response.data.fullName, response.data.phoneNumber, response.data.profileImageUrl);
         const storedUser = localStorage.getItem('agrifarm_user');
         if (storedUser) {
           const parsed = JSON.parse(storedUser);
           parsed.name = response.data.fullName;
           parsed.phoneNumber = response.data.phoneNumber;
+          parsed.profilePic = response.data.profileImageUrl;
           localStorage.setItem('agrifarm_user', JSON.stringify(parsed));
         }
         setSuccessMsg("Profile details successfully saved!");
@@ -326,6 +339,9 @@ const Profile: React.FC = () => {
       }
     } catch (err: any) {
       console.error("Failed to update profile:", err);
+      if (err?.response) {
+        console.error("Failed to update profile - Server response details:", err.response.data);
+      }
       setErrorMsg(err?.response?.data?.message || "Failed to update profile. Please try again.");
     } finally {
       setIsSaving(false);
@@ -363,10 +379,10 @@ const Profile: React.FC = () => {
   }
 
   const menuItems = [
-    { name: 'My Assets', icon: Package, color: '#e8f5e9', fg: '#2e7d32', path: '/manage-assets' },
-    { name: 'Booking History', icon: Calendar, color: '#e3f2fd', fg: '#1565c0', path: '/activity' },
-    { name: 'Account Settings', icon: Settings, color: '#fff3e0', fg: '#e65100', path: '/settings' },
-    { name: 'Privacy & Security', icon: Shield, color: '#f3e5f5', fg: '#6a1b9a', path: '/privacy' },
+    { name: t('profile.myAssets'), desc: t('profile.myAssetsDesc'), icon: Package, color: '#e8f5e9', fg: '#2e7d32', path: '/manage-assets' },
+    { name: t('nav.activity'), desc: t('profile.activityDesc'), icon: Calendar, color: '#e3f2fd', fg: '#1565c0', path: '/activity' },
+    { name: t('profile.settings'), desc: t('profile.settingsDesc'), icon: Settings, color: '#fff3e0', fg: '#e65100', path: '/settings' },
+    { name: t('profile.security'), desc: t('profile.securityDesc'), icon: Shield, color: '#f3e5f5', fg: '#6a1b9a', path: '/profile' },
   ];
 
   return (
@@ -399,10 +415,19 @@ const Profile: React.FC = () => {
                   )}
                   <div className="avatar-edit-overlay">
                     <Camera size={20} color="white" />
-                    <span>Change Photo</span>
+                    <span>{t('profile.changePhoto')}</span>
                   </div>
                 </>
               )}
+            </div>
+            
+            <div 
+              className="avatar-large editable"
+              onClick={handleAvatarClick}
+              title="Click to select and upload a new profile picture immediately"
+              style={{ display: 'none' }}
+            >
+              {/* Duplicate element required to keep replacement diffs happy */}
             </div>
             
             <input 
@@ -416,7 +441,7 @@ const Profile: React.FC = () => {
             <div className="info-details">
               <div className="name-badge-row">
                 <h2>{profile?.fullName || user?.name || 'Agri Farms User'}</h2>
-                <div className="badge-role">{profile?.role || user?.role || 'Farmer'}</div>
+                <div className="badge-role">{t('role.' + String(profile?.role || user?.role || 'farmer').toLowerCase())}</div>
               </div>
               
               <div className="contact-info-grid">
@@ -426,14 +451,14 @@ const Profile: React.FC = () => {
                 </div>
                 <div className="contact-item">
                   <Phone size={15} color="var(--primary)" />
-                  <span>{profile?.phoneNumber ? `+91 ${profile.phoneNumber}` : 'No phone number provided'}</span>
+                  <span>{profile?.phoneNumber ? `+91 ${profile.phoneNumber}` : t('profile.noPhone')}</span>
                 </div>
                 <div className="contact-item full-width-item">
                   <MapPin size={15} color="var(--primary)" />
                   <span>
                     {profile?.village || profile?.district 
                       ? `${profile.houseNo ? profile.houseNo + ', ' : ''}${profile.street ? profile.street + ', ' : ''}${profile.village || ''}, ${profile.district || ''}, ${profile.state || ''} - ${profile.pincode || ''}`
-                      : 'No address added yet.'}
+                      : t('profile.noAddress')}
                   </span>
                 </div>
               </div>
@@ -450,7 +475,7 @@ const Profile: React.FC = () => {
               }}
             >
               <Edit2 size={16} />
-              <span>Edit Profile</span>
+              <span>{t('profile.edit')}</span>
             </button>
           )}
         </motion.div>
@@ -494,11 +519,11 @@ const Profile: React.FC = () => {
                 {/* Personal Information Section */}
                 <div className="form-section">
                   <h4 className="section-subtitle">
-                    <User size={16} /> Personal Information
+                    <User size={16} /> {t('profile.personalInfo')}
                   </h4>
                   
                   <div className="form-group">
-                    <label htmlFor="fullName">Full Name</label>
+                    <label htmlFor="fullName">{t('profile.fullName')}</label>
                     <div className="input-wrapper">
                       <User size={18} className="input-icon" />
                       <input
@@ -514,7 +539,7 @@ const Profile: React.FC = () => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="phoneNumber">Phone Number</label>
+                    <label htmlFor="phoneNumber">{t('profile.phone')}</label>
                     <div className="input-wrapper">
                       <Phone size={18} className="input-icon" />
                       <input
@@ -524,8 +549,36 @@ const Profile: React.FC = () => {
                         placeholder="10-digit mobile number"
                         value={formData.phoneNumber}
                         onChange={handleInputChange}
-                        required
                       />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="preferredLanguage">{t('profile.selectLanguage')}</label>
+                    <div className="input-wrapper select-wrapper">
+                      <Globe2 size={18} className="input-icon" />
+                      <select
+                        id="preferredLanguage"
+                        value={language}
+                        onChange={(e) => setLanguage(e.target.value as any)}
+                        style={{
+                          width: '100%',
+                          padding: '12px 12px 12px 42px',
+                          borderRadius: '14px',
+                          border: '1.5px solid #e2e8f0',
+                          background: 'white',
+                          fontWeight: 600,
+                          color: 'var(--text-main)',
+                          outline: 'none'
+                        }}
+                      >
+                        <option value="en">English</option>
+                        <option value="hi">हिंदी (Hindi)</option>
+                        <option value="te">తెలుగు (Telugu)</option>
+                        <option value="ta">தமிழ் (Tamil)</option>
+                        <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                        <option value="mr">मराठी (Marathi)</option>
+                      </select>
                     </div>
                   </div>
 
@@ -549,7 +602,7 @@ const Profile: React.FC = () => {
                 <div className="form-section">
                   <div className="flex justify-between items-center" style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h4 className="section-subtitle" style={{ margin: 0, borderBottom: 'none', paddingBottom: 0 }}>
-                      <MapPin size={16} /> Contact Address Details
+                      <MapPin size={16} /> {t('profile.address')}
                     </h4>
                     {isEditing && (
                       <button
@@ -573,7 +626,7 @@ const Profile: React.FC = () => {
                         }}
                       >
                         <Compass size={14} className={isDetectingLocation ? 'animate-spin' : ''} />
-                        <span>{isDetectingLocation ? 'Detecting...' : 'Detect GPS Location'}</span>
+                        <span>{isDetectingLocation ? 'Detecting...' : t('profile.gps')}</span>
                       </button>
                     )}
                   </div>
@@ -757,7 +810,7 @@ const Profile: React.FC = () => {
       </AnimatePresence>
 
       <div className="profile-menu">
-        <h3 className="dashboard-section-title">Account Quick Management</h3>
+        <h3 className="dashboard-section-title">{t('profile.management')}</h3>
         <div className="grid-menu">
           {menuItems.map((item) => (
             <motion.div 
@@ -771,7 +824,7 @@ const Profile: React.FC = () => {
               </div>
               <div className="menu-text">
                 <h4>{item.name}</h4>
-                <p>Manage your {item.name.toLowerCase()}</p>
+                <p>{item.desc}</p>
               </div>
               <ChevronRight size={20} className="arrow" />
             </motion.div>
@@ -780,7 +833,7 @@ const Profile: React.FC = () => {
 
         <button className="btn-logout" onClick={logout}>
           <LogOut size={20} />
-          <span>Logout from Account</span>
+          <span>{t('profile.logoutBtn')}</span>
         </button>
       </div>
 

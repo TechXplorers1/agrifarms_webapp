@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
 import { apiService } from '../services/apiService';
+import { useLanguage } from '../services/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Star, MapPin, SlidersHorizontal, Info } from 'lucide-react';
 
@@ -20,9 +21,25 @@ interface Equipment {
   ownerName?: string;
   operatorPrice?: number;
   operatorAvailable?: boolean;
+  latitude?: string | number;
+  longitude?: string | number;
+  distance?: number;
 }
 
+const calculateHaversine = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371; // Radius of Earth in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
 const Rentals: React.FC = () => {
+  const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
@@ -32,23 +49,109 @@ const Rentals: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState(initialFilter);
   const [searchQuery, setSearchQuery] = useState(location.state?.initialSearch || '');
+  const [userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [showDistanceDropdown, setShowDistanceDropdown] = useState(false);
+  const [maxDistance, setMaxDistance] = useState<number | 'All'>('All');
 
-
-  const categories = ['All', 'Tractor', 'Harvester', 'Plough', 'Seeder', 'Sprayer'];
+  const categories = [
+    { value: 'All', label: t('rentals.all') },
+    { value: 'Tractor', label: t('home.tractors') },
+    { value: 'Harvester', label: t('home.harvesters') },
+    { value: 'Plough', label: t('rentals.plough') },
+    { value: 'Seeder', label: t('rentals.seeder') },
+    { value: 'Sprayer', label: t('home.sprayers') }
+  ];
 
   useEffect(() => {
-    const fetchEquipment = async () => {
+    const fetchEquipmentAndCoords = async () => {
+      setLoading(true);
+      
+      // 1. Get user coordinates
+      let coords: { latitude: number; longitude: number } | null = null;
+      
+      // Try guest location coordinates first
+      const guestLocStr = localStorage.getItem('agrifarm_guest_location');
+      if (guestLocStr) {
+        try {
+          const parsed = JSON.parse(guestLocStr);
+          if (parsed.latitude && parsed.longitude) {
+            coords = { latitude: parseFloat(parsed.latitude), longitude: parseFloat(parsed.longitude) };
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      // If logged in and guest not available, get user profile coordinates
+      if (!coords && isAuthenticated) {
+        const storedUser = localStorage.getItem('agrifarm_user');
+        if (storedUser) {
+          try {
+            const parsed = JSON.parse(storedUser);
+            if (parsed.id) {
+              const res = await apiService.getUser(parsed.id);
+              if (res && res.data && res.data.latitude && res.data.longitude) {
+                coords = { latitude: parseFloat(res.data.latitude), longitude: parseFloat(res.data.longitude) };
+              }
+            }
+          } catch (err) {
+            console.error("Failed to load user profile coords:", err);
+          }
+        }
+      }
+
+      // Browser geolocation fallback
+      if (!coords && navigator.geolocation) {
+        try {
+          coords = await new Promise<{ latitude: number; longitude: number } | null>((resolve) => {
+            navigator.geolocation.getCurrentPosition(
+              (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+              () => resolve({ latitude: 14.6819, longitude: 77.6006 }), // default to Anantapur
+              { enableHighAccuracy: true, timeout: 5000 }
+            );
+          });
+        } catch (e) {
+          coords = { latitude: 14.6819, longitude: 77.6006 };
+        }
+      }
+
+      if (!coords) {
+        coords = { latitude: 14.6819, longitude: 77.6006 }; // fallback
+      }
+
+      setUserCoords(coords);
+
       try {
         const response = await apiService.getEquipment();
-        setEquipment(response.data);
+        const rawItems = response.data || [];
+        
+        // Calculate distances
+        const processedItems = rawItems.map((item: any) => {
+          if (coords && item.latitude && item.longitude) {
+            const dist = calculateHaversine(coords.latitude, coords.longitude, parseFloat(item.latitude), parseFloat(item.longitude));
+            return { ...item, distance: dist };
+          }
+          return { ...item };
+        });
+
+        // Sort distance-wise: closest first
+        processedItems.sort((a: any, b: any) => {
+          if (a.distance === undefined && b.distance === undefined) return 0;
+          if (a.distance === undefined) return 1;
+          if (b.distance === undefined) return -1;
+          return a.distance - b.distance;
+        });
+
+        setEquipment(processedItems);
       } catch (error) {
         console.error('Error fetching equipment:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchEquipment();
-  }, []);
+
+    fetchEquipmentAndCoords();
+  }, [isAuthenticated]);
 
   const filteredEquipment = equipment.filter(item => {
     const itemCat = item.category.toLowerCase();
@@ -63,20 +166,87 @@ const Rentals: React.FC = () => {
 
     const matchesSearch = item.brandModel.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           item.category.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+
+    const matchesDistance = maxDistance === 'All' || 
+                            (item.distance !== undefined && item.distance <= maxDistance);
+
+    return matchesFilter && matchesSearch && matchesDistance;
   });
 
   return (
     <div className="rentals-page container fade-in">
       <div className="page-header">
         <div>
-          <h1 className="text-3xl font-bold">Equipment Rentals</h1>
-          <p className="text-slate-500">Find the best machinery for your farm</p>
+          <h1 className="text-3xl font-bold">{t('rentals.title')}</h1>
+          <p className="text-slate-500">{t('rentals.desc')}</p>
         </div>
-        <button className="filter-btn">
-          <SlidersHorizontal size={20} />
-          <span>Filters</span>
-        </button>
+        <div style={{ position: 'relative' }}>
+          <button 
+            className="filter-btn"
+            onClick={() => setShowDistanceDropdown(!showDistanceDropdown)}
+            style={{ cursor: 'pointer' }}
+          >
+            <SlidersHorizontal size={20} />
+            <span>{maxDistance === 'All' ? 'Distance Filter' : `Distance: ${maxDistance} km`}</span>
+          </button>
+
+          {showDistanceDropdown && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              right: 0,
+              marginTop: '8px',
+              background: 'white',
+              borderRadius: '16px',
+              boxShadow: 'var(--shadow-lg)',
+              border: '1px solid var(--border)',
+              padding: '8px',
+              zIndex: 100,
+              minWidth: '180px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px'
+            }}>
+              {[
+                { label: 'All Distances', value: 'All' },
+                { label: 'Within 5 km', value: 5 },
+                { label: 'Within 10 km', value: 10 },
+                { label: 'Within 25 km', value: 25 },
+                { label: 'Within 50 km', value: 50 },
+                { label: 'Within 100 km', value: 100 }
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => {
+                    setMaxDistance(opt.value as any);
+                    setShowDistanceDropdown(false);
+                  }}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: '10px',
+                    textAlign: 'left',
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    background: maxDistance === opt.value ? 'var(--bg-main)' : 'transparent',
+                    color: maxDistance === opt.value ? 'var(--primary)' : 'var(--text-main)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    whiteSpace: 'nowrap'
+                  }}
+                  onMouseOver={(e) => {
+                    if (maxDistance !== opt.value) e.currentTarget.style.background = '#f8fafc';
+                  }}
+                  onMouseOut={(e) => {
+                    if (maxDistance !== opt.value) e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="search-bar-row">
@@ -84,7 +254,7 @@ const Rentals: React.FC = () => {
           <Search size={20} className="text-slate-400" />
           <input 
             type="text" 
-            placeholder="Search by brand or category..." 
+            placeholder={t('rentals.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -94,11 +264,11 @@ const Rentals: React.FC = () => {
       <div className="category-pills">
         {categories.map(cat => (
           <button 
-            key={cat}
-            className={`pill ${filter === cat ? 'active' : ''}`}
-            onClick={() => setFilter(cat)}
+            key={cat.value}
+            className={`pill ${filter === cat.value ? 'active' : ''}`}
+            onClick={() => setFilter(cat.value)}
           >
-            {cat}
+            {cat.label}
           </button>
         ))}
       </div>
@@ -123,8 +293,8 @@ const Rentals: React.FC = () => {
               >
                 <div className="asset-image">
                   <img src={item.imageUrl || 'https://images.unsplash.com/photo-1594913785162-e6785b493bd2?auto=format&fit=crop&q=80&w=400'} alt={item.brandModel} />
-                  {!item.isAvailable && <div className="status-badge busy">Booked</div>}
-                  {item.isAvailable && <div className="status-badge available">Available</div>}
+                  {!item.isAvailable && <div className="status-badge busy">{t('rentals.booked')}</div>}
+                  {item.isAvailable && <div className="status-badge available">{t('rentals.available')}</div>}
                 </div>
                 <div className="asset-info">
                   <div className="asset-top">
@@ -141,7 +311,10 @@ const Rentals: React.FC = () => {
                     </div>
                     <div className="location">
                       <MapPin size={14} />
-                      <span>{item.village || 'Local'}</span>
+                      <span>
+                        {item.village || 'Local'}
+                        {item.distance !== undefined ? ` • ${item.distance.toFixed(1)} km away` : ''}
+                      </span>
                     </div>
                   </div>
                   <div className="asset-footer">
@@ -171,7 +344,7 @@ const Rentals: React.FC = () => {
                         navigate('/book', { state: { asset: assetData } });
                       }}
                     >
-                      Book Now
+                      {t('rentals.bookNow')}
                     </button>
                   </div>
                 </div>
@@ -184,8 +357,8 @@ const Rentals: React.FC = () => {
       {!loading && filteredEquipment.length === 0 && (
         <div className="empty-state">
           <Info size={48} className="text-slate-300" />
-          <h3>No Equipment Found</h3>
-          <p>Try adjusting your search or filters</p>
+          <h3>{t('rentals.empty')}</h3>
+          <p>{t('rentals.adjustFilters')}</p>
         </div>
       )}
 

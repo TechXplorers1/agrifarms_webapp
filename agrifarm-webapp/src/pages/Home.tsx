@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
 import { apiService } from '../services/apiService';
 import { resolveCoordinates } from '../services/locationHelper';
+import { useLanguage } from '../services/LanguageContext';
 
 interface ServiceItem {
   name: string;
@@ -22,23 +23,11 @@ interface ServiceItem {
 }
 
 const Home: React.FC = () => {
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [showLocationModal, setShowLocationModal] = useState(false);
-  const [showScrollIndicator, setShowScrollIndicator] = useState(true);
   const navigate = useNavigate();
   const { user, updateUserLocation } = useAuth();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 150) {
-        setShowScrollIndicator(false);
-      } else {
-        setShowScrollIndicator(true);
-      }
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const handleSearch = () => {
     const query = searchQuery.trim();
@@ -256,10 +245,10 @@ const Home: React.FC = () => {
 
 
   const tools = [
-    { name: 'Weather', icon: CloudSun, color: '#fff8e1', fg: '#f57f17' },
-    { name: 'Crop Advice', icon: Sprout, color: '#e8f5e9', fg: '#00aa55' },
-    { name: 'Mandi Prices', icon: TrendingUp, color: '#e3f2fd', fg: '#1565c0' },
-    { name: 'Calculator', icon: Calculator, color: '#f3e5f5', fg: '#6a1b9a' },
+    { name: 'Weather', label: t('tool.weather'), icon: CloudSun, color: '#fff8e1', fg: '#f57f17' },
+    { name: 'Crop Advice', label: t('tool.cropAdvice'), icon: Sprout, color: '#e8f5e9', fg: '#00aa55' },
+    { name: 'Mandi Prices', label: t('tool.mandiPrices'), icon: TrendingUp, color: '#e3f2fd', fg: '#1565c0' },
+    { name: 'Calculator', label: t('tool.calculator'), icon: Calculator, color: '#f3e5f5', fg: '#6a1b9a' },
   ];
 
   React.useEffect(() => {
@@ -276,27 +265,10 @@ const Home: React.FC = () => {
 
 
   return (
-    <div className="home-page fade-in" style={{ position: 'relative', overflowX: 'hidden' }}>
+    <div className="home-page fade-in" style={{ position: 'relative', overflowX: 'hidden', paddingBottom: 0 }}>
       {/* Premium Floating Ambient Backgrounds */}
       <div className="ambient-bg ambient-bg-1" />
       <div className="ambient-bg ambient-bg-2" />
-
-      {/* Blinking Floating Scroll Indicator on the Left */}
-      <AnimatePresence>
-        {showScrollIndicator && (
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20, transition: { duration: 0.3 } }}
-            className="scroll-indicator-left" 
-            onClick={() => window.scrollBy({ top: window.innerHeight * 0.75, behavior: 'smooth' })}
-            title="Scroll Down for More"
-          >
-            <span className="scroll-indicator-text">Scroll</span>
-            <ChevronDown size={18} color="#059669" style={{ strokeWidth: 3 }} />
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Cinematic Hero Section with Custom Background Image */}
       <section 
@@ -326,9 +298,9 @@ const Home: React.FC = () => {
           <div className="hero-content">
             <div className="flex justify-between items-center" style={{ position: 'relative', zIndex: 2 }}>
               <motion.div
-                initial={{ opacity: 0, y: -20 }}
+                initial={{ opacity: 0, y: -30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, ease: 'easeOut' }}
+                transition={{ type: 'spring', stiffness: 90, damping: 15, mass: 0.8 }}
                 className="user-greeting"
               >
                 <h1 style={{ 
@@ -341,12 +313,15 @@ const Home: React.FC = () => {
                   gap: '10px',
                   letterSpacing: '-0.3px'
                 }}>
-                  Namaste, {user?.name || 'Farmer'}! 👋
+                  {t('home.greeting').replace('{name}', user?.name || t('role.farmer'))}
                 </h1>
                 
                 <motion.div 
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 100, damping: 15, delay: 0.15 }}
                   className="location-badge glass" 
                   onClick={() => setShowLocationModal(true)} 
                   style={{
@@ -376,9 +351,9 @@ const Home: React.FC = () => {
             </div>
 
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.6, ease: 'easeOut' }}
+              initial={{ opacity: 0, scale: 0.95, y: 40 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 80, damping: 15, delay: 0.25 }}
               className="search-container"
               style={{ marginTop: '36px', position: 'relative', zIndex: 2 }}
             >
@@ -386,7 +361,7 @@ const Home: React.FC = () => {
                 <Search className="search-icon" size={20} style={{ color: 'var(--text-muted)' }} />
                 <input
                   type="text"
-                  placeholder="Search seeds, tractor, spraying services..."
+                  placeholder={t('home.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -418,7 +393,7 @@ const Home: React.FC = () => {
                     boxShadow: '0 4px 15px rgba(16, 185, 129, 0.25)'
                   }}
                 >
-                  Search
+                  {t('home.searchBtn')}
                 </motion.button>
               </div>
             </motion.div>
@@ -450,10 +425,27 @@ const Home: React.FC = () => {
               return (
                 <motion.div
                   key={tool.name}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * idx, duration: 0.5 }}
+                  initial={{ opacity: 0, y: 40, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ 
+                    type: 'spring', 
+                    stiffness: 100, 
+                    damping: 16, 
+                    delay: 0.1 * idx 
+                  }}
+                  whileHover={{ 
+                    scale: 1.05, 
+                    y: -6,
+                    transition: { type: 'spring', stiffness: 400, damping: 10 }
+                  }}
+                  whileTap={{ scale: 0.95 }}
                   className={`tool-tile card frosted-tool-tile tool-tile-${toolKey} ${hoverClass}`}
+                  onClick={() => {
+                    if (tool.name === 'Weather') navigate('/weather');
+                    else if (tool.name.includes('Crop')) navigate('/crop-advice');
+                    else if (tool.name.includes('Mandi')) navigate('/mandi-prices');
+                    else navigate('/calculator');
+                  }}
                   style={{
                     flexDirection: 'row',
                     padding: '10px 16px',
@@ -475,7 +467,7 @@ const Home: React.FC = () => {
                   }}>
                     <tool.icon size={20} color={tool.fg} />
                   </div>
-                  <span style={{ color: 'var(--text-main)', fontSize: '0.92rem', fontWeight: 800, letterSpacing: '-0.2px' }}>{tool.name}</span>
+                  <span style={{ color: 'var(--text-main)', fontSize: '0.92rem', fontWeight: 800, letterSpacing: '-0.2px' }}>{tool.label}</span>
                 </motion.div>
               );
             })}
@@ -485,10 +477,10 @@ const Home: React.FC = () => {
         {/* Promo Banner - Refined to match Mobile Spec */}
         <section className="section">
           <motion.div 
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 60, scale: 0.96 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true, margin: '-100px' }}
-            transition={{ duration: 0.8 }}
+            transition={{ type: 'spring', stiffness: 60, damping: 15 }}
             className="promo-banner card" 
             style={{ 
               padding: 0, 
@@ -511,7 +503,7 @@ const Home: React.FC = () => {
                 fontWeight: 800,
                 textTransform: 'uppercase',
                 letterSpacing: '1px'
-              }}>Season Offer</span>
+              }}>{t('home.seasonOffer')}</span>
               
               <h2 style={{ 
                 fontSize: '2.8rem', 
@@ -520,14 +512,14 @@ const Home: React.FC = () => {
                 marginTop: '16px', 
                 lineHeight: '1.15',
                 letterSpacing: '-1px'
-              }}>Book Modern Farm Services Today!</h2>
+              }}>{t('home.bannerTitle')}</h2>
               
               <p style={{
                 color: 'rgba(255,255,255,0.8)',
                 marginTop: '12px',
                 fontSize: '1.05rem',
                 lineHeight: '1.5'
-              }}>Professional drone sprayers, harvesters, and high-efficiency planting assistants nearby.</p>
+              }}>{t('home.bannerDesc')}</p>
               
               <motion.button 
                 whileHover={{ scale: 1.05, y: -2, boxShadow: '0 8px 25px rgba(255, 152, 0, 0.5)' }}
@@ -550,7 +542,7 @@ const Home: React.FC = () => {
                 }} 
                 onClick={() => navigate('/services')}
               >
-                Explore Now <ChevronRight size={18} />
+                {t('home.exploreBtn')} <ChevronRight size={18} />
               </motion.button>
             </div>
             
@@ -590,7 +582,7 @@ const Home: React.FC = () => {
               }}>
                 <Tractor size={26} color="#2e7d32" />
               </div>
-              <h3 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>Rent Equipment</h3>
+              <h3 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>{t('home.rentEquip')}</h3>
             </div>
             <motion.button 
               whileHover={{ scale: 1.05, background: '#c8e6c9' }}
@@ -611,7 +603,7 @@ const Home: React.FC = () => {
               }} 
               onClick={() => navigate('/rentals')}
             >
-              View All <ChevronRight size={18} />
+              {t('home.viewAll')} <ChevronRight size={18} />
             </motion.button>
           </div>
 
@@ -619,10 +611,20 @@ const Home: React.FC = () => {
             {rentalItems.map((item, idx) => (
               <motion.div
                 key={item.name}
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 60, scale: 0.93 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
                 viewport={{ once: true, margin: '-50px' }}
-                transition={{ delay: 0.08 * idx, duration: 0.6 }}
+                transition={{ 
+                  type: 'spring', 
+                  stiffness: 80, 
+                  damping: 16, 
+                  delay: 0.08 * idx 
+                }}
+                whileHover={{ 
+                  y: -10,
+                  transition: { type: 'spring', stiffness: 300, damping: 15 }
+                }}
+                whileTap={{ scale: 0.98 }}
                 className="premium-card visual-card"
                 style={{ 
                   height: '280px',
@@ -672,7 +674,7 @@ const Home: React.FC = () => {
                     fontWeight: 900,
                     letterSpacing: '-0.3px',
                     lineHeight: '1.2'
-                  }}>{item.name}</h4>
+                  }}>{item.name === 'Tractors' ? t('home.tractors') : item.name === 'Harvesters' ? t('home.harvesters') : item.name === 'Sprayers' ? t('home.sprayers') : item.name}</h4>
                   
                   <div className="rent-badge-btn" style={{ 
                     marginTop: '14px', 
@@ -683,7 +685,7 @@ const Home: React.FC = () => {
                     backdropFilter: 'blur(8px)',
                     border: '1px solid rgba(255,255,255,0.15)'
                   }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'white' }}>Rent Now</span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'white' }}>{t('home.rentNowBtn')}</span>
                   </div>
                 </div>
               </motion.div>
@@ -692,12 +694,12 @@ const Home: React.FC = () => {
         </section>
 
         {/* Earn Section - WOW Layout */}
-        <section className="section" style={{ marginBottom: '120px' }}>
+        <section className="section" style={{ marginBottom: '0', paddingBottom: '0' }}>
           <motion.div 
-            initial={{ opacity: 0, scale: 0.96 }}
-            whileInView={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, y: 60, scale: 0.96 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true, margin: '-80px' }}
-            transition={{ duration: 0.7 }}
+            transition={{ type: 'spring', stiffness: 60, damping: 15 }}
             className="card" 
             style={{ 
               background: 'linear-gradient(135deg, #0b1511 0%, #042f1a 100%)', 
@@ -723,14 +725,14 @@ const Home: React.FC = () => {
                   marginBottom: '20px',
                   letterSpacing: '-1px',
                   lineHeight: '1.15'
-                }}>List your assets & earn.</h3>
+                }}>{t('home.listAssetTitle')}</h3>
                 
                 <p style={{ 
                   color: 'rgba(255,255,255,0.75)', 
                   fontSize: '1.15rem', 
                   marginBottom: '36px',
                   lineHeight: '1.6' 
-                }}>Join over 5,000+ localized farm providers earning weekly by renting out spare tractors, seeders, utility trucks, or custom labor helpers.</p>
+                }}>{t('home.listAssetDesc')}</p>
                 
                 <div className="flex gap-4">
                   {(!user || user.role !== 'FARMER') ? (
@@ -749,7 +751,7 @@ const Home: React.FC = () => {
                       }} 
                       onClick={() => navigate(user ? '/upload-item' : '/login')}
                     >
-                      Register Asset
+                      {t('home.registerAssetBtn')}
                     </motion.button>
                   ) : (
                     <motion.button 
@@ -767,7 +769,7 @@ const Home: React.FC = () => {
                       }} 
                       onClick={() => navigate('/rentals')}
                     >
-                      Rent Equipment
+                      {t('home.rentEquip')}
                     </motion.button>
                   )}
                   
@@ -787,14 +789,20 @@ const Home: React.FC = () => {
                     }} 
                     onClick={() => navigate('/services')}
                   >
-                    How it works
+                    {t('home.howItWorks')}
                   </motion.button>
                 </div>
               </div>
 
               <div className="upload-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', width: '38%' }}>
                 <motion.div 
-                  whileHover={{ y: -8, borderColor: 'rgba(16, 185, 129, 0.4)', background: 'rgba(255, 255, 255, 0.08)' }}
+                  whileHover={{ 
+                    y: -10, 
+                    borderColor: 'rgba(16, 185, 129, 0.5)', 
+                    background: 'rgba(255, 255, 255, 0.12)',
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
+                  }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 18 }}
                   className="glass-card" 
                   style={{ 
                     background: 'rgba(255,255,255,0.04)', 
@@ -802,8 +810,8 @@ const Home: React.FC = () => {
                     borderRadius: '24px', 
                     backdropFilter: 'blur(16px)', 
                     border: '1px solid rgba(255,255,255,0.08)',
-                    transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+                    cursor: 'pointer'
                   }}
                 >
                   <Tractor size={36} color="#10b981" style={{ filter: 'drop-shadow(0 0 10px rgba(16,185,129,0.3))' }} />
@@ -812,7 +820,13 @@ const Home: React.FC = () => {
                 </motion.div>
                 
                 <motion.div 
-                  whileHover={{ y: -8, borderColor: 'rgba(245, 158, 11, 0.4)', background: 'rgba(255, 255, 255, 0.08)' }}
+                  whileHover={{ 
+                    y: -10, 
+                    borderColor: 'rgba(245, 158, 11, 0.5)', 
+                    background: 'rgba(255, 255, 255, 0.12)',
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
+                  }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 18 }}
                   className="glass-card" 
                   style={{ 
                     background: 'rgba(255,255,255,0.04)', 
@@ -820,8 +834,8 @@ const Home: React.FC = () => {
                     borderRadius: '24px', 
                     backdropFilter: 'blur(16px)', 
                     border: '1px solid rgba(255,255,255,0.08)',
-                    transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+                    cursor: 'pointer'
                   }}
                 >
                   <Truck size={36} color="#FF9800" style={{ filter: 'drop-shadow(0 0 10px rgba(255,152,0,0.3))' }} />
@@ -834,10 +848,10 @@ const Home: React.FC = () => {
         </section>
 
         {/* Floating Action Button for Add Asset - Shown Only for Non-Farmers */}
-        {(!user || user.role !== 'FARMER') && (
+        {(!user || user.role !== 'FARMER') && createPortal(
           <motion.button
             className="fab-add"
-            whileHover={{ scale: 1.06, y: -6 }}
+            whileHover={{ scale: 1.06 }}
             whileTap={{ scale: 0.94 }}
             onClick={() => navigate(user ? '/upload-item' : '/login')}
             style={{
@@ -850,8 +864,9 @@ const Home: React.FC = () => {
             }}
           >
             <Plus size={26} style={{ strokeWidth: 3 }} />
-            <span>Add Asset</span>
-          </motion.button>
+            <span>{t('manage.addBtn')}</span>
+          </motion.button>,
+          document.body
         )}
       </div>
 
@@ -868,7 +883,7 @@ const Home: React.FC = () => {
               style={{ border: 'none', padding: '40px', borderRadius: '28px', maxWidth: '500px', width: '100%' }}
             >
               <div style={{ width: 50, height: 6, background: '#e2e8f0', borderRadius: 3, margin: '0 auto 24px auto' }} />
-              <h3 style={{ fontSize: '1.75rem', marginBottom: '1.5rem', textAlign: 'center', fontWeight: 900, color: 'var(--primary)' }}>Select Your Field</h3>
+              <h3 style={{ fontSize: '1.75rem', marginBottom: '1.5rem', textAlign: 'center', fontWeight: 900, color: 'var(--primary)' }}>{t('home.selectField')}</h3>
 
               <motion.div
                 whileHover={{ scale: 1.02 }}
@@ -881,7 +896,7 @@ const Home: React.FC = () => {
                   {isDetecting ? <Loader2 className="animate-spin" size={28} /> : <Crosshair size={28} />}
                 </div>
                 <div style={{ marginLeft: '16px', textAlign: 'left' }}>
-                  <h4 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)' }}>{isDetecting ? 'Detecting...' : 'Auto-Detect Field'}</h4>
+                  <h4 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)' }}>{isDetecting ? 'Detecting...' : t('home.detectLocation')}</h4>
                   <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{isDetecting ? 'Acquiring GPS Signal...' : 'Use GPS for current location'}</p>
                 </div>
                 <ChevronRight size={22} style={{ marginLeft: 'auto', color: '#cbd5e1' }} />
@@ -898,7 +913,7 @@ const Home: React.FC = () => {
                   <MapPin size={28} />
                 </div>
                 <div style={{ marginLeft: '16px', textAlign: 'left' }}>
-                  <h4 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)' }}>Enter Village/District</h4>
+                  <h4 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)' }}>{t('home.manualLocation')}</h4>
                   <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Search and select manually</p>
                 </div>
                 <ChevronRight size={22} style={{ marginLeft: 'auto', color: '#cbd5e1' }} />
@@ -908,6 +923,8 @@ const Home: React.FC = () => {
           document.body
         )}
       </AnimatePresence>
+
+
       <style>{`
         .glass {
           background: rgba(255, 255, 255, 0.15);
@@ -928,7 +945,7 @@ const Home: React.FC = () => {
         }
         .fab-add {
           position: fixed;
-          bottom: 100px;
+          top: 100px;
           right: 32px;
           color: white;
           border-radius: 50px;
@@ -943,55 +960,6 @@ const Home: React.FC = () => {
         }
         .search-box input::placeholder {
           color: rgba(100, 116, 139, 0.7);
-        }
-
-        /* Scroll down indicator on the left styling */
-        .scroll-indicator-left {
-          position: fixed;
-          left: 24px;
-          bottom: 120px;
-          z-index: 1000;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          background: rgba(255, 255, 255, 0.85);
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
-          border: 1px solid rgba(16, 185, 129, 0.3);
-          padding: 12px 10px;
-          border-radius: 30px;
-          box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-          cursor: pointer;
-          animation: arrowBounceBlink 2.2s infinite ease-in-out;
-          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .scroll-indicator-left:hover {
-          transform: translateY(-5px) scale(1.05);
-          background: white;
-          border-color: rgba(16, 185, 129, 0.6);
-          box-shadow: 0 15px 30px rgba(16, 185, 129, 0.2);
-          animation-play-state: paused;
-        }
-        .scroll-indicator-text {
-          writing-mode: vertical-rl;
-          text-orientation: mixed;
-          font-size: 0.7rem;
-          font-weight: 800;
-          color: #065f46;
-          letter-spacing: 2px;
-          text-transform: uppercase;
-          margin-bottom: 6px;
-          opacity: 0.8;
-        }
-        @keyframes arrowBounceBlink {
-          0%, 100% {
-            transform: translateY(0);
-            opacity: 0.4;
-          }
-          50% {
-            transform: translateY(10px);
-            opacity: 1;
-          }
         }
 
         /* Weather, Crop, Mandi, and Calculator tabs custom colors and hover gradients */

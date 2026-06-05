@@ -22,6 +22,10 @@ export const apiService = {
   getServices: (params?: any) => api.get('/api/inventory/services', { params }),
   getVehicles: (params?: any) => api.get('/api/inventory/vehicles', { params }),
   getWorkerGroups: (params?: any) => api.get('/api/inventory/worker-groups', { params }),
+  getSkills: () => api.get('/api/inventory/skills'),
+  createSkill: (data: { name: string }) => api.post('/api/inventory/skills', data),
+  getVehicleCategories: () => api.get('/api/inventory/vehicle-categories'),
+  createVehicleCategory: (data: { name: string }) => api.post('/api/inventory/vehicle-categories', data),
   
   // Inventory - Manage
   createEquipment: (data: any) => api.post('/api/inventory/equipment', data),
@@ -43,6 +47,8 @@ export const apiService = {
   createBooking: (data: any) => api.post('/api/bookings', data),
   getFarmerBookings: (farmerId: string) => api.get(`/api/bookings/farmer/${farmerId}`),
   getProviderBookings: (providerId: string) => api.get(`/api/bookings/provider/${providerId}`),
+  updateBookingStatus: (bookingId: string, status: string, cancelledBy?: string, cancellationReason?: string) => 
+    api.put(`/api/bookings/${bookingId}/status`, null, { params: { status, cancelledBy, cancellationReason } }),
   markAllNotificationsAsRead: (userId: string) => api.put(`/api/notifications/user/${userId}/read-all`),
   
   // Notifications

@@ -185,6 +185,7 @@ const BookAsset: React.FC = () => {
         addressText: address,
         notes: JSON.stringify({
           notes,
+          assetName: asset.name,
           includeOperator,
           duration: `${duration} hours`,
           providerName: asset.providerName
