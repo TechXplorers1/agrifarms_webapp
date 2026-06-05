@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ArrowLeft, Calendar, MapPin, CheckCircle, Plus, Minus, 
+import {
+  ArrowLeft, Calendar, MapPin, CheckCircle, Plus, Minus,
   ChevronRight, Info, ShieldAlert, Award, FileText, Check,
   Home, Building, Hash, UserCheck, Edit3, AlertTriangle
 } from 'lucide-react';
@@ -26,7 +26,7 @@ const BookAsset: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   // Extract asset from navigation state
   const asset: Asset | null = location.state?.asset || null;
 
@@ -60,6 +60,24 @@ const BookAsset: React.FC = () => {
   const endHour = 20;
   const operatorRate = asset?.operatorPrice !== undefined && asset?.operatorPrice !== null ? asset.operatorPrice : 200;
 
+  const getBaseRateLabel = () => {
+    switch (asset?.type) {
+      case 'Transport': return 'Base Hourly Rate';
+      case 'Worker': return 'Hourly Wage Rate';
+      case 'Service': return 'Base Service Rate';
+      default: return 'Base Hourly Rate';
+    }
+  };
+
+  const getSubtotalLabel = () => {
+    switch (asset?.type) {
+      case 'Transport': return 'Transport Rental Subtotal';
+      case 'Worker': return 'Worker Labor Subtotal';
+      case 'Service': return 'Service Charge Subtotal';
+      default: return 'Equipment Rental Subtotal';
+    }
+  };
+
   useEffect(() => {
     // If no asset is in state, redirect to rentals as a fallback
     if (!asset) {
@@ -82,7 +100,7 @@ const BookAsset: React.FC = () => {
               pincode: data.pincode || ''
             };
             setProfileAddress(profileAddr);
-            
+
             // By default, if the profile address has fields, fill the inputs
             if (profileAddr.village || profileAddr.district) {
               setHouseNo(profileAddr.houseNo);
@@ -92,7 +110,7 @@ const BookAsset: React.FC = () => {
               setStateName(profileAddr.state);
               setPincode(profileAddr.pincode);
               setAddressMode('profile');
-              
+
               const parts = [profileAddr.houseNo, profileAddr.street, profileAddr.village, profileAddr.district, profileAddr.state, profileAddr.pincode].map(p => p.trim()).filter(Boolean);
               setAddress(parts.join(', '));
             } else {
@@ -140,12 +158,12 @@ const BookAsset: React.FC = () => {
     }
   };
 
-  const isAddressValid = 
-    houseNo.trim() !== '' && 
-    street.trim() !== '' && 
-    village.trim() !== '' && 
-    district.trim() !== '' && 
-    stateName.trim() !== '' && 
+  const isAddressValid =
+    houseNo.trim() !== '' &&
+    street.trim() !== '' &&
+    village.trim() !== '' &&
+    district.trim() !== '' &&
+    stateName.trim() !== '' &&
     pincode.trim().length === 6;
 
   const isSlotBlocked = (hour: number) => {
@@ -205,7 +223,7 @@ const BookAsset: React.FC = () => {
     switch (step) {
       case 1:
         return (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
@@ -216,12 +234,12 @@ const BookAsset: React.FC = () => {
               <span>Select Date & Starting Hour</span>
             </h3>
             <p className="step-description">Choose a convenient date and starting slot for your rental.</p>
-            
+
             <div className="form-group">
               <label className="input-label">Date of Rental</label>
-              <input 
-                type="date" 
-                className="date-picker-input" 
+              <input
+                type="date"
+                className="date-picker-input"
                 min={new Date().toISOString().split('T')[0]}
                 value={selectedDate}
                 onChange={e => setSelectedDate(e.target.value)}
@@ -261,15 +279,15 @@ const BookAsset: React.FC = () => {
                     <p>Select the number of hours you need the asset.</p>
                   </div>
                   <div className="duration-control-buttons">
-                    <button 
-                      className="ctrl-btn" 
+                    <button
+                      className="ctrl-btn"
                       onClick={() => setDuration(d => Math.max(1, d - 1))}
                     >
                       <Minus size={16} />
                     </button>
                     <span className="duration-display-value">{duration}h</span>
-                    <button 
-                      className="ctrl-btn" 
+                    <button
+                      className="ctrl-btn"
                       onClick={() => {
                         if (!isSlotBlocked(selectedHour + duration) && (selectedHour + duration) < endHour) {
                           setDuration(d => d + 1);
@@ -286,7 +304,7 @@ const BookAsset: React.FC = () => {
             )}
 
             <div className="wizard-actions">
-              <button 
+              <button
                 className="btn-primary-wizard w-full"
                 disabled={!selectedDate || selectedHour === null}
                 onClick={() => setStep(2)}
@@ -300,7 +318,7 @@ const BookAsset: React.FC = () => {
 
       case 2:
         return (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
@@ -316,7 +334,7 @@ const BookAsset: React.FC = () => {
             <div className="form-group">
               <label className="input-label">Delivery Address Method</label>
               <div className="address-mode-selector">
-                <button 
+                <button
                   type="button"
                   className={`address-mode-card ${addressMode === 'profile' ? 'active' : ''}`}
                   onClick={() => handleAddressModeChange('profile')}
@@ -327,8 +345,8 @@ const BookAsset: React.FC = () => {
                   </div>
                   <p className="mode-desc">Auto-fill using the address saved in your profile</p>
                 </button>
-                
-                <button 
+
+                <button
                   type="button"
                   className={`address-mode-card ${addressMode === 'manual' ? 'active' : ''}`}
                   onClick={() => handleAddressModeChange('manual')}
@@ -361,25 +379,25 @@ const BookAsset: React.FC = () => {
                   <label className="input-label">House No / Flat / Landmark *</label>
                   <div className="input-wrapper">
                     <Home className="input-icon" size={16} />
-                    <input 
-                      type="text" 
-                      value={houseNo} 
-                      onChange={e => setHouseNo(e.target.value)} 
-                      placeholder="e.g. Flat 102, Near Hanuman Temple" 
+                    <input
+                      type="text"
+                      value={houseNo}
+                      onChange={e => setHouseNo(e.target.value)}
+                      placeholder="e.g. Flat 102, Near Hanuman Temple"
                       className="form-input-field"
                     />
                   </div>
                 </div>
-                
+
                 <div className="form-group col-span-2">
                   <label className="input-label">Street / Colony *</label>
                   <div className="input-wrapper">
                     <Building className="input-icon" size={16} />
-                    <input 
-                      type="text" 
-                      value={street} 
-                      onChange={e => setStreet(e.target.value)} 
-                      placeholder="e.g. Subhash Road, Ram Nagar" 
+                    <input
+                      type="text"
+                      value={street}
+                      onChange={e => setStreet(e.target.value)}
+                      placeholder="e.g. Subhash Road, Ram Nagar"
                       className="form-input-field"
                     />
                   </div>
@@ -389,11 +407,11 @@ const BookAsset: React.FC = () => {
                   <label className="input-label">Village / Area / Taluk *</label>
                   <div className="input-wrapper">
                     <MapPin className="input-icon" size={16} />
-                    <input 
-                      type="text" 
-                      value={village} 
-                      onChange={e => setVillage(e.target.value)} 
-                      placeholder="e.g. Gorantla Village" 
+                    <input
+                      type="text"
+                      value={village}
+                      onChange={e => setVillage(e.target.value)}
+                      placeholder="e.g. Gorantla Village"
                       className="form-input-field"
                     />
                   </div>
@@ -403,11 +421,11 @@ const BookAsset: React.FC = () => {
                   <label className="input-label">District *</label>
                   <div className="input-wrapper">
                     <MapPin className="input-icon" size={16} />
-                    <input 
-                      type="text" 
-                      value={district} 
-                      onChange={e => setDistrict(e.target.value)} 
-                      placeholder="e.g. Guntur" 
+                    <input
+                      type="text"
+                      value={district}
+                      onChange={e => setDistrict(e.target.value)}
+                      placeholder="e.g. Guntur"
                       className="form-input-field"
                     />
                   </div>
@@ -417,11 +435,11 @@ const BookAsset: React.FC = () => {
                   <label className="input-label">State *</label>
                   <div className="input-wrapper">
                     <MapPin className="input-icon" size={16} />
-                    <input 
-                      type="text" 
-                      value={stateName} 
-                      onChange={e => setStateName(e.target.value)} 
-                      placeholder="e.g. Andhra Pradesh" 
+                    <input
+                      type="text"
+                      value={stateName}
+                      onChange={e => setStateName(e.target.value)}
+                      placeholder="e.g. Andhra Pradesh"
                       className="form-input-field"
                     />
                   </div>
@@ -431,15 +449,15 @@ const BookAsset: React.FC = () => {
                   <label className="input-label">Pincode *</label>
                   <div className="input-wrapper">
                     <Hash className="input-icon" size={16} />
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       maxLength={6}
-                      value={pincode} 
+                      value={pincode}
                       onChange={e => {
                         const val = e.target.value.replace(/\D/g, ''); // digit only
                         setPincode(val);
-                      }} 
-                      placeholder="6-digit pincode" 
+                      }}
+                      placeholder="6-digit pincode"
                       className="form-input-field"
                     />
                   </div>
@@ -464,9 +482,9 @@ const BookAsset: React.FC = () => {
 
             <div className="form-group">
               <label className="input-label">Instructions & Special Notes (Optional)</label>
-              <textarea 
+              <textarea
                 rows={3}
-                value={notes} 
+                value={notes}
                 onChange={e => setNotes(e.target.value)}
                 placeholder="Share any special instructions, soil quality, or access details..."
                 className="notes-textarea"
@@ -478,7 +496,7 @@ const BookAsset: React.FC = () => {
                 <button className="btn-ghost-wizard" onClick={() => setStep(1)}>Back</button>
                 <AnimatePresence>
                   {isAddressValid && (
-                    <motion.button 
+                    <motion.button
                       initial={{ opacity: 0, scale: 0.9, x: 20 }}
                       animate={{ opacity: 1, scale: 1, x: 0 }}
                       exit={{ opacity: 0, scale: 0.9, x: 20 }}
@@ -506,7 +524,7 @@ const BookAsset: React.FC = () => {
 
       case 3:
         return (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
@@ -553,7 +571,7 @@ const BookAsset: React.FC = () => {
 
             <div className="wizard-actions dual">
               <button className="btn-ghost-wizard" onClick={() => setStep(2)}>Back</button>
-              <button 
+              <button
                 className="btn-primary-wizard submit"
                 disabled={loading}
                 onClick={handleBookingSubmit}
@@ -573,7 +591,7 @@ const BookAsset: React.FC = () => {
     <div className="booking-page-layout">
       {success ? (
         <div className="success-container-screen">
-          <motion.div 
+          <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className="success-message-card"
@@ -583,7 +601,7 @@ const BookAsset: React.FC = () => {
             </div>
             <h2>Booking Request Submitted!</h2>
             <p className="success-tagline">Your rental request has been successfully routed to the equipment owner.</p>
-            
+
             <div className="booking-visual-receipt">
               <div className="receipt-head">
                 <h4>{asset.name}</h4>
@@ -664,9 +682,9 @@ const BookAsset: React.FC = () => {
 
                 <div className="pricing-bill-breakdown">
                   <h4>Price Details</h4>
-                  
+
                   <div className="bill-item">
-                    <span className="item-label">Base Hourly Rate</span>
+                    <span className="item-label">{getBaseRateLabel()}</span>
                     <span className="item-val">₹{asset.price}/hr</span>
                   </div>
 
@@ -678,7 +696,7 @@ const BookAsset: React.FC = () => {
                   <div className="bill-item divider" />
 
                   <div className="bill-item">
-                    <span className="item-label">Equipment Rental Subtotal</span>
+                    <span className="item-label">{getSubtotalLabel()}</span>
                     <span className="item-val">₹{calculateBaseTotal()}</span>
                   </div>
 

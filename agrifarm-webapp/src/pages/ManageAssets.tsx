@@ -133,10 +133,17 @@ const ManageAssets: React.FC = () => {
           <div className="assets-list">
             <AnimatePresence mode="popLayout">
               {assets.map((asset) => {
+                const isVehicle = activeTab === 'Vehicles';
                 const id = asset.vehicleId || asset.equipmentId || asset.serviceId || asset.groupId;
-                const title = asset.vehicleType || asset.brandModel || asset.businessName || asset.groupName;
-                const subtitle = asset.vehicleNumber || asset.category || asset.serviceType || `${asset.maleCount} Men, ${asset.femaleCount} Women`;
-                const price = asset.pricePerKmOrTrip || asset.pricePerHour || asset.priceRate || asset.pricePerMale;
+                const title = isVehicle && asset.brand 
+                  ? `${asset.brand} ${asset.model || ''}` 
+                  : (asset.vehicleType || asset.brandModel || asset.businessName || asset.groupName);
+                const subtitle = isVehicle 
+                  ? `${asset.vehicleType || 'Transport'} • ${asset.vehicleNumber}` 
+                  : (asset.vehicleNumber || asset.category || asset.serviceType || `${asset.maleCount} Men, ${asset.femaleCount} Women`);
+                const price = isVehicle 
+                  ? `${asset.pricePerKm || 0}/km • ₹${asset.pricePerHour || 0}/hr` 
+                  : (asset.pricePerKmOrTrip || asset.pricePerHour || asset.priceRate || asset.pricePerMale);
                 
                 return (
                   <motion.div 

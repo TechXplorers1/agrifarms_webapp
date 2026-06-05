@@ -41,6 +41,11 @@ const UploadItem: React.FC = () => {
   const [newVehicleCategoryName, setNewVehicleCategoryName] = useState('');
   const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false);
 
+  // Equipment Brand States
+  const [showCustomBrandInput, setShowCustomBrandInput] = useState(false);
+  const [newBrandName, setNewBrandName] = useState('');
+  const [brandList, setBrandList] = useState(['Mahindra', 'Sonalika', 'Swaraj', 'John Deere', 'Massey Ferguson', 'New Holland']);
+
   const handleUploadBoxClick = () => {
     fileInputRef.current?.click();
   };
@@ -86,6 +91,25 @@ const UploadItem: React.FC = () => {
     if (editData) {
       setFormData(editData);
       if (initialCategory) setCategory(initialCategory);
+      
+      if (editData.brandModel && !editData.brand) {
+        const parts = editData.brandModel.split(' ');
+        if (parts.length > 1) {
+          const brandVal = parts[0];
+          const modelVal = parts.slice(1).join(' ');
+          setFormData((prev: any) => ({
+            ...prev,
+            brand: brandVal,
+            model: modelVal
+          }));
+        } else {
+          setFormData((prev: any) => ({
+            ...prev,
+            brand: editData.brandModel,
+            model: ''
+          }));
+        }
+      }
     }
   }, [editData, initialCategory]);
 
@@ -369,8 +393,14 @@ const UploadItem: React.FC = () => {
         return (
           <div className="form-fields grid-2">
             <div className="input-group">
-              <label>Equipment Name / Brand</label>
-              <input name="brandModel" value={formData.brandModel || ''} placeholder="e.g. John Deere 5310" onChange={handleInputChange} required />
+              <label>Owner / Business Name</label>
+              <input
+                name="ownerBusinessName"
+                value={formData.ownerBusinessName || ''}
+                placeholder="e.g. Baldev Singh Farms"
+                onChange={handleInputChange}
+                required
+              />
             </div>
             <div className="input-group">
               <label>Category</label>
@@ -383,6 +413,95 @@ const UploadItem: React.FC = () => {
                 <option value="Sprayer">Sprayer</option>
               </select>
             </div>
+            
+            <div className="input-group" style={{ position: 'relative' }}>
+              <label>Brand / Make</label>
+              <select
+                name="brand"
+                value={formData.brand || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === 'Others') {
+                    setShowCustomBrandInput(true);
+                    setFormData((prev: any) => ({ ...prev, brand: '' }));
+                  } else {
+                    setShowCustomBrandInput(false);
+                    setFormData((prev: any) => ({ ...prev, brand: val }));
+                  }
+                }}
+                required
+              >
+                <option value="">Select Brand</option>
+                {brandList.map(b => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+                <option value="Others">Others (Add custom brand)</option>
+              </select>
+
+              {showCustomBrandInput && (
+                <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                  <input
+                    type="text"
+                    placeholder="Type new brand..."
+                    value={newBrandName}
+                    onChange={(e) => setNewBrandName(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border)',
+                      fontSize: '0.85rem'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const trimmed = newBrandName.trim();
+                      if (!trimmed) return;
+                      if (!brandList.includes(trimmed)) {
+                        setBrandList(prev => [...prev, trimmed]);
+                      }
+                      setFormData((prev: any) => ({ ...prev, brand: trimmed }));
+                      setNewBrandName('');
+                      setShowCustomBrandInput(false);
+                    }}
+                    className="btn-primary"
+                    style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700 }}
+                  >
+                    Add
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCustomBrandInput(false);
+                      setNewBrandName('');
+                    }}
+                    style={{
+                      background: '#f1f5f9',
+                      border: 'none',
+                      color: '#64748b',
+                      padding: '8px',
+                      borderRadius: '8px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="input-group">
+              <label>Model</label>
+              <input
+                name="model"
+                value={formData.model || ''}
+                placeholder="e.g. 575 DI, 5310"
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+
             <div className="input-group">
               <label>Horse Power (HP)</label>
               <input type="number" name="hp" value={formData.hp || ''} placeholder="50" onChange={handleInputChange} required />
@@ -403,6 +522,26 @@ const UploadItem: React.FC = () => {
                 <option value="FAIR">Fair</option>
               </select>
             </div>
+            <div className="input-group span-2">
+              <label>Description / Extra Details (Optional)</label>
+              <textarea
+                name="description"
+                value={formData.description || ''}
+                onChange={handleInputChange}
+                placeholder="Enter details like accessories included, service history, specific rules..."
+                rows={3}
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  border: '2px solid #f1f5f9',
+                  background: '#f8fafc',
+                  fontWeight: 600,
+                  outline: 'none',
+                  transition: 'all 0.2s',
+                  minHeight: '80px'
+                }}
+              />
+            </div>
           </div>
         );
       case 'Vehicles':
@@ -410,6 +549,17 @@ const UploadItem: React.FC = () => {
           const isDriverIncluded = formData.driverIncluded === true;
           return (
             <div className="form-fields grid-2">
+              <div className="input-group">
+                <label>Owner / Business Name</label>
+                <input
+                  name="ownerBusinessName"
+                  value={formData.ownerBusinessName || ''}
+                  placeholder="e.g. Ram Singh Transports"
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
               <div className="input-group" style={{ position: 'relative' }}>
                 <label>Vehicle Type (Category)</label>
                 <select
@@ -497,16 +647,75 @@ const UploadItem: React.FC = () => {
               </div>
 
               <div className="input-group">
+                <label>Brand</label>
+                <input
+                  name="brand"
+                  value={formData.brand || ''}
+                  placeholder="e.g. Tata, Mahindra"
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div className="input-group">
+                <label>Model</label>
+                <input
+                  name="model"
+                  value={formData.model || ''}
+                  placeholder="e.g. Ace Gold, Bolero Pikup"
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div className="input-group">
                 <label>Vehicle Number</label>
                 <input name="vehicleNumber" value={formData.vehicleNumber || ''} placeholder="PB-XX-XXXX" onChange={handleInputChange} required />
               </div>
+
               <div className="input-group">
                 <label>Load Capacity (Tons)</label>
                 <input type="number" name="loadCapacity" value={formData.loadCapacity || ''} placeholder="2" onChange={handleInputChange} required />
               </div>
+
               <div className="input-group">
-                <label>Price Per KM / Trip (₹)</label>
-                <input type="number" name="pricePerKmOrTrip" value={formData.pricePerKmOrTrip || ''} placeholder="20" onChange={handleInputChange} required />
+                <label>Vehicle Condition</label>
+                <select
+                  name="vehicleCondition"
+                  value={formData.vehicleCondition || ''}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="">Select Condition</option>
+                  <option value="NEW">New</option>
+                  <option value="GOOD">Good</option>
+                  <option value="MANAGABLE">Manageable</option>
+                  <option value="AVERAGE">Average</option>
+                </select>
+              </div>
+
+              <div className="input-group">
+                <label>Price Per KM (₹)</label>
+                <input
+                  type="number"
+                  name="pricePerKm"
+                  value={formData.pricePerKm || ''}
+                  placeholder="e.g. 15"
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div className="input-group">
+                <label>Price Per Hour (₹)</label>
+                <input
+                  type="number"
+                  name="pricePerHour"
+                  value={formData.pricePerHour || ''}
+                  placeholder="e.g. 300"
+                  onChange={handleInputChange}
+                  required
+                />
               </div>
 
               <div className="input-group" style={{ gridColumn: 'span 2' }}>

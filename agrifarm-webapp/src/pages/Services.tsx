@@ -32,6 +32,14 @@ interface ServiceItem {
   maleCount?: number;
   femaleCount?: number;
   roles?: any[];
+  // Vehicle-specific fields
+  pricePerKm?: number;
+  pricePerHour?: number;
+  brand?: string;
+  model?: string;
+  yearOfManufacture?: number;
+  vehicleCondition?: string;
+  ownerBusinessName?: string;
 }
 
 const calculateHaversine = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -158,17 +166,24 @@ const Services: React.FC = () => {
           })),
           ...(veh.data || []).map((v: any) => ({
             id: v.vehicleId,
-            name: v.vehicleType,
-            category: 'Transport',
-            price: `₹${v.pricePerKmOrTrip}`,
+            name: v.brand && v.model ? `${v.brand} ${v.model}` : (v.vehicleType || 'Transport'),
+            category: v.vehicleType || 'Transport',
+            price: v.pricePerHour ? `₹${v.pricePerHour}/hr` : (v.pricePerKm ? `₹${v.pricePerKm}/km` : `₹${v.pricePerKmOrTrip || 0}`),
             imageUrl: v.imageUrl,
             type: 'Transport',
             location: v.village,
-            specs: v.tonnage ? `${v.tonnage} Ton` : undefined,
+            specs: v.loadCapacity ? `${v.loadCapacity} Ton` : (v.tonnage ? `${v.tonnage} Ton` : undefined),
             providerId: v.ownerId,
-            providerName: v.ownerName,
+            providerName: v.ownerBusinessName || v.ownerName || 'Service Provider',
             latitude: v.latitude,
-            longitude: v.longitude
+            longitude: v.longitude,
+            pricePerKm: v.pricePerKm,
+            pricePerHour: v.pricePerHour,
+            brand: v.brand,
+            model: v.model,
+            yearOfManufacture: v.yearOfManufacture,
+            vehicleCondition: v.vehicleCondition,
+            ownerBusinessName: v.ownerBusinessName
           })),
           ...(work.data || []).map((w: any) => ({
             id: w.groupId,
@@ -417,7 +432,51 @@ const Services: React.FC = () => {
                     <div className="flex items-center gap-2 mb-1">
                       <p className="category">{item.category}</p>
                       {item.specs && <span className="spec-badge">{item.specs}</span>}
+                      {item.type === 'Transport' && item.vehicleCondition && (
+                        <span className="spec-badge" style={{ backgroundColor: '#f0fdf4', color: '#166534', borderColor: '#bbf7d0' }}>
+                          Condition: {item.vehicleCondition.charAt(0).toUpperCase() + item.vehicleCondition.slice(1).toLowerCase()}
+                        </span>
+                      )}
                     </div>
+
+                    {/* Transport pricing grid */}
+                    {item.type === 'Transport' && (
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: '6px',
+                        margin: '10px 0 12px 0'
+                      }}>
+                        {/* Per KM */}
+                        <div style={{
+                          background: 'linear-gradient(135deg, #efebe9, #d7ccc8)',
+                          border: '1px solid #bcaaa4',
+                          borderRadius: '10px',
+                          padding: '8px 10px'
+                        }}>
+                          <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#5d4037', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '4px' }}>
+                            🛣️ Rate Per KM
+                          </div>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#3e2723' }}>
+                            {item.pricePerKm ? `₹${item.pricePerKm}/km` : '—'}
+                          </span>
+                        </div>
+                        {/* Per Hour */}
+                        <div style={{
+                          background: 'linear-gradient(135deg, #e0f2f1, #b2dfdb)',
+                          border: '1px solid #80cbc4',
+                          borderRadius: '10px',
+                          padding: '8px 10px'
+                        }}>
+                          <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#00796b', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '4px' }}>
+                            ⏱️ Rate Per Hour
+                          </div>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#004d40' }}>
+                            {item.pricePerHour ? `₹${item.pricePerHour}/hr` : '—'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Worker pricing grid */}
                     {item.type === 'Worker' && (
