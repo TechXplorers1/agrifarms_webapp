@@ -4,7 +4,7 @@ import { useAuth } from '../services/AuthContext';
 import { apiService } from '../services/apiService';
 import { useLanguage } from '../services/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Star, MapPin, SlidersHorizontal, Info } from 'lucide-react';
+import { Search, Star, MapPin, SlidersHorizontal, Info, Loader2 } from 'lucide-react';
 
 
 interface Equipment {
@@ -42,7 +42,7 @@ const Rentals: React.FC = () => {
   const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const initialFilter = location.state?.initialFilter || 'All';
 
   const [equipment, setEquipment] = useState<Equipment[]>([]);
@@ -59,7 +59,8 @@ const Rentals: React.FC = () => {
     { value: 'Harvester', label: t('home.harvesters') },
     { value: 'Plough', label: t('rentals.plough') },
     { value: 'Seeder', label: t('rentals.seeder') },
-    { value: 'Sprayer', label: t('home.sprayers') }
+    { value: 'Sprayer', label: t('home.sprayers') },
+    { value: 'Trolley', label: t('rentals.trolley') }
   ];
 
   useEffect(() => {
@@ -122,8 +123,21 @@ const Rentals: React.FC = () => {
       setUserCoords(coords);
 
       try {
-        const response = await apiService.getEquipment();
-        const rawItems = response.data || [];
+        const [equipRes, vehRes] = await Promise.all([
+          apiService.getEquipment(),
+          apiService.getVehicles(),
+          new Promise(resolve => setTimeout(resolve, 1000))
+        ]);
+        const rawEquip = equipRes.data || [];
+        const rawVeh = (vehRes.data || []).map((v: any) => ({
+          ...v,
+          equipmentId: v.vehicleId,
+          brandModel: `${v.brand || ''} ${v.model || ''}`.trim() || v.vehicleType,
+          category: v.vehicleType,
+          pricePerHour: v.pricePerHour || v.pricePerKm,
+          operatorAvailable: v.driverIncluded
+        }));
+        const rawItems = [...rawEquip, ...rawVeh];
         
         // Calculate distances
         const processedItems = rawItems.map((item: any) => {
@@ -154,6 +168,8 @@ const Rentals: React.FC = () => {
   }, [isAuthenticated]);
 
   const filteredEquipment = equipment.filter(item => {
+    if (user?.id && item.ownerId === user.id) return false;
+
     const itemCat = item.category.toLowerCase();
     const activeFilter = filter.toLowerCase();
     
@@ -274,10 +290,8 @@ const Rentals: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="loading-grid">
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="skeleton-card"></div>
-          ))}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '100px 0' }}>
+          <Loader2 className="animate-spin" size={48} color="var(--primary)" />
         </div>
       ) : (
         <div className="assets-grid">

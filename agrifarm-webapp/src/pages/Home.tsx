@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   Search, MapPin, Tractor, Truck, Plus, Crosshair,
   ChevronRight, Sprout, Droplets, Construction,
-  CloudSun, TrendingUp, Calculator, Loader2, ChevronDown
+  CloudSun, TrendingUp, Calculator, Loader2, ChevronDown,
+  MessageSquare, LifeBuoy
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
@@ -245,10 +246,10 @@ const Home: React.FC = () => {
 
 
   const tools = [
-    { name: 'Weather', label: t('tool.weather'), icon: CloudSun, color: '#fff8e1', fg: '#f57f17' },
-    { name: 'Crop Advice', label: t('tool.cropAdvice'), icon: Sprout, color: '#e8f5e9', fg: '#00aa55' },
-    { name: 'Mandi Prices', label: t('tool.mandiPrices'), icon: TrendingUp, color: '#e3f2fd', fg: '#1565c0' },
-    { name: 'Calculator', label: t('tool.calculator'), icon: Calculator, color: '#f3e5f5', fg: '#6a1b9a' },
+    { name: 'Community', label: 'Community', icon: MessageSquare, color: '#e0f2fe', fg: '#0284c7' },
+    { name: 'Crop Advisory', label: 'Crop Advisory', icon: Sprout, color: '#e8f5e9', fg: '#00aa55' },
+    { name: 'Calculators', label: 'Calculators', icon: Calculator, color: '#f3e5f5', fg: '#6a1b9a' },
+    { name: 'Help Support', label: 'Help & Support', icon: LifeBuoy, color: '#fee2e2', fg: '#ef4444' },
   ];
 
   React.useEffect(() => {
@@ -265,7 +266,7 @@ const Home: React.FC = () => {
 
 
   return (
-    <div className="home-page fade-in" style={{ position: 'relative', overflowX: 'hidden', paddingBottom: 0 }}>
+    <div className="home-page fade-in" style={{ position: 'relative', overflowX: 'clip', paddingBottom: 0 }}>
       {/* Premium Floating Ambient Backgrounds */}
       <div className="ambient-bg ambient-bg-1" />
       <div className="ambient-bg ambient-bg-2" />
@@ -404,7 +405,7 @@ const Home: React.FC = () => {
       <div className="container" style={{ marginTop: '-35px', position: 'relative', zIndex: 10 }}>
         {/* Compact Quick Tools Row with Distinct Background and Hover Colors */}
         <section className="section" style={{ marginTop: 0, paddingBottom: '20px' }}>
-          <div className="tools-row" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+          <div className="strict-grid-4" style={{ gap: '16px', width: '100%', boxSizing: 'border-box' }}>
             {tools.map((tool, idx) => {
               const hoverClass = tool.name === 'Weather' 
                 ? 'frosted-tool-tile-weather' 
@@ -441,46 +442,51 @@ const Home: React.FC = () => {
                   whileTap={{ scale: 0.95 }}
                   className={`tool-tile card frosted-tool-tile tool-tile-${toolKey} ${hoverClass}`}
                   onClick={() => {
-                    if (tool.name === 'Weather') navigate('/weather');
-                    else if (tool.name.includes('Crop')) navigate('/crop-advice');
-                    else if (tool.name.includes('Mandi')) navigate('/mandi-prices');
-                    else navigate('/calculator');
+                    if (tool.name === 'Community') navigate('/community');
+                    else if (tool.name === 'Crop Advisory') navigate('/crop-advisory');
+                    else if (tool.name === 'Calculators') navigate('/calculators');
+                    else navigate('/help');
                   }}
                   style={{
+                    display: 'flex',
                     flexDirection: 'row',
                     padding: '10px 16px',
                     justifyContent: 'flex-start',
                     alignItems: 'center',
                     borderRadius: '16px',
-                    gap: '12px',
-                    cursor: 'pointer'
+                    gap: '16px',
+                    cursor: 'pointer',
+                    background: 'rgba(255, 255, 255, 0.95)',
+                    boxShadow: '0 8px 25px -8px rgba(15, 23, 42, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.8)'
                   }}
                 >
                   <div style={{
                     background: tool.color,
-                    padding: '8px',
-                    borderRadius: '12px',
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
+                    boxShadow: '0 4px 10px -2px ' + tool.color,
+                    transition: 'transform 0.3s ease',
+                    flexShrink: 0
                   }}>
-                    <tool.icon size={20} color={tool.fg} />
+                    <tool.icon size={18} color={tool.fg} />
                   </div>
-                  <span style={{ color: 'var(--text-main)', fontSize: '0.92rem', fontWeight: 800, letterSpacing: '-0.2px' }}>{tool.label}</span>
+                  <span style={{ color: 'var(--text-main)', fontSize: '1rem', fontWeight: 700, letterSpacing: '-0.3px', textAlign: 'left' }}>
+                    {tool.label}
+                  </span>
                 </motion.div>
               );
             })}
           </div>
         </section>
 
-        {/* Promo Banner - Refined to match Mobile Spec */}
+        {/* Promo Banner - Refined for compact UI */}
         <section className="section">
-          <motion.div 
-            initial={{ opacity: 0, y: 60, scale: 0.96 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1 }}
-            viewport={{ once: true, margin: '-100px' }}
-            transition={{ type: 'spring', stiffness: 60, damping: 15 }}
+          <div 
             className="promo-banner card" 
             style={{ 
               padding: 0, 
@@ -488,72 +494,79 @@ const Home: React.FC = () => {
               background: 'linear-gradient(135deg, #064e3b 0%, #047857 60%, #059669 100%)', 
               color: 'white', 
               overflow: 'hidden',
-              borderRadius: '32px',
-              boxShadow: '0 20px 40px -10px rgba(4, 120, 87, 0.2)'
+              borderRadius: '24px',
+              boxShadow: '0 12px 24px -8px rgba(4, 120, 87, 0.25)',
+              display: 'flex',
+              alignItems: 'stretch',
+              maxHeight: '380px'
             }}
           >
-            <div className="banner-text" style={{ padding: '56px 48px', maxWidth: '55%', zIndex: 2, position: 'relative' }}>
-              <span className="badge" style={{ 
-                background: 'rgba(255,255,255,0.15)', 
-                backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                padding: '6px 16px',
-                borderRadius: '100px',
-                fontSize: '0.85rem',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: '1px'
-              }}>{t('home.seasonOffer')}</span>
+            <div className="banner-text" style={{ padding: '48px 40px', maxWidth: '55%', zIndex: 2, position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <span className="badge" style={{ 
+                  background: 'rgba(255,255,255,0.15)', 
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  padding: '6px 14px',
+                  borderRadius: '100px',
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px'
+                }}>{t('home.seasonOffer')}</span>
+              </div>
               
               <h2 style={{ 
-                fontSize: '2.8rem', 
+                fontSize: '2.5rem', 
                 fontWeight: 900, 
                 color: 'white', 
-                marginTop: '16px', 
-                lineHeight: '1.15',
-                letterSpacing: '-1px'
+                margin: '0 0 12px 0', 
+                lineHeight: '1.2',
+                letterSpacing: '-0.5px'
               }}>{t('home.bannerTitle')}</h2>
               
               <p style={{
-                color: 'rgba(255,255,255,0.8)',
-                marginTop: '12px',
+                color: 'rgba(255,255,255,0.85)',
+                margin: '0 0 24px 0',
                 fontSize: '1.05rem',
                 lineHeight: '1.5'
               }}>{t('home.bannerDesc')}</p>
               
-              <motion.button 
-                whileHover={{ scale: 1.05, y: -2, boxShadow: '0 8px 25px rgba(255, 152, 0, 0.5)' }}
-                whileTap={{ scale: 0.95 }}
-                className="btn-accent" 
-                style={{ 
-                  background: '#FF9800', 
-                  color: 'white', 
-                  padding: '16px 36px', 
-                  borderRadius: '100px', 
-                  fontWeight: 900, 
-                  marginTop: '24px', 
-                  border: 'none', 
-                  fontSize: '1rem',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 15px rgba(255, 152, 0, 0.4)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }} 
-                onClick={() => navigate('/services')}
-              >
-                {t('home.exploreBtn')} <ChevronRight size={18} />
-              </motion.button>
+              <div>
+                <motion.button 
+                  whileHover={{ scale: 1.05, y: -2, boxShadow: '0 6px 15px rgba(255, 152, 0, 0.4)' }}
+                  whileTap={{ scale: 0.95 }}
+                  className="btn-accent" 
+                  style={{ 
+                    background: '#FF9800', 
+                    color: 'white', 
+                    padding: '14px 32px', 
+                    borderRadius: '100px', 
+                    fontWeight: 800, 
+                    border: 'none', 
+                    fontSize: '0.95rem',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 10px rgba(255, 152, 0, 0.3)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }} 
+                  onClick={() => navigate('/services')}
+                >
+                  {t('home.exploreBtn')} <ChevronRight size={16} />
+                </motion.button>
+              </div>
             </div>
             
             <div className="banner-image" style={{ 
-              clipPath: 'polygon(15% 0, 100% 0, 100% 100%, 0% 100%)',
+              flex: 1,
+              clipPath: 'polygon(10% 0, 100% 0, 100% 100%, 0% 100%)',
               position: 'relative'
             }}>
               <div style={{
                 position: 'absolute',
                 top: 0, left: 0, bottom: 0, width: '40px',
-                background: 'linear-gradient(to right, rgba(4, 120, 87, 0.5), transparent)',
+                background: 'linear-gradient(to right, rgba(4, 120, 87, 0.8), transparent)',
                 zIndex: 2,
                 pointerEvents: 'none'
               }} />
@@ -567,7 +580,7 @@ const Home: React.FC = () => {
                 }}
               />
             </div>
-          </motion.div>
+          </div>
         </section>
 
         {/* Categories Section - Improved Visual Cards */}
@@ -607,13 +620,12 @@ const Home: React.FC = () => {
             </motion.button>
           </div>
 
-          <div className="categories-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
+          <div className="categories-grid responsive-grid-4" style={{ gap: '24px' }}>
             {rentalItems.map((item, idx) => (
               <motion.div
                 key={item.name}
-                initial={{ opacity: 0, y: 60, scale: 0.93 }}
-                whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                viewport={{ once: true, margin: '-50px' }}
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ 
                   type: 'spring', 
                   stiffness: 80, 
@@ -696,9 +708,8 @@ const Home: React.FC = () => {
         {/* Earn Section - WOW Layout */}
         <section className="section" style={{ marginBottom: '0', paddingBottom: '0' }}>
           <motion.div 
-            initial={{ opacity: 0, y: 60, scale: 0.96 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1 }}
-            viewport={{ once: true, margin: '-80px' }}
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ type: 'spring', stiffness: 60, damping: 15 }}
             className="card" 
             style={{ 
@@ -712,9 +723,9 @@ const Home: React.FC = () => {
               boxShadow: '0 25px 50px -12px rgba(4, 47, 26, 0.4)'
             }}
           >
-            {/* Glowing neon decorative bubbles */}
-            <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '250px', height: '250px', background: 'rgba(16, 185, 129, 0.2)', borderRadius: '50%', filter: 'blur(100px)', pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', bottom: '-80px', left: '10%', width: '200px', height: '200px', background: 'rgba(59, 130, 246, 0.12)', borderRadius: '50%', filter: 'blur(80px)', pointerEvents: 'none' }} />
+            {/* Glowing neon decorative bubbles (Optimized for performance) */}
+            <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '250px', height: '250px', background: 'radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', bottom: '-80px', left: '10%', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
             <div className="flex justify-between items-center relative" style={{ zIndex: 2 }}>
               <div style={{ maxWidth: '58%' }}>
@@ -794,7 +805,7 @@ const Home: React.FC = () => {
                 </div>
               </div>
 
-              <div className="upload-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', width: '38%' }}>
+              <div className="upload-grid responsive-grid-2">
                 <motion.div 
                   whileHover={{ 
                     y: -10, 
@@ -856,14 +867,14 @@ const Home: React.FC = () => {
             onClick={() => navigate(user ? '/upload-item' : '/login')}
             style={{
               background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-              padding: '18px 36px',
-              fontSize: '1.1rem',
+              padding: '12px 24px',
+              fontSize: '0.95rem',
               boxShadow: '0 15px 35px rgba(5, 150, 105, 0.4)',
               borderRadius: '50px',
               border: '1px solid rgba(255, 255, 255, 0.2)'
             }}
           >
-            <Plus size={26} style={{ strokeWidth: 3 }} />
+            <Plus size={20} style={{ strokeWidth: 3 }} />
             <span>{t('manage.addBtn')}</span>
           </motion.button>,
           document.body
@@ -945,7 +956,7 @@ const Home: React.FC = () => {
         }
         .fab-add {
           position: fixed;
-          top: 100px;
+          bottom: 32px;
           right: 32px;
           color: white;
           border-radius: 50px;

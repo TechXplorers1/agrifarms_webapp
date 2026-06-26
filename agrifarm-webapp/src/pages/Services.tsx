@@ -4,7 +4,7 @@ import { useAuth } from '../services/AuthContext';
 import { apiService } from '../services/apiService';
 import { useLanguage } from '../services/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Star, MapPin, Info, Hammer, Truck, Users, SlidersHorizontal } from 'lucide-react';
+import { Search, Star, MapPin, Info, Hammer, Truck, Users, SlidersHorizontal, Loader2 } from 'lucide-react';
 
 
 interface ServiceItem {
@@ -145,7 +145,8 @@ const Services: React.FC = () => {
         const [serv, veh, work] = await Promise.all([
           apiService.getServices(),
           apiService.getVehicles(),
-          apiService.getWorkerGroups()
+          apiService.getWorkerGroups(),
+          new Promise(resolve => setTimeout(resolve, 1000))
         ]);
 
         const normalized: ServiceItem[] = [
@@ -272,7 +273,7 @@ const Services: React.FC = () => {
           <h1 className="text-3xl font-bold">{t('services.title')}</h1>
           <p className="text-slate-500">{t('services.desc')}</p>
         </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative', flexWrap: 'wrap' }}>
           <div style={{ position: 'relative' }}>
             <button 
               onClick={() => setShowDistanceDropdown(!showDistanceDropdown)}
@@ -394,10 +395,8 @@ const Services: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="loading-grid">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="skeleton-card"></div>
-          ))}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '100px 0' }}>
+          <Loader2 className="animate-spin" size={48} color="var(--primary)" />
         </div>
       ) : (
         <div className="assets-grid">
@@ -441,9 +440,7 @@ const Services: React.FC = () => {
 
                     {/* Transport pricing grid */}
                     {item.type === 'Transport' && (
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
+                      <div className="responsive-grid-2" style={{
                         gap: '6px',
                         margin: '10px 0 12px 0'
                       }}>
@@ -480,9 +477,7 @@ const Services: React.FC = () => {
 
                     {/* Worker pricing grid */}
                     {item.type === 'Worker' && (
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
+                      <div className="responsive-grid-2" style={{
                         gap: '6px',
                         margin: '10px 0 12px 0'
                       }}>
