@@ -559,9 +559,13 @@ const Profile: React.FC = () => {
                         id="phoneNumber"
                         name="phoneNumber"
                         type="text"
+                        maxLength={10}
                         placeholder="10-digit mobile number"
                         value={formData.phoneNumber}
-                        onChange={handleInputChange}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                          setFormData(prev => ({ ...prev, phoneNumber: val }));
+                        }}
                       />
                     </div>
                   </div>

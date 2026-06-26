@@ -257,12 +257,7 @@ const Home: React.FC = () => {
     { name: 'Seeding', icon: Sprout, image: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&q=80&w=400', subtitle: 'Planting Seeds', color: '#fff3e0', iconColor: '#e65100', category: 'Services' },
   ];
 
-  const workerItems: ServiceItem[] = [
-    { name: 'General Labor', icon: Crosshair, image: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&q=80&w=400', subtitle: 'Farm Activities', color: '#e8f5e9', iconColor: '#2e7d32', category: 'Services' },
-    { name: 'Harvesters', icon: Sprout, image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&q=80&w=400', subtitle: 'Skilled Crop Picking', color: '#fff9c4', iconColor: '#f9a825', category: 'Services' },
-    { name: 'Machine Operators', icon: Tractor, image: 'https://images.unsplash.com/photo-1594913785162-e67853f2c522?auto=format&fit=crop&q=80&w=400', subtitle: 'Driver & Operators', color: '#e3f2fd', iconColor: '#1565c0', category: 'Services' },
-    { name: 'Electricians', icon: CloudSun, image: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&q=80&w=400', subtitle: 'Farm Maintenance', color: '#fff3e0', iconColor: '#e65100', category: 'Services' },
-  ];
+
 
 
 
@@ -890,128 +885,6 @@ const Home: React.FC = () => {
           </div>
         </section>
 
-        {/* Worker Categories */}
-        <section className="section">
-          <div className="section-header" style={{ marginBottom: '28px' }}>
-            <div className="flex items-center gap-3">
-              <div style={{
-                background: '#fff9c4',
-                padding: '12px',
-                borderRadius: '16px',
-                boxShadow: 'inset 0 2px 4px rgba(249,168,37,0.06)'
-              }}>
-                <Crosshair size={26} color="#f9a825" />
-              </div>
-              <h3 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>{t('workers', 'Farm Workers')}</h3>
-            </div>
-            <motion.button
-              whileHover={{ scale: 1.05, background: '#fff59d' }}
-              whileTap={{ scale: 0.95 }}
-              className="view-all"
-              style={{
-                background: '#fff9c4',
-                color: '#f9a825',
-                fontWeight: 800,
-                padding: '10px 24px',
-                borderRadius: '100px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '0.95rem'
-              }}
-              onClick={() => navigate('/services', { state: { initialFilter: 'Workers' } })}
-            >
-              {t('home.viewAll')} <ChevronRight size={18} />
-            </motion.button>
-          </div>
-
-          <div className="categories-grid responsive-grid-4" style={{ gap: '24px' }}>
-            {workerItems.map((item, idx) => (
-              <motion.div
-                key={item.name}
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 80,
-                  damping: 16,
-                  delay: 0.08 * idx
-                }}
-                whileHover={{
-                  y: -10,
-                  transition: { type: 'spring', stiffness: 300, damping: 15 }
-                }}
-                whileTap={{ scale: 0.98 }}
-                className="premium-card visual-card"
-                style={{
-                  height: '280px',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  borderRadius: '28px',
-                  boxShadow: '0 12px 30px -10px rgba(15, 23, 42, 0.08)'
-                }}
-                onClick={() => navigate('/services', { state: { initialFilter: item.name } })}
-              >
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    position: 'absolute',
-                    top: 0, left: 0
-                  }}
-                />
-
-                <div className="overlay" style={{
-                  padding: '28px 24px',
-                  position: 'absolute',
-                  bottom: 0, left: 0, right: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
-                  height: '100%',
-                  zIndex: 2
-                }}>
-                  <span style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    letterSpacing: '1.5px',
-                    opacity: 0.85,
-                    marginBottom: '6px',
-                    color: 'rgba(255,255,255,0.9)'
-                  }}>{item.subtitle}</span>
-
-                  <h4 style={{
-                    fontSize: '1.65rem',
-                    color: 'white',
-                    fontWeight: 900,
-                    letterSpacing: '-0.3px',
-                    lineHeight: '1.2'
-                  }}>{item.name}</h4>
-
-                  <div className="rent-badge-btn" style={{
-                    marginTop: '14px',
-                    background: 'rgba(255,255,255,0.2)',
-                    width: 'fit-content',
-                    padding: '6px 16px',
-                    borderRadius: '100px',
-                    backdropFilter: 'blur(8px)',
-                    border: '1px solid rgba(255,255,255,0.15)'
-                  }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'white' }}>Hire Now</span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
         {/* Earn Section - WOW Layout */}
         <section className="section" style={{ marginBottom: '0', paddingBottom: '0' }}>
           <motion.div
@@ -1199,7 +1072,7 @@ const Home: React.FC = () => {
               }}>
                 <TrendingUp size={26} color="#0284c7" />
               </div>
-              <h3 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>{t('home.quickTools', 'Quick Tools')}</h3>
+              <h3 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>{t('quickTools', 'Quick Tools')}</h3>
             </div>
           </div>
 
