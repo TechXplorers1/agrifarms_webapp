@@ -1,0 +1,12 @@
+[submodule "agrifarm-mobile"]
+	path = agrifarm-mobile
+	url = https://github.com/gopivr/agrifarm-mobile.git
+[submodule "agrifarm-common-service"]
+	path = agrifarm-common-service
+	url = https://github.com/gopivr/agrifarm-common-service.git
+[submodule "agrifarm-auth-service"]
+	path = agrifarm-auth-service
+	url = https://github.com/gopivr/agrifarm-auth-service.git
+[submodule "agrifarm-base-infra"]
+	path = agrifarm-base-infra
+	url = https://github.com/gopivr/agrifarm-base-infra.git
