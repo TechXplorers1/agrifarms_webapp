@@ -122,7 +122,10 @@ const Rentals: React.FC = () => {
       setUserCoords(coords);
 
       try {
-        const response = await apiService.getEquipment();
+        const [response] = await Promise.all([
+          apiService.getEquipment(),
+          new Promise(resolve => setTimeout(resolve, 1000))
+        ]);
         const rawItems = response.data || [];
         
         // Calculate distances

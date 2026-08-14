@@ -10,15 +10,15 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState('FARMER'); // Default role
-  
+
   // Visibility toggles
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   // Messages
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  
+
   const { login, signup, isLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -28,12 +28,12 @@ const Login: React.FC = () => {
     const hasNumber = /\d/.test(pass);
     const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(pass);
     const isLengthValid = pass.length >= 6;
-    
+
     if (!isLengthValid) return "Password must be at least 6 characters long.";
     if (!hasUpperCase) return "Password must contain at least one capital letter.";
     if (!hasNumber) return "Password must contain at least one number.";
     if (!hasSpecialChar) return "Password must contain at least one special character.";
-    
+
     return null;
   };
 
@@ -81,7 +81,7 @@ const Login: React.FC = () => {
 
   return (
     <div className="login-page">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="login-card glass"
@@ -130,9 +130,9 @@ const Login: React.FC = () => {
                 }}
                 required
               />
-              <button 
-                type="button" 
-                className="toggle-password" 
+              <button
+                type="button"
+                className="toggle-password"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -142,9 +142,9 @@ const Login: React.FC = () => {
 
           {isSignUp && (
             <>
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }} 
-                animate={{ opacity: 1, height: 'auto' }} 
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
                 className="input-group"
               >
                 <label htmlFor="confirmPassword">Confirm Password</label>
@@ -162,9 +162,9 @@ const Login: React.FC = () => {
                     }}
                     required
                   />
-                  <button 
-                    type="button" 
-                    className="toggle-password" 
+                  <button
+                    type="button"
+                    className="toggle-password"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -172,16 +172,16 @@ const Login: React.FC = () => {
                 </div>
               </motion.div>
 
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }} 
-                animate={{ opacity: 1, height: 'auto' }} 
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
                 className="input-group"
               >
                 <label htmlFor="role">Select Your Role</label>
                 <div className="input-wrapper select-wrapper">
-                  <select 
-                    id="role" 
-                    value={role} 
+                  <select
+                    id="role"
+                    value={role}
                     onChange={(e) => setRole(e.target.value)}
                     required
                   >
@@ -199,7 +199,7 @@ const Login: React.FC = () => {
               <span>{errorMsg}</span>
             </motion.div>
           )}
-          
+
           {successMsg && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="message-box success-message">
               <CheckCircle2 size={16} />
@@ -207,8 +207,8 @@ const Login: React.FC = () => {
             </motion.div>
           )}
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="btn-login"
             disabled={!email || !password || (isSignUp && !confirmPassword) || isLoading}
           >

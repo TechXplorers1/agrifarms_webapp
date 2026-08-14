@@ -17,6 +17,8 @@ import OtpVerificationModal from './components/OtpVerificationModal';
 import BookAsset from './pages/BookAsset';
 import ToolPlaceholder from './pages/ToolPlaceholder';
 import Notifications from './pages/Notifications';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import Footer from './components/Footer';
 
 const App: React.FC = () => {
   return (
@@ -40,6 +42,7 @@ const App: React.FC = () => {
                   <Route path="/crop-advice" element={<ToolPlaceholder />} />
                   <Route path="/mandi-prices" element={<ToolPlaceholder />} />
                   <Route path="/calculator" element={<ToolPlaceholder />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
                   {/* Protected routes */}
                   <Route path="/manage-assets" element={<ProtectedRoute><ManageAssets /></ProtectedRoute>} />
@@ -51,6 +54,7 @@ const App: React.FC = () => {
                   <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 </Routes>
               </main>
+              <Footer />
             </>
           } />
         </Routes>

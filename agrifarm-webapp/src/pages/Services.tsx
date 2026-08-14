@@ -145,7 +145,8 @@ const Services: React.FC = () => {
         const [serv, veh, work] = await Promise.all([
           apiService.getServices(),
           apiService.getVehicles(),
-          apiService.getWorkerGroups()
+          apiService.getWorkerGroups(),
+          new Promise(resolve => setTimeout(resolve, 1000))
         ]);
 
         const normalized: ServiceItem[] = [

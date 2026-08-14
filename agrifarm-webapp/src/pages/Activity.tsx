@@ -59,7 +59,8 @@ const Activity: React.FC = () => {
         const isProviderUser = ['OWNER', 'PROVIDER'].includes(user.role || '');
         const [farmerRes, providerRes] = await Promise.all([
           apiService.getFarmerBookings(user.id),
-          isProviderUser ? apiService.getProviderBookings(user.id) : Promise.resolve({ data: [] })
+          isProviderUser ? apiService.getProviderBookings(user.id) : Promise.resolve({ data: [] }),
+          new Promise(resolve => setTimeout(resolve, 1000))
         ]);
 
         const farmerBookings = (farmerRes.data || []).map((b: any) => ({ ...b, roleInBooking: 'farmer' }));

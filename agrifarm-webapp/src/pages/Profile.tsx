@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../services/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  User, MapPin, Phone, LogOut, Settings, Shield, ChevronRight, 
-  Package, Calendar, Mail, Edit2, Save, X, Building2, Map, Globe2, 
+import {
+  User, MapPin, Phone, LogOut, Settings, Shield, ChevronRight,
+  Package, Calendar, Mail, Edit2, Save, X, Building2, Map, Globe2,
   Pin, Compass, AlertCircle, CheckCircle2, UserCheck, Camera, Loader2
 } from 'lucide-react';
 import { apiService } from '../services/apiService';
@@ -76,7 +76,7 @@ const Profile: React.FC = () => {
         if (user?.id && profile) {
           const lat = formData.latitude ? parseFloat(formData.latitude) : (profile.latitude ? parseFloat(profile.latitude) : null);
           const lon = formData.longitude ? parseFloat(formData.longitude) : (profile.longitude ? parseFloat(profile.longitude) : null);
-          
+
           const payload = {
             ...profile,
             fullName: formData.fullName || profile.fullName,
@@ -97,7 +97,7 @@ const Profile: React.FC = () => {
           const responseUpdate = await apiService.updateUser(user.id, payload);
           if (responseUpdate && responseUpdate.data) {
             setProfile(responseUpdate.data);
-            
+
             // Sync session cache
             updateUserProfile(responseUpdate.data.fullName, responseUpdate.data.phoneNumber, responseUpdate.data.profileImageUrl);
             const storedUser = localStorage.getItem('agrifarm_user');
@@ -108,11 +108,11 @@ const Profile: React.FC = () => {
               localStorage.setItem('agrifarm_user', JSON.stringify(parsed));
             }
             setSuccessMsg('Profile picture successfully uploaded and saved in database!');
-            setTimeout(() => setSuccessMsg(''), 4000);
+            setTimeout(() => setSuccessMsg(''), 1000);
           }
         } else {
           setSuccessMsg('Profile image uploaded successfully! Save profile to persist changes.');
-          setTimeout(() => setSuccessMsg(''), 4000);
+          setTimeout(() => setSuccessMsg(''), 1000);
         }
       } else {
         throw new Error('Image upload failed.');
@@ -144,7 +144,10 @@ const Profile: React.FC = () => {
     if (!user?.id) return;
     setIsLoadingProfile(true);
     try {
-      const response = await apiService.getUser(user.id);
+      const [response] = await Promise.all([
+        apiService.getUser(user.id),
+        new Promise(resolve => setTimeout(resolve, 1000))
+      ]);
       if (response && response.data) {
         const data = response.data;
         setProfile(data);
@@ -209,11 +212,11 @@ const Profile: React.FC = () => {
           const data = await response.json();
           if (data && data.address) {
             const addr = data.address;
-            
+
             // Geocoding extraction optimized to isolate city/village vs suburb/area name correctly
             const village = addr.city || addr.town || addr.village || addr.municipality || addr.suburb || addr.neighbourhood || addr.city_district || '';
             const district = addr.district || addr.county || addr.city || '';
-            
+
             const areaParts = [];
             if (addr.road) areaParts.push(addr.road);
             const areaName = addr.suburb || addr.neighbourhood || addr.quarter;
@@ -221,7 +224,7 @@ const Profile: React.FC = () => {
               areaParts.push(areaName);
             }
             const street = areaParts.join(', ') || addr.road || addr.suburb || '';
-            
+
             const state = addr.state || '';
             const pincode = addr.postcode || '';
 
@@ -269,7 +272,7 @@ const Profile: React.FC = () => {
 
     setErrorMsg('');
     setSuccessMsg('');
-    
+
     // Validate phone number: must be exactly 10 digits if provided
     const cleanedPhone = (formData.phoneNumber || '').replace(/\D/g, '');
     if (cleanedPhone.length > 0 && cleanedPhone.length !== 10) {
@@ -335,7 +338,7 @@ const Profile: React.FC = () => {
         }
         setSuccessMsg("Profile details successfully saved!");
         setIsEditing(false);
-        setTimeout(() => setSuccessMsg(''), 4000);
+        setTimeout(() => setSuccessMsg(''), 1000);
       }
     } catch (err: any) {
       console.error("Failed to update profile:", err);
@@ -352,13 +355,13 @@ const Profile: React.FC = () => {
 
   if (isLoadingProfile) {
     return (
-      <div style={{ 
-        minHeight: '60vh', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        gap: '20px' 
+      <div style={{
+        minHeight: '60vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '20px'
       }}>
         <motion.div
           animate={{ rotate: 360 }}
@@ -388,13 +391,13 @@ const Profile: React.FC = () => {
   return (
     <div className="profile-page container fade-in">
       <div className="profile-header">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="profile-info-card card glass-profile"
         >
           <div className="profile-main-row">
-            <div 
+            <div
               className="avatar-large editable"
               onClick={handleAvatarClick}
               title="Click to select and upload a new profile picture immediately"
@@ -406,9 +409,9 @@ const Profile: React.FC = () => {
               ) : (
                 <>
                   {formData.profileImageUrl || profile?.profileImageUrl ? (
-                    <img 
-                      src={apiService.getFullImageUrl(formData.profileImageUrl || profile?.profileImageUrl)} 
-                      alt={formData.fullName || profile?.fullName} 
+                    <img
+                      src={apiService.getFullImageUrl(formData.profileImageUrl || profile?.profileImageUrl)}
+                      alt={formData.fullName || profile?.fullName}
                     />
                   ) : (
                     <User size={48} color="white" />
@@ -420,8 +423,8 @@ const Profile: React.FC = () => {
                 </>
               )}
             </div>
-            
-            <div 
+
+            <div
               className="avatar-large editable"
               onClick={handleAvatarClick}
               title="Click to select and upload a new profile picture immediately"
@@ -429,21 +432,21 @@ const Profile: React.FC = () => {
             >
               {/* Duplicate element required to keep replacement diffs happy */}
             </div>
-            
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleFileChange} 
-              accept="image/*" 
-              style={{ display: 'none' }} 
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              style={{ display: 'none' }}
             />
-            
+
             <div className="info-details">
               <div className="name-badge-row">
                 <h2>{profile?.fullName || user?.name || 'Agri Farms User'}</h2>
                 <div className="badge-role">{t('role.' + String(profile?.role || user?.role || 'farmer').toLowerCase())}</div>
               </div>
-              
+
               <div className="contact-info-grid">
                 <div className="contact-item">
                   <Mail size={15} color="var(--primary)" />
@@ -456,7 +459,7 @@ const Profile: React.FC = () => {
                 <div className="contact-item full-width-item">
                   <MapPin size={15} color="var(--primary)" />
                   <span>
-                    {profile?.village || profile?.district 
+                    {profile?.village || profile?.district
                       ? `${profile.houseNo ? profile.houseNo + ', ' : ''}${profile.street ? profile.street + ', ' : ''}${profile.village || ''}, ${profile.district || ''}, ${profile.state || ''} - ${profile.pincode || ''}`
                       : t('profile.noAddress')}
                   </span>
@@ -466,8 +469,8 @@ const Profile: React.FC = () => {
           </div>
 
           {!isEditing && (
-            <button 
-              className="btn-edit-action" 
+            <button
+              className="btn-edit-action"
               onClick={() => {
                 setIsEditing(true);
                 setErrorMsg('');
@@ -487,7 +490,7 @@ const Profile: React.FC = () => {
           <span>{errorMsg}</span>
         </motion.div>
       )}
-      
+
       {successMsg && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="message-box success-message">
           <CheckCircle2 size={18} />
@@ -497,7 +500,7 @@ const Profile: React.FC = () => {
 
       <AnimatePresence>
         {isEditing && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -515,13 +518,13 @@ const Profile: React.FC = () => {
 
             <form onSubmit={handleSaveProfile} className="profile-edit-form">
               <div className="form-sections-grid">
-                
+
                 {/* Personal Information Section */}
                 <div className="form-section">
                   <h4 className="section-subtitle">
                     <User size={16} /> {t('profile.personalInfo')}
                   </h4>
-                  
+
                   <div className="form-group">
                     <label htmlFor="fullName">{t('profile.fullName')}</label>
                     <div className="input-wrapper">
@@ -783,16 +786,16 @@ const Profile: React.FC = () => {
               </div>
 
               <div className="edit-form-actions">
-                <button 
-                  type="button" 
-                  className="btn-cancel-edit" 
+                <button
+                  type="button"
+                  className="btn-cancel-edit"
                   onClick={() => setIsEditing(false)}
                   disabled={isSaving}
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="btn-save-profile"
                   disabled={isSaving}
                 >
@@ -813,7 +816,7 @@ const Profile: React.FC = () => {
         <h3 className="dashboard-section-title">{t('profile.management')}</h3>
         <div className="grid-menu">
           {menuItems.map((item) => (
-            <motion.div 
+            <motion.div
               key={item.name}
               whileHover={{ y: -4, scale: 1.01 }}
               className="menu-card"

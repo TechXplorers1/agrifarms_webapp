@@ -29,7 +29,8 @@ const ManageAssets: React.FC = () => {
         apiService.getVehicles({ ownerId: id }),
         apiService.getEquipment({ ownerId: id }),
         apiService.getServices({ ownerId: id }),
-        apiService.getWorkerGroups({ ownerId: id })
+        apiService.getWorkerGroups({ ownerId: id }),
+        new Promise(resolve => setTimeout(resolve, 1000))
       ]);
 
       const allAssets = {
