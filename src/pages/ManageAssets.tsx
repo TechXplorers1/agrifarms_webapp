@@ -4,7 +4,7 @@ import { useAuth } from '../services/AuthContext';
 import { useLanguage } from '../services/LanguageContext';
 import { 
   Package, Plus, Edit2, Trash2, 
-  CheckCircle, Clock, XCircle 
+  CheckCircle, Clock, XCircle, Loader2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -127,8 +127,8 @@ const ManageAssets: React.FC = () => {
 
       <div className="assets-content">
         {loading ? (
-          <div className="loading-state">
-            <div className="spinner" />
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '100px 0' }}>
+            <Loader2 className="animate-spin" size={48} color="var(--primary)" />
           </div>
         ) : assets.length > 0 ? (
           <div className="assets-list">

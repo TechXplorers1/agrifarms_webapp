@@ -60,7 +60,7 @@ const PrivacyPolicy: React.FC = () => {
             <li><strong style={{ color: 'var(--text-main)' }}>Authorization:</strong> Strict role-based access control (FARMER vs. PROVIDER) ensures that users can only access or modify data they are explicitly authorized to view.</li>
           </ul>
         </section>
-        
+
       </motion.div>
     </div>
   );

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Home, History, User, LayoutGrid, LogIn, Sprout, Bell, ClipboardList, 
-  X, CheckCheck, Info, Tag
+  X, CheckCheck, Info, Tag, MessageSquare, Menu
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
@@ -16,34 +16,8 @@ const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
-
-  const defaultNotifications = [
-    {
-      id: '1',
-      title: 'Booking Confirmed 🚜',
-      message: 'Your tractor rental booking for John Deere 5050D has been approved by the owner.',
-      type: 'booking',
-      time: '10 mins ago',
-      read: false
-    },
-    {
-      id: '2',
-      title: 'Crop Advice Alert 🌾',
-      message: 'High humidity levels detected in your area. Spraying pesticide is recommended for paddy crops.',
-      type: 'advice',
-      time: '2 hours ago',
-      read: false
-    },
-    {
-      id: '3',
-      title: 'Mandi Price Update 📈',
-      message: 'Wheat prices in your local Mandi increased by ₹80/quintal. Current rate is ₹2,280/quintal.',
-      type: 'price',
-      time: 'Yesterday',
-      read: true
-    }
-  ];
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id) {
@@ -58,19 +32,17 @@ const Navbar: React.FC = () => {
           const unread = res.data.filter((n: any) => n.read === false || n.isRead === false);
           setNotifications(unread);
         } else {
-          const unreadDefaults = defaultNotifications.filter((n: any) => n.read === false || n.isRead === false);
-          setNotifications(unreadDefaults);
+          setNotifications([]);
         }
       } catch (err) {
         console.error("Error fetching notifications:", err);
-        const unreadDefaults = defaultNotifications.filter((n: any) => n.read === false || n.isRead === false);
-        setNotifications(unreadDefaults);
+        setNotifications([]);
       }
     };
 
     fetchNotifications();
-    // Poll every 30 seconds for live updates
-    const interval = setInterval(fetchNotifications, 30000);
+    // Poll every 5 seconds for live updates
+    const interval = setInterval(fetchNotifications, 5000);
     return () => clearInterval(interval);
   }, [isAuthenticated, user]);
 
@@ -139,6 +111,7 @@ const Navbar: React.FC = () => {
     { name: t('nav.rentals'), path: '/rentals', icon: LayoutGrid, state: undefined },
     { name: t('nav.services'), path: '/services', icon: Sprout, state: { initialFilter: 'Services' } },
     { name: t('nav.activity'), path: '/activity', icon: History, state: undefined },
+    { name: 'Community', path: '/community', icon: MessageSquare, state: undefined },
   ];
 
   const showManageAssets = isAuthenticated && ['OWNER', 'PROVIDER'].includes(user?.role || '');
@@ -167,13 +140,22 @@ const Navbar: React.FC = () => {
           ))}
 
           {showManageAssets && (
-            <Link
-              to="/manage-assets"
-              className={`nav-item ${location.pathname === '/manage-assets' ? 'active' : ''}`}
-            >
-              <ClipboardList size={20} />
-              <span>{t('nav.manage')}</span>
-            </Link>
+            <>
+              <Link
+                to="/manage-assets"
+                className={`nav-item ${location.pathname === '/manage-assets' ? 'active' : ''}`}
+              >
+                <ClipboardList size={20} />
+                <span>{t('nav.manage')}</span>
+              </Link>
+              <Link
+                to="/service-requests"
+                className={`nav-item ${location.pathname === '/service-requests' ? 'active' : ''}`}
+              >
+                <History size={20} />
+                <span>{t('nav.requests')}</span>
+              </Link>
+            </>
           )}
 
           {isAuthenticated && (
@@ -251,76 +233,104 @@ const Navbar: React.FC = () => {
           )}
         </div>
 
-        {/* Mobile Bottom Nav */}
-        <div className="mobile-nav">
-          {[
-            ...navItems,
-            ...(showManageAssets ? [{ name: t('nav.manage'), path: '/manage-assets', icon: ClipboardList }] : []),
-            ...(isAuthenticated ? [{ name: t('nav.notifications'), path: '/notifications', icon: Bell }] : []),
-            { name: t('nav.profile'), path: '/profile', icon: User }
-          ].map((item) => {
-            const isAlerts = item.name === t('nav.notifications');
-            return isAlerts ? (
-              <Link
-                key={item.name}
-                to="/notifications"
-                className={`mobile-nav-item ${location.pathname === '/notifications' ? 'active' : ''}`}
+        {/* Hamburger Menu Button (Mobile) */}
+        <button 
+          className="mobile-menu-btn" 
+          onClick={() => setIsMobileMenuOpen(true)}
+          style={{ display: 'none', background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: '8px' }}
+        >
+          <Menu size={28} />
+        </button>
+      </div>
+
+      {/* Mobile Drawer */}
+      {createPortal(
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsMobileMenuOpen(false)}
+                style={{
+                  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                  background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', zIndex: 9999
+                }}
+              />
+              <motion.div
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+                style={{
+                  position: 'fixed', top: 0, left: 0, height: '100vh', width: '80%', maxWidth: '320px',
+                  background: '#ffffff', boxShadow: '10px 0 40px rgba(15, 23, 42, 0.15)',
+                  display: 'flex', flexDirection: 'column', zIndex: 10000, overflow: 'hidden'
+                }}
               >
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <item.icon size={22} />
-                  {unreadCount > 0 && (
-                    <span className="mobile-badge-count" style={{
-                      position: 'absolute',
-                      top: '-6px',
-                      right: '-6px',
-                      background: '#ef4444',
-                      color: 'white',
-                      fontSize: '9px',
-                      fontWeight: 800,
-                      minWidth: '14px',
-                      height: '14px',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '0 3px',
-                      boxShadow: '0 0 8px rgba(239, 68, 68, 0.8)',
-                      border: '1.5px solid white'
-                    }}>
-                      {unreadCount}
-                    </span>
+                <div style={{ padding: '24px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafbfb' }}>
+                  <div className="logo-section" onClick={() => { navigate('/'); setIsMobileMenuOpen(false); }} style={{ cursor: 'pointer' }}>
+                    <div className="logo-box">
+                      <Sprout size={24} color="var(--primary)" />
+                    </div>
+                    <span className="logo-text">{t('logo.title')}</span>
+                  </div>
+                  <button
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    style={{ background: '#f1f5f9', border: 'none', padding: '8px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {[
+                    ...navItems,
+                    ...(showManageAssets ? [
+                      { name: t('nav.manage'), path: '/manage-assets', icon: ClipboardList },
+                      { name: t('nav.requests'), path: '/service-requests', icon: History }
+                    ] : []),
+                    ...(isAuthenticated ? [{ name: t('nav.notifications'), path: '/notifications', icon: Bell }] : []),
+                    { name: t('nav.profile'), path: '/profile', icon: User }
+                  ].map((item) => {
+                    const isAlerts = item.name === t('nav.notifications');
+                    const targetPath = isAlerts ? '/notifications' : item.path;
+                    return (
+                      <Link
+                        key={item.name}
+                        to={targetPath}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={`mobile-drawer-item ${location.pathname === targetPath ? 'active' : ''}`}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 16px',
+                          borderRadius: '12px', color: 'var(--text-main)', textDecoration: 'none', fontWeight: 600,
+                          transition: 'background 0.2s, color 0.2s'
+                        }}
+                      >
+                        <item.icon size={22} style={{ color: 'var(--primary)' }} />
+                        <span style={{ fontSize: '1.05rem' }}>{item.name}</span>
+                        {isAlerts && unreadCount > 0 && (
+                          <span style={{ background: '#ef4444', color: 'white', fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '10px', marginLeft: 'auto' }}>
+                            {unreadCount} New
+                          </span>
+                        )}
+                      </Link>
+                    )
+                  })}
+                  {!isAuthenticated && (
+                    <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 16px', borderRadius: '12px', background: 'var(--grad-primary)', color: 'white', textDecoration: 'none', fontWeight: 700, marginTop: '8px', boxShadow: '0 4px 10px rgba(5,150,105,0.3)' }}>
+                      <LogIn size={20} />
+                      <span style={{ fontSize: '1.05rem' }}>{t('nav.login')}</span>
+                    </Link>
                   )}
                 </div>
-                <span>{item.name}</span>
-              </Link>
-            ) : (
-              <Link
-                key={item.name}
-                to={item.path}
-                className={`mobile-nav-item ${location.pathname === item.path ? 'active' : ''}`}
-              >
-                {item.name === t('nav.profile') && isAuthenticated && user?.profilePic ? (
-                  <img
-                    src={apiService.getFullImageUrl(user.profilePic)}
-                    alt="Profile"
-                    style={{
-                      width: '22px',
-                      height: '22px',
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                      border: '1.5px solid var(--primary-light)',
-                      marginBottom: '4px'
-                    }}
-                  />
-                ) : (
-                  <item.icon size={22} />
-                )}
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Premium Sliding Notifications Drawer Panel - portaled to body to escape nav stacking context */}
       {createPortal(

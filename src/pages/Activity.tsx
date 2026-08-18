@@ -6,8 +6,9 @@ import { useLanguage } from '../services/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   History, Calendar, Clock, MapPin,
-  CheckCircle2, Clock3, XCircle, AlertCircle, RefreshCcw
+  CheckCircle2, Clock3, XCircle, AlertCircle, RefreshCcw, Loader2, Star
 } from 'lucide-react';
+import ReviewModal from '../components/ReviewModal';
 
 interface Booking {
   id: string;
@@ -21,6 +22,8 @@ interface Booking {
   roleInBooking: 'farmer' | 'provider';
   farmerId: string;
   providerId: string;
+  assetId: string;
+  isReviewed?: boolean;
   addressText: string;
   notesText: string;
   includeOperator: boolean;
@@ -39,6 +42,9 @@ const Activity: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'Upcoming' | 'History'>('Upcoming');
   const [userProfiles, setUserProfiles] = useState<Record<string, any>>({});
+  
+  const [reviewBookingId, setReviewBookingId] = useState<string | null>(null);
+  const [reviewAssetId, setReviewAssetId] = useState<string | null>(null);
 
   const handleStatusUpdate = async (bookingId: string, status: string, cancelledBy?: string, cancellationReason?: string) => {
     try {
@@ -104,6 +110,8 @@ const Activity: React.FC = () => {
             // Extra fields for Receipt Modal and WhatsApp button
             farmerId: b.farmerId,
             providerId: b.providerId,
+            assetId: b.assetId,
+            isReviewed: b.isReviewed,
             addressText: b.addressText || 'N/A',
             notesText: parsedNotes.notes || '',
             includeOperator: !!parsedNotes.includeOperator,
@@ -143,7 +151,7 @@ const Activity: React.FC = () => {
       }
     };
     fetchBookings();
-  }, [user]);
+  }, [user, highlightBookingId]);
 
   // Handle auto-highlighting, tab selection and scrolling when navigating from notifications
   useEffect(() => {
@@ -210,8 +218,8 @@ const Activity: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="loading-state">
-          {[1, 2, 3].map(i => <div key={i} className="skeleton-booking-card" />)}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '100px 0' }}>
+          <Loader2 className="animate-spin" size={48} color="var(--primary)" />
         </div>
       ) : (
         <div className="bookings-list">
@@ -438,6 +446,20 @@ const Activity: React.FC = () => {
                         <p>{t('activity.paid')}</p>
                         <h4>₹{booking.totalPrice}</h4>
                       </div>
+                      
+                      {booking.status === 'COMPLETED' && !booking.isReviewed && booking.roleInBooking === 'farmer' && (
+                        <button 
+                          className="btn-primary" 
+                          style={{ padding: '8px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                          onClick={() => {
+                            setReviewBookingId(booking.id);
+                            setReviewAssetId(booking.assetId);
+                          }}
+                        >
+                          <Star size={16} className="fill-white" />
+                          Leave Review
+                        </button>
+                      )}
                     </div>
                   </motion.div>
                 );
@@ -627,6 +649,22 @@ const Activity: React.FC = () => {
           100% { border-color: var(--primary); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
         }
       `}</style>
+
+      {reviewBookingId && reviewAssetId && (
+        <ReviewModal
+          bookingId={reviewBookingId}
+          assetId={reviewAssetId}
+          onClose={() => {
+            setReviewBookingId(null);
+            setReviewAssetId(null);
+          }}
+          onSuccess={() => {
+            setReviewBookingId(null);
+            setReviewAssetId(null);
+            setBookings(prev => prev.map(b => b.id === reviewBookingId ? { ...b, isReviewed: true } : b));
+          }}
+        />
+      )}
     </div>
   );
 };

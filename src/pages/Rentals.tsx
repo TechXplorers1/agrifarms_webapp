@@ -4,7 +4,7 @@ import { useAuth } from '../services/AuthContext';
 import { apiService } from '../services/apiService';
 import { useLanguage } from '../services/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Star, MapPin, SlidersHorizontal, Info } from 'lucide-react';
+import { Search, Star, MapPin, SlidersHorizontal, Info, Loader2 } from 'lucide-react';
 
 
 interface Equipment {
@@ -30,9 +30,9 @@ const calculateHaversine = (lat1: number, lon1: number, lat2: number, lon2: numb
   const R = 6371; // Radius of Earth in km
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
+  const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
@@ -42,7 +42,7 @@ const Rentals: React.FC = () => {
   const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const initialFilter = location.state?.initialFilter || 'All';
 
   const [equipment, setEquipment] = useState<Equipment[]>([]);
@@ -59,16 +59,17 @@ const Rentals: React.FC = () => {
     { value: 'Harvester', label: t('home.harvesters') },
     { value: 'Plough', label: t('rentals.plough') },
     { value: 'Seeder', label: t('rentals.seeder') },
-    { value: 'Sprayer', label: t('home.sprayers') }
+    { value: 'Sprayer', label: t('home.sprayers') },
+    { value: 'Trolley', label: t('rentals.trolley') }
   ];
 
   useEffect(() => {
     const fetchEquipmentAndCoords = async () => {
       setLoading(true);
-      
+
       // 1. Get user coordinates
       let coords: { latitude: number; longitude: number } | null = null;
-      
+
       // Try guest location coordinates first
       const guestLocStr = localStorage.getItem('agrifarm_guest_location');
       if (guestLocStr) {
@@ -122,12 +123,22 @@ const Rentals: React.FC = () => {
       setUserCoords(coords);
 
       try {
-        const [response] = await Promise.all([
+        const [equipRes, vehRes] = await Promise.all([
           apiService.getEquipment(),
+          apiService.getVehicles(),
           new Promise(resolve => setTimeout(resolve, 1000))
         ]);
-        const rawItems = response.data || [];
-        
+        const rawEquip = equipRes.data || [];
+        const rawVeh = (vehRes.data || []).map((v: any) => ({
+          ...v,
+          equipmentId: v.vehicleId,
+          brandModel: `${v.brand || ''} ${v.model || ''}`.trim() || v.vehicleType,
+          category: v.vehicleType,
+          pricePerHour: v.pricePerHour || v.pricePerKm,
+          operatorAvailable: v.driverIncluded
+        }));
+        const rawItems = [...rawEquip, ...rawVeh];
+
         // Calculate distances
         const processedItems = rawItems.map((item: any) => {
           if (coords && item.latitude && item.longitude) {
@@ -157,21 +168,23 @@ const Rentals: React.FC = () => {
   }, [isAuthenticated]);
 
   const filteredEquipment = equipment.filter(item => {
+    if (user?.id && item.ownerId === user.id) return false;
+
     const itemCat = item.category.toLowerCase();
     const activeFilter = filter.toLowerCase();
-    
-    const matchesFilter = filter === 'All' || 
-                         itemCat === activeFilter || 
-                         itemCat === `${activeFilter}s` || 
-                         activeFilter === `${itemCat}s` ||
-                         itemCat.includes(activeFilter) ||
-                         activeFilter.includes(itemCat);
 
-    const matchesSearch = item.brandModel.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          item.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filter === 'All' ||
+      itemCat === activeFilter ||
+      itemCat === `${activeFilter}s` ||
+      activeFilter === `${itemCat}s` ||
+      itemCat.includes(activeFilter) ||
+      activeFilter.includes(itemCat);
 
-    const matchesDistance = maxDistance === 'All' || 
-                            (item.distance !== undefined && item.distance <= maxDistance);
+    const matchesSearch = item.brandModel.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.category.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesDistance = maxDistance === 'All' ||
+      (item.distance !== undefined && item.distance <= maxDistance);
 
     return matchesFilter && matchesSearch && matchesDistance;
   });
@@ -184,7 +197,7 @@ const Rentals: React.FC = () => {
           <p className="text-slate-500">{t('rentals.desc')}</p>
         </div>
         <div style={{ position: 'relative' }}>
-          <button 
+          <button
             className="filter-btn"
             onClick={() => setShowDistanceDropdown(!showDistanceDropdown)}
             style={{ cursor: 'pointer' }}
@@ -255,8 +268,8 @@ const Rentals: React.FC = () => {
       <div className="search-bar-row">
         <div className="search-box">
           <Search size={20} className="text-slate-400" />
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder={t('rentals.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -266,7 +279,7 @@ const Rentals: React.FC = () => {
 
       <div className="category-pills">
         {categories.map(cat => (
-          <button 
+          <button
             key={cat.value}
             className={`pill ${filter === cat.value ? 'active' : ''}`}
             onClick={() => setFilter(cat.value)}
@@ -277,16 +290,14 @@ const Rentals: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="loading-grid">
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="skeleton-card"></div>
-          ))}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '100px 0' }}>
+          <Loader2 className="animate-spin" size={48} color="var(--primary)" />
         </div>
       ) : (
         <div className="assets-grid">
           <AnimatePresence>
             {filteredEquipment.map((item) => (
-              <motion.div 
+              <motion.div
                 key={item.equipmentId}
                 layout
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -325,7 +336,7 @@ const Rentals: React.FC = () => {
                       <span className="amount">₹{item.pricePerHour}</span>
                       <span className="unit">/hr</span>
                     </div>
-                    <button 
+                    <button
                       className="btn-book"
                       onClick={() => {
                         if (!isAuthenticated) {

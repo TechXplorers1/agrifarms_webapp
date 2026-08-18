@@ -79,6 +79,11 @@ export const apiService = {
       },
     });
   },
+
+  // Reviews
+  submitReview: (reviewData: { bookingId: string, assetId: string, reviewerId: string, rating: number, comment?: string }) => 
+    api.post('/api/reviews', reviewData),
+  getAssetReviews: (assetId: string) => api.get(`/api/reviews/asset/${assetId}`),
 };
 
 export default api;

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import Home from './pages/Home';
 import Services from './pages/Services';
 import Rentals from './pages/Rentals';
@@ -17,8 +18,12 @@ import OtpVerificationModal from './components/OtpVerificationModal';
 import BookAsset from './pages/BookAsset';
 import ToolPlaceholder from './pages/ToolPlaceholder';
 import Notifications from './pages/Notifications';
+import ServiceRequests from './pages/ServiceRequests';
+import Calculators from './pages/Calculators';
+import CropAdvisory from './pages/CropAdvisory';
+import Community from './pages/Community';
+import HelpSupport from './pages/HelpSupport';
 import PrivacyPolicy from './pages/PrivacyPolicy';
-import Footer from './components/Footer';
 
 const App: React.FC = () => {
   return (
@@ -38,17 +43,20 @@ const App: React.FC = () => {
                   <Route path="/rentals" element={<Rentals />} />
                   <Route path="/services" element={<Services />} />
                   <Route path="/select-language" element={<SelectLanguage />} />
-                  <Route path="/weather" element={<ToolPlaceholder />} />
-                  <Route path="/crop-advice" element={<ToolPlaceholder />} />
-                  <Route path="/mandi-prices" element={<ToolPlaceholder />} />
-                  <Route path="/calculator" element={<ToolPlaceholder />} />
+                  <Route path="/calculators" element={<Calculators />} />
+                  <Route path="/crop-advisory" element={<CropAdvisory />} />
+                  <Route path="/community" element={<Community />} />
+                  <Route path="/help" element={<HelpSupport />} />
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/weather" element={<ToolPlaceholder />} />
+                  <Route path="/mandi-prices" element={<ToolPlaceholder />} />
 
                   {/* Protected routes */}
                   <Route path="/manage-assets" element={<ProtectedRoute><ManageAssets /></ProtectedRoute>} />
                   <Route path="/upload-item" element={<ProtectedRoute><UploadItem /></ProtectedRoute>} />
                   <Route path="/book" element={<ProtectedRoute><BookAsset /></ProtectedRoute>} />
                   <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
+                  <Route path="/service-requests" element={<ProtectedRoute><ServiceRequests /></ProtectedRoute>} />
                   <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
                   <Route path="/settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
                   <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

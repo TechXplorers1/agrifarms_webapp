@@ -63,8 +63,12 @@ const Notifications: React.FC = () => {
     }
 
     const fetchNotifications = async () => {
+      setLoading(true);
       try {
-        const res = await apiService.getNotifications(user.id);
+        const [res] = await Promise.all([
+          apiService.getNotifications(user.id),
+          new Promise(resolve => setTimeout(resolve, 1000))
+        ]);
         if (res && res.data && res.data.length > 0) {
           // Filter to display only unread notifications (disappearing when read)
           const unread = res.data.filter((n: any) => n.read === false || n.isRead === false);

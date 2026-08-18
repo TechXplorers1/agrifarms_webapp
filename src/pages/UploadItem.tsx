@@ -15,7 +15,7 @@ const UploadItem: React.FC = () => {
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [formData, setFormData] = useState<any>(editData || {
     isAvailable: true,
-    approvalStatus: 'PENDING',
+    approvalStatus: 'Approved',
     rating: 0,
     village: '',
     district: '',
@@ -411,6 +411,7 @@ const UploadItem: React.FC = () => {
                 <option value="Plough">Plough</option>
                 <option value="Seeder">Seeder</option>
                 <option value="Sprayer">Sprayer</option>
+                <option value="Trolley">Trolley</option>
               </select>
             </div>
             
@@ -1112,7 +1113,7 @@ const UploadItem: React.FC = () => {
                   <div style={{ fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                     Allocation Summary
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '0.9rem', fontWeight: 800 }}>
+                  <div className="grid-2" style={{ gap: '16px', fontSize: '0.9rem', fontWeight: 800 }}>
                     <div style={{ color: totalMaleAllocated === maleExpected ? '#16a34a' : '#dc2626' }}>
                       👨‍🌾 Male: {totalMaleAllocated} / {maleExpected} allocated
                     </div>
@@ -1362,8 +1363,9 @@ const UploadItem: React.FC = () => {
 
       <style>{`
         .upload-page { padding-top: 32px; max-width: 900px !important; }
-        .page-header { display: flex; align-items: center; gap: 16px; margin-bottom: 40px; }
-        .btn-back { width: 48px; height: 48px; border-radius: 12px; background: white; box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: center; }
+        .page-header { display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 40px; min-height: 48px; }
+        .page-header h1 { margin: 0; text-align: center; }
+        .btn-back { position: absolute; left: 0; width: 48px; height: 48px; border-radius: 12px; background: white; box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; }
         
         .category-selection-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; }
         .category-select-card { background: white; padding: 40px; border-radius: 32px; display: flex; flex-direction: column; align-items: center; gap: 20px; cursor: pointer; box-shadow: var(--shadow-md); border: 2px solid transparent; transition: all 0.2s; }

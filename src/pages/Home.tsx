@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   Search, MapPin, Tractor, Truck, Plus, Crosshair,
   ChevronRight, Sprout, Droplets, Construction,
-  CloudSun, TrendingUp, Calculator, Loader2, ChevronDown
+  CloudSun, TrendingUp, Calculator, Loader2, ChevronDown,
+  MessageSquare, LifeBuoy
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
@@ -34,13 +35,13 @@ const Home: React.FC = () => {
     if (!query) return;
 
     const lowerQuery = query.toLowerCase();
-    
+
     // Explicit rental terms take precedence
     const rentalKeywords = [
-      'tractor', 'harvester', 'plough', 'seeder', 'sprayer', 'jcb', 
+      'tractor', 'harvester', 'plough', 'seeder', 'sprayer', 'jcb',
       'equipment', 'machinery', 'tool', 'tools', 'implement', 'implements'
     ];
-    
+
     const isRental = rentalKeywords.some(keyword => lowerQuery.includes(keyword));
 
     if (isRental) {
@@ -48,12 +49,12 @@ const Home: React.FC = () => {
     } else {
       // Check for worker or transport keywords
       const serviceKeywords = [
-        'worker', 'workers', 'labor', 'labour', 'helper', 'helpers', 
-        'transport', 'truck', 'trucks', 'vehicle', 'vehicles', 
+        'worker', 'workers', 'labor', 'labour', 'helper', 'helpers',
+        'transport', 'truck', 'trucks', 'vehicle', 'vehicles',
         'driver', 'drivers', 'service', 'services', 'business', 'farm hand'
       ];
       const isService = serviceKeywords.some(keyword => lowerQuery.includes(keyword));
-      
+
       if (isService) {
         navigate('/services', { state: { initialSearch: query } });
       } else {
@@ -242,13 +243,29 @@ const Home: React.FC = () => {
     { name: 'JCB', icon: Construction, image: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&q=80&w=400', subtitle: 'Digging & Leveling', color: '#fff3e0', iconColor: '#e65100', category: 'Rentals' },
   ];
 
+  const transportItems: ServiceItem[] = [
+    { name: 'Trucks', icon: Truck, image: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=400', subtitle: 'Heavy Load Transport', color: '#fff3e0', iconColor: '#e65100', category: 'Transport' },
+    { name: 'Tractors with Trolley', icon: Tractor, image: 'https://images.unsplash.com/photo-1594913785162-e67853f2c522?auto=format&fit=crop&q=80&w=400', subtitle: 'Farm to Market', color: '#e8f5e9', iconColor: '#2e7d32', category: 'Transport' },
+    { name: 'Mini Trucks', icon: Truck, image: 'https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&q=80&w=400', subtitle: 'Local Delivery', color: '#e3f2fd', iconColor: '#1565c0', category: 'Transport' },
+    { name: 'Loaders', icon: Truck, image: 'https://images.unsplash.com/photo-1621993202323-f438eec934ff?auto=format&fit=crop&q=80&w=400', subtitle: 'Material Handling', color: '#fff9c4', iconColor: '#f9a825', category: 'Transport' },
+  ];
+
+  const serviceItems: ServiceItem[] = [
+    { name: 'Plowing', icon: Tractor, image: 'https://images.unsplash.com/photo-1594913785162-e67853f2c522?auto=format&fit=crop&q=80&w=400', subtitle: 'Field Preparation', color: '#e8f5e9', iconColor: '#2e7d32', category: 'Services' },
+    { name: 'Harvesting', icon: Sprout, image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&q=80&w=400', subtitle: 'Crop Gathering', color: '#fff9c4', iconColor: '#f9a825', category: 'Services' },
+    { name: 'Drone Spraying', icon: CloudSun, image: 'https://images.unsplash.com/photo-1592842415124-7da8534b8683?auto=format&fit=crop&q=80&w=400', subtitle: 'Precision Agriculture', color: '#e3f2fd', iconColor: '#1565c0', category: 'Services' },
+    { name: 'Seeding', icon: Sprout, image: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&q=80&w=400', subtitle: 'Planting Seeds', color: '#fff3e0', iconColor: '#e65100', category: 'Services' },
+  ];
+
+
+
 
 
   const tools = [
-    { name: 'Weather', label: t('tool.weather'), icon: CloudSun, color: '#fff8e1', fg: '#f57f17' },
-    { name: 'Crop Advice', label: t('tool.cropAdvice'), icon: Sprout, color: '#e8f5e9', fg: '#00aa55' },
-    { name: 'Mandi Prices', label: t('tool.mandiPrices'), icon: TrendingUp, color: '#e3f2fd', fg: '#1565c0' },
-    { name: 'Calculator', label: t('tool.calculator'), icon: Calculator, color: '#f3e5f5', fg: '#6a1b9a' },
+    { name: 'Community', label: 'Community', icon: MessageSquare, image: 'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&q=80&w=400', subtitle: 'Connect & Share', color: '#e0f2fe', fg: '#0284c7' },
+    { name: 'Crop Advisory', label: 'Crop Advisory', icon: Sprout, image: 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&q=80&w=400', subtitle: 'Expert Farming Tips', color: '#e8f5e9', fg: '#00aa55' },
+    { name: 'Calculators', label: 'Calculators', icon: Calculator, image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&q=80&w=400', subtitle: 'Yield & Profit', color: '#f3e5f5', fg: '#6a1b9a' },
+    { name: 'Help Support', label: 'Help & Support', icon: LifeBuoy, image: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&q=80&w=400', subtitle: '24/7 Assistance', color: '#fee2e2', fg: '#ef4444' },
   ];
 
   React.useEffect(() => {
@@ -265,19 +282,20 @@ const Home: React.FC = () => {
 
 
   return (
-    <div className="home-page fade-in" style={{ position: 'relative', overflowX: 'hidden', paddingBottom: 0 }}>
+    <div className="home-page fade-in" style={{ position: 'relative', overflowX: 'clip', paddingBottom: 0 }}>
       {/* Premium Floating Ambient Backgrounds */}
       <div className="ambient-bg ambient-bg-1" />
       <div className="ambient-bg ambient-bg-2" />
 
       {/* Cinematic Hero Section with Custom Background Image */}
-      <section 
-        className="hero-section hero-mesh" 
+      <section
+        className="hero-section hero-mesh"
         style={{
           padding: '50px 0 90px 0',
           borderRadius: '0 0 40px 40px',
           position: 'relative',
           overflow: 'hidden',
+          marginBottom: '50px',
           boxShadow: '0 20px 45px -10px rgba(15, 23, 42, 0.3)',
           backgroundImage: 'linear-gradient(135deg, rgba(15, 23, 42, 0.65) 0%, rgba(15, 23, 42, 0.3) 50%, rgba(15, 23, 42, 0.75) 100%), linear-gradient(135deg, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0) 70%), url(/crop_sowing_banner.png)',
           backgroundSize: 'cover',
@@ -298,32 +316,32 @@ const Home: React.FC = () => {
           <div className="hero-content">
             <div className="flex justify-between items-center" style={{ position: 'relative', zIndex: 2 }}>
               <motion.div
-                initial={{ opacity: 0, y: -30 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 transition={{ type: 'spring', stiffness: 90, damping: 15, mass: 0.8 }}
                 className="user-greeting"
               >
-                <h1 style={{ 
-                  fontSize: '1.5rem', 
-                  fontWeight: 900, 
-                  textShadow: '0 3px 10px rgba(0,0,0,0.3)', 
-                  color: 'white', 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                <h1 style={{
+                  fontSize: '1.5rem',
+                  fontWeight: 900,
+                  textShadow: '0 3px 10px rgba(0,0,0,0.3)',
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: '10px',
                   letterSpacing: '-0.3px'
                 }}>
                   {t('home.greeting').replace('{name}', user?.name || t('role.farmer'))}
                 </h1>
-                
-                <motion.div 
+
+                <motion.div
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ type: 'spring', stiffness: 100, damping: 15, delay: 0.15 }}
-                  className="location-badge glass" 
-                  onClick={() => setShowLocationModal(true)} 
+                  className="location-badge glass"
+                  onClick={() => setShowLocationModal(true)}
                   style={{
                     marginTop: '10px',
                     padding: '6px 14px',
@@ -351,8 +369,8 @@ const Home: React.FC = () => {
             </div>
 
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 40 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ type: 'spring', stiffness: 80, damping: 15, delay: 0.25 }}
               className="search-container"
               style={{ marginTop: '36px', position: 'relative', zIndex: 2 }}
@@ -376,15 +394,15 @@ const Home: React.FC = () => {
                     marginLeft: '10px'
                   }}
                 />
-                <motion.button 
+                <motion.button
                   whileHover={{ scale: 1.03, boxShadow: '0 8px 20px rgba(16, 185, 129, 0.4)' }}
                   whileTap={{ scale: 0.97 }}
-                  className="btn-primary" 
-                  onClick={handleSearch} 
-                  style={{ 
-                    padding: '10px 28px', 
-                    borderRadius: '24px', 
-                    background: 'var(--grad-primary)', 
+                  className="btn-primary"
+                  onClick={handleSearch}
+                  style={{
+                    padding: '10px 28px',
+                    borderRadius: '24px',
+                    background: 'var(--grad-primary)',
                     border: 'none',
                     color: 'white',
                     fontWeight: 800,
@@ -401,165 +419,96 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      <div className="container" style={{ marginTop: '-35px', position: 'relative', zIndex: 10 }}>
-        {/* Compact Quick Tools Row with Distinct Background and Hover Colors */}
-        <section className="section" style={{ marginTop: 0, paddingBottom: '20px' }}>
-          <div className="tools-row" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-            {tools.map((tool, idx) => {
-              const hoverClass = tool.name === 'Weather' 
-                ? 'frosted-tool-tile-weather' 
-                : tool.name.includes('Crop') 
-                  ? 'frosted-tool-tile-crop' 
-                  : tool.name.includes('Mandi') 
-                    ? 'frosted-tool-tile-mandi' 
-                    : 'frosted-tool-tile-calc';
-
-              const toolKey = tool.name === 'Weather' 
-                ? 'weather' 
-                : tool.name.includes('Crop') 
-                  ? 'crop' 
-                  : tool.name.includes('Mandi') 
-                    ? 'mandi' 
-                    : 'calc';
-
-              return (
-                <motion.div
-                  key={tool.name}
-                  initial={{ opacity: 0, y: 40, scale: 0.9 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ 
-                    type: 'spring', 
-                    stiffness: 100, 
-                    damping: 16, 
-                    delay: 0.1 * idx 
-                  }}
-                  whileHover={{ 
-                    scale: 1.05, 
-                    y: -6,
-                    transition: { type: 'spring', stiffness: 400, damping: 10 }
-                  }}
-                  whileTap={{ scale: 0.95 }}
-                  className={`tool-tile card frosted-tool-tile tool-tile-${toolKey} ${hoverClass}`}
-                  onClick={() => {
-                    if (tool.name === 'Weather') navigate('/weather');
-                    else if (tool.name.includes('Crop')) navigate('/crop-advice');
-                    else if (tool.name.includes('Mandi')) navigate('/mandi-prices');
-                    else navigate('/calculator');
-                  }}
-                  style={{
-                    flexDirection: 'row',
-                    padding: '10px 16px',
-                    justifyContent: 'flex-start',
-                    alignItems: 'center',
-                    borderRadius: '16px',
-                    gap: '12px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <div style={{
-                    background: tool.color,
-                    padding: '8px',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
-                  }}>
-                    <tool.icon size={20} color={tool.fg} />
-                  </div>
-                  <span style={{ color: 'var(--text-main)', fontSize: '0.92rem', fontWeight: 800, letterSpacing: '-0.2px' }}>{tool.label}</span>
-                </motion.div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Promo Banner - Refined to match Mobile Spec */}
+      <div className="container" style={{ marginTop: '20px', position: 'relative', zIndex: 10 }}>
+        {/* Promo Banner - Refined for compact UI */}
         <section className="section">
-          <motion.div 
-            initial={{ opacity: 0, y: 60, scale: 0.96 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1 }}
-            viewport={{ once: true, margin: '-100px' }}
-            transition={{ type: 'spring', stiffness: 60, damping: 15 }}
-            className="promo-banner card" 
-            style={{ 
-              padding: 0, 
-              border: 'none', 
-              background: 'linear-gradient(135deg, #064e3b 0%, #047857 60%, #059669 100%)', 
-              color: 'white', 
+          <div
+            className="promo-banner card"
+            style={{
+              padding: 0,
+              border: 'none',
+              background: 'linear-gradient(135deg, #064e3b 0%, #047857 60%, #059669 100%)',
+              color: 'white',
               overflow: 'hidden',
-              borderRadius: '32px',
-              boxShadow: '0 20px 40px -10px rgba(4, 120, 87, 0.2)'
+              borderRadius: '24px',
+              boxShadow: '0 12px 24px -8px rgba(4, 120, 87, 0.25)',
+              display: 'flex',
+              alignItems: 'stretch',
+              maxHeight: '380px'
             }}
           >
-            <div className="banner-text" style={{ padding: '56px 48px', maxWidth: '55%', zIndex: 2, position: 'relative' }}>
-              <span className="badge" style={{ 
-                background: 'rgba(255,255,255,0.15)', 
-                backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                padding: '6px 16px',
-                borderRadius: '100px',
-                fontSize: '0.85rem',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: '1px'
-              }}>{t('home.seasonOffer')}</span>
-              
-              <h2 style={{ 
-                fontSize: '2.8rem', 
-                fontWeight: 900, 
-                color: 'white', 
-                marginTop: '16px', 
-                lineHeight: '1.15',
-                letterSpacing: '-1px'
+            <div className="banner-text" style={{ padding: '48px 40px', maxWidth: '55%', zIndex: 2, position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <span className="badge" style={{
+                  background: 'rgba(255,255,255,0.15)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  padding: '6px 14px',
+                  borderRadius: '100px',
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px'
+                }}>{t('home.seasonOffer')}</span>
+              </div>
+
+              <h2 style={{
+                fontSize: '2.5rem',
+                fontWeight: 900,
+                color: 'white',
+                margin: '0 0 12px 0',
+                lineHeight: '1.2',
+                letterSpacing: '-0.5px'
               }}>{t('home.bannerTitle')}</h2>
-              
+
               <p style={{
-                color: 'rgba(255,255,255,0.8)',
-                marginTop: '12px',
+                color: 'rgba(255,255,255,0.85)',
+                margin: '0 0 24px 0',
                 fontSize: '1.05rem',
                 lineHeight: '1.5'
               }}>{t('home.bannerDesc')}</p>
-              
-              <motion.button 
-                whileHover={{ scale: 1.05, y: -2, boxShadow: '0 8px 25px rgba(255, 152, 0, 0.5)' }}
-                whileTap={{ scale: 0.95 }}
-                className="btn-accent" 
-                style={{ 
-                  background: '#FF9800', 
-                  color: 'white', 
-                  padding: '16px 36px', 
-                  borderRadius: '100px', 
-                  fontWeight: 900, 
-                  marginTop: '24px', 
-                  border: 'none', 
-                  fontSize: '1rem',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 15px rgba(255, 152, 0, 0.4)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }} 
-                onClick={() => navigate('/services')}
-              >
-                {t('home.exploreBtn')} <ChevronRight size={18} />
-              </motion.button>
+
+              <div>
+                <motion.button
+                  whileHover={{ scale: 1.05, y: -2, boxShadow: '0 6px 15px rgba(255, 152, 0, 0.4)' }}
+                  whileTap={{ scale: 0.95 }}
+                  className="btn-accent"
+                  style={{
+                    background: '#FF9800',
+                    color: 'white',
+                    padding: '14px 32px',
+                    borderRadius: '100px',
+                    fontWeight: 800,
+                    border: 'none',
+                    fontSize: '0.95rem',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 10px rgba(255, 152, 0, 0.3)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                  onClick={() => navigate('/services')}
+                >
+                  {t('home.exploreBtn')} <ChevronRight size={16} />
+                </motion.button>
+              </div>
             </div>
-            
-            <div className="banner-image" style={{ 
-              clipPath: 'polygon(15% 0, 100% 0, 100% 100%, 0% 100%)',
+
+            <div className="banner-image" style={{
+              flex: 1,
+              clipPath: 'polygon(10% 0, 100% 0, 100% 100%, 0% 100%)',
               position: 'relative'
             }}>
               <div style={{
                 position: 'absolute',
                 top: 0, left: 0, bottom: 0, width: '40px',
-                background: 'linear-gradient(to right, rgba(4, 120, 87, 0.5), transparent)',
+                background: 'linear-gradient(to right, rgba(4, 120, 87, 0.8), transparent)',
                 zIndex: 2,
                 pointerEvents: 'none'
               }} />
-              <img 
-                src="/hero_banner.png" 
-                alt="Farmer" 
+              <img
+                src="/hero_banner.png"
+                alt="Farmer"
                 style={{
                   width: '100%',
                   height: '100%',
@@ -567,16 +516,16 @@ const Home: React.FC = () => {
                 }}
               />
             </div>
-          </motion.div>
+          </div>
         </section>
 
         {/* Categories Section - Improved Visual Cards */}
         <section className="section">
           <div className="section-header" style={{ marginBottom: '28px' }}>
             <div className="flex items-center gap-3">
-              <div style={{ 
-                background: '#e8f5e9', 
-                padding: '12px', 
+              <div style={{
+                background: '#e8f5e9',
+                padding: '12px',
                 borderRadius: '16px',
                 boxShadow: 'inset 0 2px 4px rgba(46,125,50,0.06)'
               }}>
@@ -584,49 +533,48 @@ const Home: React.FC = () => {
               </div>
               <h3 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>{t('home.rentEquip')}</h3>
             </div>
-            <motion.button 
+            <motion.button
               whileHover={{ scale: 1.05, background: '#c8e6c9' }}
               whileTap={{ scale: 0.95 }}
-              className="view-all" 
-              style={{ 
-                background: '#e8f5e9', 
-                color: '#2e7d32', 
-                fontWeight: 800, 
-                padding: '10px 24px', 
-                borderRadius: '100px', 
-                display: 'flex', 
-                alignItems: 'center', 
+              className="view-all"
+              style={{
+                background: '#e8f5e9',
+                color: '#2e7d32',
+                fontWeight: 800,
+                padding: '10px 24px',
+                borderRadius: '100px',
+                display: 'flex',
+                alignItems: 'center',
                 gap: '8px',
                 border: 'none',
                 cursor: 'pointer',
                 fontSize: '0.95rem'
-              }} 
+              }}
               onClick={() => navigate('/rentals')}
             >
               {t('home.viewAll')} <ChevronRight size={18} />
             </motion.button>
           </div>
 
-          <div className="categories-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
+          <div className="categories-grid responsive-grid-4" style={{ gap: '24px' }}>
             {rentalItems.map((item, idx) => (
               <motion.div
                 key={item.name}
-                initial={{ opacity: 0, y: 60, scale: 0.93 }}
-                whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                viewport={{ once: true, margin: '-50px' }}
-                transition={{ 
-                  type: 'spring', 
-                  stiffness: 80, 
-                  damping: 16, 
-                  delay: 0.08 * idx 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 80,
+                  damping: 16,
+                  delay: 0.08 * idx
                 }}
-                whileHover={{ 
+                whileHover={{
                   y: -10,
                   transition: { type: 'spring', stiffness: 300, damping: 15 }
                 }}
                 whileTap={{ scale: 0.98 }}
                 className="premium-card visual-card"
-                style={{ 
+                style={{
                   height: '280px',
                   cursor: 'pointer',
                   position: 'relative',
@@ -636,9 +584,9 @@ const Home: React.FC = () => {
                 }}
                 onClick={() => navigate('/rentals', { state: { initialFilter: item.name === 'Tractors' ? 'Tractor' : item.name } })}
               >
-                <img 
-                  src={item.image} 
-                  alt={item.name} 
+                <img
+                  src={item.image}
+                  alt={item.name}
                   style={{
                     width: '100%',
                     height: '100%',
@@ -647,8 +595,8 @@ const Home: React.FC = () => {
                     top: 0, left: 0
                   }}
                 />
-                
-                <div className="overlay" style={{ 
+
+                <div className="overlay" style={{
                   padding: '28px 24px',
                   position: 'absolute',
                   bottom: 0, left: 0, right: 0,
@@ -658,30 +606,30 @@ const Home: React.FC = () => {
                   height: '100%',
                   zIndex: 2
                 }}>
-                  <span style={{ 
-                    fontSize: '0.75rem', 
-                    fontWeight: 800, 
-                    textTransform: 'uppercase', 
-                    letterSpacing: '1.5px', 
-                    opacity: 0.85, 
-                    marginBottom: '6px', 
-                    color: 'rgba(255,255,255,0.9)' 
+                  <span style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '1.5px',
+                    opacity: 0.85,
+                    marginBottom: '6px',
+                    color: 'rgba(255,255,255,0.9)'
                   }}>{item.subtitle}</span>
-                  
-                  <h4 style={{ 
-                    fontSize: '1.65rem', 
-                    color: 'white', 
+
+                  <h4 style={{
+                    fontSize: '1.65rem',
+                    color: 'white',
                     fontWeight: 900,
                     letterSpacing: '-0.3px',
                     lineHeight: '1.2'
                   }}>{item.name === 'Tractors' ? t('home.tractors') : item.name === 'Harvesters' ? t('home.harvesters') : item.name === 'Sprayers' ? t('home.sprayers') : item.name}</h4>
-                  
-                  <div className="rent-badge-btn" style={{ 
-                    marginTop: '14px', 
-                    background: 'rgba(255,255,255,0.2)', 
-                    width: 'fit-content', 
-                    padding: '6px 16px', 
-                    borderRadius: '100px', 
+
+                  <div className="rent-badge-btn" style={{
+                    marginTop: '14px',
+                    background: 'rgba(255,255,255,0.2)',
+                    width: 'fit-content',
+                    padding: '6px 16px',
+                    borderRadius: '100px',
                     backdropFilter: 'blur(8px)',
                     border: '1px solid rgba(255,255,255,0.15)'
                   }}>
@@ -693,100 +641,343 @@ const Home: React.FC = () => {
           </div>
         </section>
 
+        {/* Services Categories */}
+        <section className="section">
+          <div className="section-header" style={{ marginBottom: '28px' }}>
+            <div className="flex items-center gap-3">
+              <div style={{
+                background: '#e3f2fd',
+                padding: '12px',
+                borderRadius: '16px',
+                boxShadow: 'inset 0 2px 4px rgba(21,101,192,0.06)'
+              }}>
+                <Sprout size={26} color="#1565c0" />
+              </div>
+              <h3 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>{t('services', 'Farm Services')}</h3>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.05, background: '#bbdefb' }}
+              whileTap={{ scale: 0.95 }}
+              className="view-all"
+              style={{
+                background: '#e3f2fd',
+                color: '#1565c0',
+                fontWeight: 800,
+                padding: '10px 24px',
+                borderRadius: '100px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '0.95rem'
+              }}
+              onClick={() => navigate('/services', { state: { initialFilter: 'Services' } })}
+            >
+              {t('home.viewAll')} <ChevronRight size={18} />
+            </motion.button>
+          </div>
+
+          <div className="categories-grid responsive-grid-4" style={{ gap: '24px' }}>
+            {serviceItems.map((item, idx) => (
+              <motion.div
+                key={item.name}
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 80,
+                  damping: 16,
+                  delay: 0.08 * idx
+                }}
+                whileHover={{
+                  y: -10,
+                  transition: { type: 'spring', stiffness: 300, damping: 15 }
+                }}
+                whileTap={{ scale: 0.98 }}
+                className="premium-card visual-card"
+                style={{
+                  height: '280px',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  borderRadius: '28px',
+                  boxShadow: '0 12px 30px -10px rgba(15, 23, 42, 0.08)'
+                }}
+                onClick={() => navigate('/services', { state: { initialFilter: item.name } })}
+              >
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    position: 'absolute',
+                    top: 0, left: 0
+                  }}
+                />
+
+                <div className="overlay" style={{
+                  padding: '28px 24px',
+                  position: 'absolute',
+                  bottom: 0, left: 0, right: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-end',
+                  height: '100%',
+                  zIndex: 2
+                }}>
+                  <span style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '1.5px',
+                    opacity: 0.85,
+                    marginBottom: '6px',
+                    color: 'rgba(255,255,255,0.9)'
+                  }}>{item.subtitle}</span>
+
+                  <h4 style={{
+                    fontSize: '1.65rem',
+                    color: 'white',
+                    fontWeight: 900,
+                    letterSpacing: '-0.3px',
+                    lineHeight: '1.2'
+                  }}>{item.name}</h4>
+
+                  <div className="rent-badge-btn" style={{
+                    marginTop: '14px',
+                    background: 'rgba(255,255,255,0.2)',
+                    width: 'fit-content',
+                    padding: '6px 16px',
+                    borderRadius: '100px',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255,255,255,0.15)'
+                  }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'white' }}>Book Now</span>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* Transport Categories */}
+        <section className="section">
+          <div className="section-header" style={{ marginBottom: '28px' }}>
+            <div className="flex items-center gap-3">
+              <div style={{
+                background: '#fff3e0',
+                padding: '12px',
+                borderRadius: '16px',
+                boxShadow: 'inset 0 2px 4px rgba(230,81,0,0.06)'
+              }}>
+                <Truck size={26} color="#e65100" />
+              </div>
+              <h3 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>{t('transport', 'Transports')}</h3>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.05, background: '#ffe0b2' }}
+              whileTap={{ scale: 0.95 }}
+              className="view-all"
+              style={{
+                background: '#fff3e0',
+                color: '#e65100',
+                fontWeight: 800,
+                padding: '10px 24px',
+                borderRadius: '100px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '0.95rem'
+              }}
+              onClick={() => navigate('/services', { state: { initialFilter: 'Transport' } })}
+            >
+              {t('home.viewAll')} <ChevronRight size={18} />
+            </motion.button>
+          </div>
+
+          <div className="categories-grid responsive-grid-4" style={{ gap: '24px' }}>
+            {transportItems.map((item, idx) => (
+              <motion.div
+                key={item.name}
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 80,
+                  damping: 16,
+                  delay: 0.08 * idx
+                }}
+                whileHover={{
+                  y: -10,
+                  transition: { type: 'spring', stiffness: 300, damping: 15 }
+                }}
+                whileTap={{ scale: 0.98 }}
+                className="premium-card visual-card"
+                style={{
+                  height: '280px',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  borderRadius: '28px',
+                  boxShadow: '0 12px 30px -10px rgba(15, 23, 42, 0.08)'
+                }}
+                onClick={() => navigate('/services', { state: { initialFilter: item.name } })}
+              >
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    position: 'absolute',
+                    top: 0, left: 0
+                  }}
+                />
+
+                <div className="overlay" style={{
+                  padding: '28px 24px',
+                  position: 'absolute',
+                  bottom: 0, left: 0, right: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-end',
+                  height: '100%',
+                  zIndex: 2
+                }}>
+                  <span style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '1.5px',
+                    opacity: 0.85,
+                    marginBottom: '6px',
+                    color: 'rgba(255,255,255,0.9)'
+                  }}>{item.subtitle}</span>
+
+                  <h4 style={{
+                    fontSize: '1.65rem',
+                    color: 'white',
+                    fontWeight: 900,
+                    letterSpacing: '-0.3px',
+                    lineHeight: '1.2'
+                  }}>{item.name}</h4>
+
+                  <div className="rent-badge-btn" style={{
+                    marginTop: '14px',
+                    background: 'rgba(255,255,255,0.2)',
+                    width: 'fit-content',
+                    padding: '6px 16px',
+                    borderRadius: '100px',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255,255,255,0.15)'
+                  }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'white' }}>Book Now</span>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
         {/* Earn Section - WOW Layout */}
         <section className="section" style={{ marginBottom: '0', paddingBottom: '0' }}>
-          <motion.div 
-            initial={{ opacity: 0, y: 60, scale: 0.96 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1 }}
-            viewport={{ once: true, margin: '-80px' }}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ type: 'spring', stiffness: 60, damping: 15 }}
-            className="card" 
-            style={{ 
-              background: 'linear-gradient(135deg, #0b1511 0%, #042f1a 100%)', 
-              color: 'white', 
-              padding: '60px', 
-              border: '1px solid rgba(16, 185, 129, 0.15)', 
-              position: 'relative', 
+            className="card"
+            style={{
+              background: 'linear-gradient(135deg, #0b1511 0%, #042f1a 100%)',
+              color: 'white',
+              padding: '60px',
+              border: '1px solid rgba(16, 185, 129, 0.15)',
+              position: 'relative',
               overflow: 'hidden',
               borderRadius: '32px',
               boxShadow: '0 25px 50px -12px rgba(4, 47, 26, 0.4)'
             }}
           >
-            {/* Glowing neon decorative bubbles */}
-            <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '250px', height: '250px', background: 'rgba(16, 185, 129, 0.2)', borderRadius: '50%', filter: 'blur(100px)', pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', bottom: '-80px', left: '10%', width: '200px', height: '200px', background: 'rgba(59, 130, 246, 0.12)', borderRadius: '50%', filter: 'blur(80px)', pointerEvents: 'none' }} />
+            {/* Glowing neon decorative bubbles (Optimized for performance) */}
+            <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '250px', height: '250px', background: 'radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', bottom: '-80px', left: '10%', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
             <div className="flex justify-between items-center relative" style={{ zIndex: 2 }}>
               <div style={{ maxWidth: '58%' }}>
-                <h3 style={{ 
-                  fontSize: '2.8rem', 
-                  fontWeight: 900, 
-                  color: 'white', 
+                <h3 style={{
+                  fontSize: '2.8rem',
+                  fontWeight: 900,
+                  color: 'white',
                   marginBottom: '20px',
                   letterSpacing: '-1px',
                   lineHeight: '1.15'
                 }}>{t('home.listAssetTitle')}</h3>
-                
-                <p style={{ 
-                  color: 'rgba(255,255,255,0.75)', 
-                  fontSize: '1.15rem', 
+
+                <p style={{
+                  color: 'rgba(255,255,255,0.75)',
+                  fontSize: '1.15rem',
                   marginBottom: '36px',
-                  lineHeight: '1.6' 
+                  lineHeight: '1.6'
                 }}>{t('home.listAssetDesc')}</p>
-                
+
                 <div className="flex gap-4">
                   {(!user || user.role !== 'FARMER') ? (
-                    <motion.button 
+                    <motion.button
                       whileHover={{ scale: 1.05, y: -2, boxShadow: '0 8px 25px rgba(16, 185, 129, 0.4)' }}
                       whileTap={{ scale: 0.95 }}
-                      className="btn-primary" 
-                      style={{ 
-                        padding: '16px 36px', 
-                        borderRadius: '16px', 
-                        background: 'var(--grad-primary)', 
+                      className="btn-primary"
+                      style={{
+                        padding: '16px 36px',
+                        borderRadius: '16px',
+                        background: 'var(--grad-primary)',
                         fontWeight: 800,
                         fontSize: '1rem',
                         border: 'none',
                         cursor: 'pointer'
-                      }} 
+                      }}
                       onClick={() => navigate(user ? '/upload-item' : '/login')}
                     >
                       {t('home.registerAssetBtn')}
                     </motion.button>
                   ) : (
-                    <motion.button 
+                    <motion.button
                       whileHover={{ scale: 1.05, y: -2, boxShadow: '0 8px 25px rgba(16, 185, 129, 0.4)' }}
                       whileTap={{ scale: 0.95 }}
-                      className="btn-primary" 
-                      style={{ 
-                        padding: '16px 36px', 
-                        borderRadius: '16px', 
-                        background: 'var(--grad-primary)', 
+                      className="btn-primary"
+                      style={{
+                        padding: '16px 36px',
+                        borderRadius: '16px',
+                        background: 'var(--grad-primary)',
                         fontWeight: 800,
                         fontSize: '1rem',
                         border: 'none',
                         cursor: 'pointer'
-                      }} 
+                      }}
                       onClick={() => navigate('/rentals')}
                     >
                       {t('home.rentEquip')}
                     </motion.button>
                   )}
-                  
-                  <motion.button 
+
+                  <motion.button
                     whileHover={{ scale: 1.05, background: 'rgba(255,255,255,0.1)' }}
                     whileTap={{ scale: 0.95 }}
-                    className="btn-secondary" 
-                    style={{ 
-                      border: '2px solid rgba(255,255,255,0.25)', 
+                    className="btn-secondary"
+                    style={{
+                      border: '2px solid rgba(255,255,255,0.25)',
                       background: 'transparent',
                       color: 'white',
-                      padding: '16px 36px', 
-                      borderRadius: '16px', 
+                      padding: '16px 36px',
+                      borderRadius: '16px',
                       fontWeight: 800,
                       fontSize: '1rem',
                       cursor: 'pointer'
-                    }} 
+                    }}
                     onClick={() => navigate('/services')}
                   >
                     {t('home.howItWorks')}
@@ -794,21 +985,21 @@ const Home: React.FC = () => {
                 </div>
               </div>
 
-              <div className="upload-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', width: '38%' }}>
-                <motion.div 
-                  whileHover={{ 
-                    y: -10, 
-                    borderColor: 'rgba(16, 185, 129, 0.5)', 
+              <div className="upload-grid responsive-grid-2">
+                <motion.div
+                  whileHover={{
+                    y: -10,
+                    borderColor: 'rgba(16, 185, 129, 0.5)',
                     background: 'rgba(255, 255, 255, 0.12)',
                     boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
                   }}
                   transition={{ type: 'spring', stiffness: 300, damping: 18 }}
-                  className="glass-card" 
-                  style={{ 
-                    background: 'rgba(255,255,255,0.04)', 
-                    padding: '28px 24px', 
-                    borderRadius: '24px', 
-                    backdropFilter: 'blur(16px)', 
+                  className="glass-card"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    padding: '28px 24px',
+                    borderRadius: '24px',
+                    backdropFilter: 'blur(16px)',
                     border: '1px solid rgba(255,255,255,0.08)',
                     boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
                     cursor: 'pointer'
@@ -818,21 +1009,21 @@ const Home: React.FC = () => {
                   <h4 style={{ marginTop: '16px', fontWeight: 800, fontSize: '1.2rem', color: 'white' }}>Tractors</h4>
                   <p style={{ fontSize: '0.85rem', opacity: 0.65, marginTop: '4px' }}>Earn up to ₹5,000/day</p>
                 </motion.div>
-                
-                <motion.div 
-                  whileHover={{ 
-                    y: -10, 
-                    borderColor: 'rgba(245, 158, 11, 0.5)', 
+
+                <motion.div
+                  whileHover={{
+                    y: -10,
+                    borderColor: 'rgba(245, 158, 11, 0.5)',
                     background: 'rgba(255, 255, 255, 0.12)',
                     boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
                   }}
                   transition={{ type: 'spring', stiffness: 300, damping: 18 }}
-                  className="glass-card" 
-                  style={{ 
-                    background: 'rgba(255,255,255,0.04)', 
-                    padding: '28px 24px', 
-                    borderRadius: '24px', 
-                    backdropFilter: 'blur(16px)', 
+                  className="glass-card"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    padding: '28px 24px',
+                    borderRadius: '24px',
+                    backdropFilter: 'blur(16px)',
                     border: '1px solid rgba(255,255,255,0.08)',
                     boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
                     cursor: 'pointer'
@@ -856,18 +1047,124 @@ const Home: React.FC = () => {
             onClick={() => navigate(user ? '/upload-item' : '/login')}
             style={{
               background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-              padding: '18px 36px',
-              fontSize: '1.1rem',
+              padding: '12px 24px',
+              fontSize: '0.95rem',
               boxShadow: '0 15px 35px rgba(5, 150, 105, 0.4)',
               borderRadius: '50px',
               border: '1px solid rgba(255, 255, 255, 0.2)'
             }}
           >
-            <Plus size={26} style={{ strokeWidth: 3 }} />
+            <Plus size={20} style={{ strokeWidth: 3 }} />
             <span>{t('manage.addBtn')}</span>
           </motion.button>,
           document.body
         )}
+
+        {/* Quick Tools Row (Upgraded to Cards) */}
+        <section className="section" style={{ marginTop: '40px', paddingBottom: '0px' }}>
+          <div className="section-header" style={{ marginBottom: '28px' }}>
+            <div className="flex items-center gap-3">
+              <div style={{
+                background: '#e0f2fe',
+                padding: '12px',
+                borderRadius: '16px',
+                boxShadow: 'inset 0 2px 4px rgba(2,132,199,0.06)'
+              }}>
+                <TrendingUp size={26} color="#0284c7" />
+              </div>
+              <h3 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>{t('quickTools', 'Quick Tools')}</h3>
+            </div>
+          </div>
+
+          <div className="categories-grid responsive-grid-4" style={{ gap: '24px' }}>
+            {tools.map((tool, idx) => (
+              <motion.div
+                key={tool.name}
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 80,
+                  damping: 16,
+                  delay: 0.08 * idx
+                }}
+                whileHover={{
+                  y: -10,
+                  transition: { type: 'spring', stiffness: 300, damping: 15 }
+                }}
+                whileTap={{ scale: 0.98 }}
+                className="premium-card visual-card"
+                style={{
+                  height: '280px',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  borderRadius: '28px',
+                  boxShadow: '0 12px 30px -10px rgba(15, 23, 42, 0.08)'
+                }}
+                onClick={() => {
+                  if (tool.name === 'Community') navigate('/community');
+                  else if (tool.name === 'Crop Advisory') navigate('/crop-advisory');
+                  else if (tool.name === 'Calculators') navigate('/calculators');
+                  else navigate('/help');
+                }}
+              >
+                <img
+                  src={tool.image}
+                  alt={tool.name}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    position: 'absolute',
+                    top: 0, left: 0
+                  }}
+                />
+
+                <div className="overlay" style={{
+                  padding: '28px 24px',
+                  position: 'absolute',
+                  bottom: 0, left: 0, right: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-end',
+                  height: '100%',
+                  zIndex: 2
+                }}>
+                  <span style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '1.5px',
+                    opacity: 0.85,
+                    marginBottom: '6px',
+                    color: 'rgba(255,255,255,0.9)'
+                  }}>{tool.subtitle}</span>
+
+                  <h4 style={{
+                    fontSize: '1.65rem',
+                    color: 'white',
+                    fontWeight: 900,
+                    letterSpacing: '-0.3px',
+                    lineHeight: '1.2'
+                  }}>{tool.label}</h4>
+
+                  <div className="rent-badge-btn" style={{
+                    marginTop: '14px',
+                    background: 'rgba(255,255,255,0.2)',
+                    width: 'fit-content',
+                    padding: '6px 16px',
+                    borderRadius: '100px',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255,255,255,0.15)'
+                  }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'white' }}>Open</span>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </section>
       </div>
 
       {/* Location Selector Modal */}
@@ -945,7 +1242,7 @@ const Home: React.FC = () => {
         }
         .fab-add {
           position: fixed;
-          top: 100px;
+          bottom: 32px;
           right: 32px;
           color: white;
           border-radius: 50px;

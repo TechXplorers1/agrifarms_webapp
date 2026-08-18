@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, MapPin, Phone, LogOut, Settings, Shield, ChevronRight,
   Package, Calendar, Mail, Edit2, Save, X, Building2, Map, Globe2,
-  Pin, Compass, AlertCircle, CheckCircle2, UserCheck, Camera, Loader2
+  Pin, Compass, AlertCircle, CheckCircle2, UserCheck, Camera, Loader2, Info
 } from 'lucide-react';
 import { apiService } from '../services/apiService';
 import { resolveCoordinates } from '../services/locationHelper';
@@ -19,6 +19,7 @@ const Profile: React.FC = () => {
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [infoMsg, setInfoMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -168,9 +169,13 @@ const Profile: React.FC = () => {
           longitude: data.longitude ? String(data.longitude) : ''
         });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to load profile details:", err);
-      setErrorMsg("Failed to retrieve your complete profile details from the database.");
+      if (err?.response?.status === 404) {
+        setInfoMsg("Please complete your profile details to unlock all features.");
+      } else {
+        setErrorMsg("Failed to retrieve your complete profile details from the database.");
+      }
     } finally {
       setIsLoadingProfile(false);
     }
@@ -474,6 +479,7 @@ const Profile: React.FC = () => {
               onClick={() => {
                 setIsEditing(true);
                 setErrorMsg('');
+                setInfoMsg('');
                 setSuccessMsg('');
               }}
             >
@@ -483,6 +489,13 @@ const Profile: React.FC = () => {
           )}
         </motion.div>
       </div>
+
+      {infoMsg && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="message-box info-message">
+          <Info size={18} />
+          <span>{infoMsg}</span>
+        </motion.div>
+      )}
 
       {errorMsg && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="message-box error-message">
@@ -549,9 +562,13 @@ const Profile: React.FC = () => {
                         id="phoneNumber"
                         name="phoneNumber"
                         type="text"
+                        maxLength={10}
                         placeholder="10-digit mobile number"
                         value={formData.phoneNumber}
-                        onChange={handleInputChange}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                          setFormData(prev => ({ ...prev, phoneNumber: val }));
+                        }}
                       />
                     </div>
                   </div>
@@ -586,18 +603,30 @@ const Profile: React.FC = () => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="profileImageUrl">Profile Image URL</label>
-                    <div className="input-wrapper">
-                      <Globe2 size={18} className="input-icon" />
+                    <label htmlFor="profileImageFile">Profile Image</label>
+                    <div className="input-wrapper" style={{ padding: '0', border: 'none', background: 'transparent' }}>
                       <input
-                        id="profileImageUrl"
-                        name="profileImageUrl"
-                        type="text"
-                        placeholder="https://example.com/avatar.jpg"
-                        value={formData.profileImageUrl}
-                        onChange={handleInputChange}
+                        id="profileImageFile"
+                        name="profileImageFile"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          borderRadius: '14px',
+                          border: '1.5px solid #e2e8f0',
+                          background: 'white',
+                          cursor: 'pointer',
+                          color: 'var(--text-main)'
+                        }}
                       />
                     </div>
+                    {formData.profileImageUrl && (
+                      <p style={{ fontSize: '0.8rem', color: 'var(--success)', marginTop: '4px' }}>
+                        Image uploaded! Click Save to confirm.
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -1259,6 +1288,11 @@ const Profile: React.FC = () => {
           color: #059669;
           background: #ecfdf5;
           border: 1px solid rgba(5, 150, 105, 0.15);
+        }
+        .info-message {
+          color: #0284c7;
+          background: #f0f9ff;
+          border: 1px solid rgba(2, 132, 199, 0.15);
         }
 
         @media (max-width: 768px) {
