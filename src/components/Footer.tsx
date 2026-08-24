@@ -51,7 +51,7 @@ const Footer: React.FC = () => {
                 <Mail size={18} color="#10b981" /> support@agrifarms.in
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'rgba(255,255,255,0.8)' }}>
-                <Phone size={18} color="#10b981" /> +91 98765 43210
+                <Phone size={18} color="#10b981" /> +91 9493280533
               </li>
               <li style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.4' }}>
                 <MapPin size={18} color="#10b981" style={{ flexShrink: 0, marginTop: '2px' }} />
