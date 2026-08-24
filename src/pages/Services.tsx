@@ -71,7 +71,7 @@ const Services: React.FC = () => {
       setFilter(location.state.initialFilter);
     }
   }, [location.state?.initialFilter]);
-  const [userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [_userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [showDistanceDropdown, setShowDistanceDropdown] = useState(false);
   const [maxDistance, setMaxDistance] = useState<number | 'All'>('All');
 

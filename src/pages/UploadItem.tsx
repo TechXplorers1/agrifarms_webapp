@@ -31,7 +31,7 @@ const UploadItem: React.FC = () => {
   // Worker Skills & Allocation States
   const [dbSkills, setDbSkills] = useState<string[]>([]);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
-  const [skillAllocations, setSkillAllocations] = useState<Record<string, { male: number; female: number }>>({});
+  const [skillAllocations, setSkillAllocations] = useState<Record<string, { male: number | string; female: number | string }>>({});
   const [newSkillName, setNewSkillName] = useState('');
   const [showCustomSkillInput, setShowCustomSkillInput] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -297,12 +297,12 @@ const UploadItem: React.FC = () => {
       if (category === 'Workers') {
         const totalMaleAllocated = selectedSkills.reduce((sum, skill) => {
           const alloc = skillAllocations[skill] || { male: '' };
-          return sum + (alloc.male === '' ? 0 : Number(alloc.male));
+          return sum + (String(alloc.male) === '' ? 0 : Number(alloc.male));
         }, 0);
 
         const totalFemaleAllocated = selectedSkills.reduce((sum, skill) => {
           const alloc = skillAllocations[skill] || { female: '' };
-          return sum + (alloc.female === '' ? 0 : Number(alloc.female));
+          return sum + (String(alloc.female) === '' ? 0 : Number(alloc.female));
         }, 0);
 
         const totalMaleExpected = Number(formData.maleCount || 0);
@@ -327,8 +327,8 @@ const UploadItem: React.FC = () => {
         const rolesList: any[] = [];
         selectedSkills.forEach((skill) => {
           const alloc = skillAllocations[skill] || { male: '', female: '' };
-          const mCount = alloc.male === '' ? 0 : Number(alloc.male);
-          const fCount = alloc.female === '' ? 0 : Number(alloc.female);
+          const mCount = String(alloc.male) === '' ? 0 : Number(alloc.male);
+          const fCount = String(alloc.female) === '' ? 0 : Number(alloc.female);
           if (mCount > 0) {
             rolesList.push({
               gender: 'MALE',
@@ -1088,12 +1088,12 @@ const UploadItem: React.FC = () => {
             {selectedSkills.length > 0 && (() => {
               const totalMaleAllocated = selectedSkills.reduce((sum, skill) => {
                 const alloc = skillAllocations[skill] || { male: '' };
-                return sum + (alloc.male === '' ? 0 : Number(alloc.male));
+                return sum + (String(alloc.male) === '' ? 0 : Number(alloc.male));
               }, 0);
 
               const totalFemaleAllocated = selectedSkills.reduce((sum, skill) => {
                 const alloc = skillAllocations[skill] || { female: '' };
-                return sum + (alloc.female === '' ? 0 : Number(alloc.female));
+                return sum + (String(alloc.female) === '' ? 0 : Number(alloc.female));
               }, 0);
 
               const maleExpected = Number(formData.maleCount || 0);

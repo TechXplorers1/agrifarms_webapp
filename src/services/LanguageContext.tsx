@@ -5,7 +5,7 @@ type Language = 'en' | 'hi' | 'te' | 'ta' | 'kn' | 'mr';
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
+  t: (key: string, fallback?: string) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -883,9 +883,9 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem('agrifarm_web_language', lang);
   };
 
-  const t = (key: string): string => {
+  const t = (key: string, fallback?: string): string => {
     const translationSet = translations[language] || translations['en'];
-    return translationSet[key] || translations['en'][key] || key;
+    return translationSet[key] || translations['en'][key] || fallback || key;
   };
 
   return (

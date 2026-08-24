@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calculator, Droplets, FlaskConical, Sprout, ChevronRight } from 'lucide-react';
+import { Calculator, Droplets, FlaskConical, Sprout } from 'lucide-react';
 import { 
   calculateFertilizer, 
   calculatePesticide, 

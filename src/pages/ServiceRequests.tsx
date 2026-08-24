@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
 import { apiService } from '../services/apiService';
-import { useLanguage } from '../services/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   History, Calendar, Clock, MapPin, CheckCircle2, Clock3, XCircle, 
@@ -30,7 +29,6 @@ interface Booking {
 }
 
 const ServiceRequests: React.FC = () => {
-  const { t } = useLanguage();
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   
@@ -98,7 +96,7 @@ const ServiceRequests: React.FC = () => {
       setBookings(mappedBookings);
 
       // Fetch customer profiles for customer info
-      const uniqueFarmerIds = Array.from(new Set(mappedBookings.map(b => b.farmerId).filter(Boolean))) as string[];
+      const uniqueFarmerIds = Array.from(new Set(mappedBookings.map((b: Booking) => b.farmerId).filter(Boolean))) as string[];
       const profilesMap: Record<string, any> = {};
       
       await Promise.all(

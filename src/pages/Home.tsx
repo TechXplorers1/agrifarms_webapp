@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Search, MapPin, Tractor, Truck, Plus, Crosshair,
   ChevronRight, Sprout, Droplets, Construction,
-  CloudSun, TrendingUp, Calculator, Loader2, ChevronDown,
+  CloudSun, TrendingUp, Calculator, Loader2,
   MessageSquare, LifeBuoy
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';

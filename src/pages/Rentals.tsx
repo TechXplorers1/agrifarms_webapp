@@ -49,7 +49,7 @@ const Rentals: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState(initialFilter);
   const [searchQuery, setSearchQuery] = useState(location.state?.initialSearch || '');
-  const [userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [_userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [showDistanceDropdown, setShowDistanceDropdown] = useState(false);
   const [maxDistance, setMaxDistance] = useState<number | 'All'>('All');
 
