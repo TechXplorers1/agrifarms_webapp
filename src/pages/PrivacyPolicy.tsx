@@ -1,22 +1,76 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { Shield, Lock, Eye, CheckCircle } from 'lucide-react';
 
 const PrivacyPolicy: React.FC = () => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   return (
-    <div className="privacy-policy-page" style={{ padding: '60px 20px', maxWidth: '900px', margin: '0 auto', color: 'var(--text-main)' }}>
+    <div className="privacy-policy-page" style={{ padding: '60px 20px', maxWidth: '960px', margin: '0 auto', color: 'var(--text-main)' }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div style={{ textAlign: 'center', marginBottom: '50px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
           <div style={{ display: 'inline-flex', background: '#e8f5e9', padding: '16px', borderRadius: '50%', marginBottom: '20px' }}>
             <Shield size={40} color="#10b981" />
           </div>
           <h1 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '10px' }}>Privacy Policy</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Your data, your trust, our priority.</p>
+        </div>
+
+        {/* Tab Switcher */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '12px',
+          marginBottom: '40px',
+          background: 'rgba(0,0,0,0.03)',
+          padding: '6px',
+          borderRadius: '16px',
+          maxWidth: '450px',
+          margin: '0 auto 40px auto'
+        }}>
+          <Link
+            to="/terms"
+            style={{
+              flex: 1,
+              padding: '12px 20px',
+              borderRadius: '12px',
+              border: 'none',
+              fontWeight: 700,
+              fontSize: '0.95rem',
+              textAlign: 'center',
+              textDecoration: 'none',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              background: 'transparent',
+              color: 'var(--text-muted)'
+            }}
+          >
+            Terms of Service
+          </Link>
+          <button
+            style={{
+              flex: 1,
+              padding: '12px 20px',
+              borderRadius: '12px',
+              border: 'none',
+              fontWeight: 700,
+              fontSize: '0.95rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              background: '#10b981',
+              color: '#ffffff',
+              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)'
+            }}
+          >
+            Privacy Policy
+          </button>
         </div>
 
         <section className="card" style={{ padding: '40px', marginBottom: '30px', borderRadius: '24px' }}>

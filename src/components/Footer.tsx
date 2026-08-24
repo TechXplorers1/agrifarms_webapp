@@ -38,7 +38,8 @@ const Footer: React.FC = () => {
               <li><Link to="/rentals" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', transition: 'color 0.2s' }}>Rent Equipment</Link></li>
               <li><Link to="/services" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', transition: 'color 0.2s' }}>Find Services</Link></li>
               <li><Link to="/upload-item" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', transition: 'color 0.2s' }}>List an Asset</Link></li>
-              <li><Link to="/privacy-policy" style={{ color: 'white', textDecoration: 'underline', fontWeight: 600, transition: 'color 0.2s' }}>Privacy Policy</Link></li>
+              <li><Link to="/terms" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', transition: 'color 0.2s' }}>Terms & Conditions</Link></li>
+              <li><Link to="/privacy-policy" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', transition: 'color 0.2s' }}>Privacy Policy</Link></li>
             </ul>
           </div>
 
@@ -73,8 +74,8 @@ const Footer: React.FC = () => {
             &copy; {new Date().getFullYear()} Agri Farms. All rights reserved.
           </p>
           <div style={{ display: 'flex', gap: '20px' }}>
-            <Link to="/privacy-policy" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', textDecoration: 'none' }}>Privacy</Link>
-            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', cursor: 'pointer' }}>Terms</span>
+            <Link to="/privacy-policy" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', textDecoration: 'none' }}>Privacy Policy</Link>
+            <Link to="/terms" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', textDecoration: 'none' }}>Terms & Conditions</Link>
           </div>
         </div>
       </div>

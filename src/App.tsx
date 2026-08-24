@@ -24,10 +24,13 @@ import CropAdvisory from './pages/CropAdvisory';
 import Community from './pages/Community';
 import HelpSupport from './pages/HelpSupport';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsAndConditions from './pages/TermsAndConditions';
+import ScrollToTop from './components/ScrollToTop';
 
 const App: React.FC = () => {
   return (
     <Router>
+      <ScrollToTop />
       <div className="app">
         <OtpVerificationModal />
         <Routes>
@@ -48,6 +51,8 @@ const App: React.FC = () => {
                   <Route path="/community" element={<Community />} />
                   <Route path="/help" element={<HelpSupport />} />
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/terms" element={<TermsAndConditions />} />
+                  <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
                   <Route path="/weather" element={<ToolPlaceholder />} />
                   <Route path="/mandi-prices" element={<ToolPlaceholder />} />
 

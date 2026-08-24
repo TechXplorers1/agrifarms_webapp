@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
 import { motion } from 'framer-motion';
 import { Mail, Lock, ChevronRight, Sprout, AlertCircle, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
@@ -218,6 +218,11 @@ const Login: React.FC = () => {
         </form>
 
         <div className="login-footer">
+          {isSignUp && (
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '12px', lineHeight: '1.4' }}>
+              By signing up, you agree to Agri Farms' <Link to="/terms" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Terms of Service</Link> and <Link to="/privacy-policy" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Privacy Policy</Link>.
+            </p>
+          )}
           <p>
             {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
             <span onClick={() => {
