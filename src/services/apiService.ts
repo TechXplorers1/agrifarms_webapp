@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8083';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -55,11 +55,18 @@ export const apiService = {
   getNotifications: (userId: string) => api.get(`/api/notifications/user/${userId}`),
   markAsRead: (id: string) => api.put(`/api/notifications/${id}/read`),
 
-  // Auth & SMTP OTP
+  // Auth & Mobile OTP
   login: (email: string, password: string) => api.post('/api/auth/login', { email, password }),
   register: (email: string, password: string, role: string) => api.post('/api/auth/register', { email, password, role }),
   sendOtp: (email: string) => api.post('/api/auth/send-otp', { email }),
   verifyOtp: (email: string, otp: string) => api.post('/api/auth/verify-otp', { email, otp }),
+  
+  // Mobile Phone Authentication Endpoints (MSG91 & Static OTP)
+  sendMsg91Otp: (phoneNumber: string) => api.post('/api/auth/msg91/send-otp', { phoneNumber }),
+  verifyMsg91Otp: (data: { phoneNumber: string; otp: string; role?: string; fullName?: string; isLogin?: boolean }) =>
+    api.post('/api/auth/msg91/verify-otp', data),
+  staticLogin: (data: { phoneNumber: string; role?: string; fullName?: string; isLogin?: boolean }) =>
+    api.post('/api/auth/static-login', data),
 
   // Image Helper
   getFullImageUrl: (path?: string) => {

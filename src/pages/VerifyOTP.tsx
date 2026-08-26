@@ -2,17 +2,37 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
 import { motion } from 'framer-motion';
-import { ShieldCheck, ChevronRight, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, ChevronRight, ArrowLeft, AlertCircle } from 'lucide-react';
 
 const VerifyOTP: React.FC = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
-  const { verifyEmailOtp, resendEmailOtp, pendingEmail, isLoading } = useAuth();
+  const [secondsRemaining, setSecondsRemaining] = useState(60);
+  const [canResend, setCanResend] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+
+  const { verifyPhoneOtp, resendPhoneOtp, pendingPhone, isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!pendingEmail) navigate('/login');
-  }, [pendingEmail, navigate]);
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+    } else if (!pendingPhone) {
+      navigate('/login', { replace: true });
+    }
+  }, [isAuthenticated, pendingPhone, navigate]);
+
+  useEffect(() => {
+    let timer: any;
+    if (secondsRemaining > 0) {
+      timer = setInterval(() => {
+        setSecondsRemaining((prev) => prev - 1);
+      }, 1000);
+    } else {
+      setCanResend(true);
+    }
+    return () => clearInterval(timer);
+  }, [secondsRemaining]);
 
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) value = value[value.length - 1];
@@ -21,6 +41,7 @@ const VerifyOTP: React.FC = () => {
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
+    setError('');
 
     // Auto-focus next input
     if (value && index < 5) {
@@ -37,11 +58,20 @@ const VerifyOTP: React.FC = () => {
   };
 
   const handleResend = async () => {
+    if (!canResend || isResending) return;
+    setIsResending(true);
+    setError('');
+
     try {
-      await resendEmailOtp();
+      await resendPhoneOtp();
+      setSecondsRemaining(60);
+      setCanResend(false);
+      setOtp(['', '', '', '', '', '']);
       setError('A fresh 6-digit OTP code has been sent successfully.');
     } catch (err) {
       setError('Failed to resend OTP. Please try again.');
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -50,10 +80,10 @@ const VerifyOTP: React.FC = () => {
     const otpValue = otp.join('');
     if (otpValue.length === 6) {
       try {
-        await verifyEmailOtp(otpValue);
+        await verifyPhoneOtp(otpValue);
         navigate('/');
-      } catch (err) {
-        setError('Invalid OTP. Please try again.');
+      } catch (err: any) {
+        setError(err.message || 'Invalid or expired OTP. Please try again.');
       }
     }
   };
@@ -65,7 +95,7 @@ const VerifyOTP: React.FC = () => {
         animate={{ opacity: 1, scale: 1 }}
         className="login-card glass"
       >
-        <button onClick={() => navigate('/login')} className="btn-back">
+        <button onClick={() => navigate('/login')} className="btn-back" title="Back to Login">
           <ArrowLeft size={20} />
         </button>
 
@@ -74,7 +104,7 @@ const VerifyOTP: React.FC = () => {
             <ShieldCheck size={40} color="var(--primary)" />
           </div>
           <h1>Verify Identity</h1>
-          <p>Enter the 6-digit code sent to<br/><strong>{pendingEmail}</strong></p>
+          <p>Enter the 6-digit OTP code sent to<br/><strong>+91 {pendingPhone}</strong></p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
@@ -85,29 +115,40 @@ const VerifyOTP: React.FC = () => {
                 id={`otp-${index}`}
                 type="text"
                 maxLength={1}
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={digit}
                 onChange={(e) => handleChange(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
-                className={error ? 'error' : ''}
+                className={error && !error.includes('successfully') ? 'error' : ''}
                 autoFocus={index === 0}
               />
             ))}
           </div>
 
-          {error && <p className={`error-message ${error.includes('successfully') ? 'success-text' : ''}`}>{error}</p>}
+          {error && (
+            <div className={`error-message ${error.includes('successfully') ? 'success-text' : ''}`}>
+              <AlertCircle size={16} />
+              <span>{error}</span>
+            </div>
+          )}
 
           <button 
             type="submit" 
             className="btn-login"
             disabled={otp.join('').length < 6 || isLoading}
           >
-            {isLoading ? 'Verifying...' : 'Verify & Continue'}
+            {isLoading ? 'Verifying...' : 'Verify & Proceed'}
             <ChevronRight size={20} />
           </button>
         </form>
 
         <div className="login-footer">
-          <p>Didn't receive code? <span onClick={handleResend} style={{ cursor: 'pointer' }}>Resend OTP</span></p>
+          {canResend ? (
+            <p>Didn't receive code? <span onClick={handleResend} style={{ cursor: 'pointer', color: 'var(--primary)', fontWeight: 700 }}>Resend OTP</span></p>
+          ) : (
+            <p style={{ color: 'var(--text-muted)' }}>Resend code in <strong style={{ color: 'var(--primary)' }}>{secondsRemaining}s</strong></p>
+          )}
         </div>
       </motion.div>
 
@@ -128,7 +169,7 @@ const VerifyOTP: React.FC = () => {
         }
         .login-card {
           width: 100%;
-          max-width: 420px;
+          max-width: 440px;
           padding: 40px;
           border-radius: 32px;
           z-index: 1;
@@ -142,19 +183,25 @@ const VerifyOTP: React.FC = () => {
           width: 40px;
           height: 40px;
           border-radius: 12px;
+          border: none;
           display: flex;
           align-items: center;
           justify-content: center;
           color: var(--text-main);
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .btn-back:hover {
+          background: #e2e8f0;
         }
         .login-header {
           text-align: center;
-          margin-bottom: 32px;
+          margin-bottom: 28px;
         }
         .login-logo {
           background: white;
-          width: 80px;
-          height: 80px;
+          width: 76px;
+          height: 76px;
           border-radius: 24px;
           display: flex;
           align-items: center;
@@ -165,26 +212,28 @@ const VerifyOTP: React.FC = () => {
         .login-header h1 {
           font-size: 1.75rem;
           margin-bottom: 8px;
+          font-weight: 800;
         }
         .login-header p {
           color: var(--text-muted);
           line-height: 1.5;
+          font-size: 0.95rem;
         }
         .otp-container {
           display: flex;
           gap: 10px;
           justify-content: center;
-          margin-bottom: 32px;
+          margin-bottom: 28px;
         }
         .otp-container input {
-          width: 48px;
-          height: 56px;
-          border-radius: 12px;
+          width: 50px;
+          height: 58px;
+          border-radius: 14px;
           border: 2px solid #f1f5f9;
           background: #f1f5f9;
           text-align: center;
-          font-size: 1.25rem;
-          font-weight: 700;
+          font-size: 1.5rem;
+          font-weight: 800;
           color: var(--text-main);
           transition: all 0.2s;
         }
@@ -202,9 +251,19 @@ const VerifyOTP: React.FC = () => {
           color: var(--error);
           font-size: 0.875rem;
           font-weight: 600;
-          text-align: center;
-          margin-top: -16px;
-          margin-bottom: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          margin-top: -12px;
+          margin-bottom: 20px;
+          padding: 8px 14px;
+          background: #fef2f2;
+          border-radius: 10px;
+        }
+        .error-message.success-text {
+          color: #059669;
+          background: #ecfdf5;
         }
         .btn-login {
           width: 100%;
@@ -213,26 +272,29 @@ const VerifyOTP: React.FC = () => {
           padding: 16px;
           border-radius: 16px;
           font-weight: 700;
+          font-size: 1rem;
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
           transition: all 0.2s;
+          border: none;
+          cursor: pointer;
+          box-shadow: 0 4px 14px rgba(0, 170, 85, 0.3);
         }
         .btn-login:hover:not(:disabled) {
           transform: translateY(-2px);
-          box-shadow: 0 6px 16px rgba(0, 170, 85, 0.4);
+          box-shadow: 0 6px 18px rgba(0, 170, 85, 0.4);
+        }
+        .btn-login:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
         .login-footer {
-          margin-top: 32px;
+          margin-top: 24px;
           text-align: center;
           font-size: 0.875rem;
           color: var(--text-muted);
-        }
-        .login-footer span {
-          color: var(--primary);
-          font-weight: 700;
-          cursor: pointer;
         }
       `}</style>
     </div>

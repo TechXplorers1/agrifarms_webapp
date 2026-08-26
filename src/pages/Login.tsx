@@ -2,39 +2,32 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
 import { motion } from 'framer-motion';
-import { Mail, Lock, ChevronRight, Sprout, AlertCircle, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { Phone, User as UserIcon, ChevronRight, Sprout, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const Login: React.FC = () => {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('FARMER'); // Default role
-
-  // Visibility toggles
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [role, setRole] = useState('FARMER');
 
   // Messages
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  const { login, signup, isLoading } = useAuth();
+  const { sendPhoneOtp, isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // Password Validation: At least one capital letter, one number, one special character, min 6 length
-  const validatePassword = (pass: string) => {
-    const hasUpperCase = /[A-Z]/.test(pass);
-    const hasNumber = /\d/.test(pass);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(pass);
-    const isLengthValid = pass.length >= 6;
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
-    if (!isLengthValid) return "Password must be at least 6 characters long.";
-    if (!hasUpperCase) return "Password must contain at least one capital letter.";
-    if (!hasNumber) return "Password must contain at least one number.";
-    if (!hasSpecialChar) return "Password must contain at least one special character.";
-
-    return null;
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setPhoneNumber(val);
+    setErrorMsg('');
+    setSuccessMsg('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,42 +35,25 @@ const Login: React.FC = () => {
     setErrorMsg('');
     setSuccessMsg('');
 
-    if (isSignUp) {
-      const passwordError = validatePassword(password);
-      if (passwordError) {
-        setErrorMsg(passwordError);
-        return;
-      }
-      if (password !== confirmPassword) {
-        setErrorMsg('Passwords do not match.');
-        return;
-      }
+    if (phoneNumber.length !== 10) {
+      setErrorMsg('Please enter a valid 10-digit mobile number.');
+      return;
     }
 
-    if (email && password) {
-      try {
-        if (isSignUp) {
-          await signup(email, password, role);
-          setSuccessMsg('Account created! A verification link has been sent to your email. Please verify and then log in.');
-          // Reset form to switch to login mode cleanly
-          setIsSignUp(false);
-          setPassword('');
-          setConfirmPassword('');
-        } else {
-          await login(email, password);
-          navigate('/');
-        }
-      } catch (err: any) {
-        if (err.code === 'auth/invalid-credential') {
-          setErrorMsg('Invalid email or password.');
-        } else if (err.code === 'auth/email-already-in-use') {
-          setErrorMsg('Email already in use. Please log in.');
-        } else {
-          setErrorMsg(err.message || 'Authentication failed. Please try again.');
-        }
-      }
+    if (isSignUp && !fullName.trim()) {
+      setErrorMsg('Please enter your full name.');
+      return;
+    }
+
+    try {
+      await sendPhoneOtp(phoneNumber, !isSignUp, isSignUp ? fullName.trim() : undefined, isSignUp ? role : undefined);
+      navigate('/verify-otp');
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Authentication failed. Please check details and try again.');
     }
   };
+
+  const isFormValid = phoneNumber.length === 10 && (!isSignUp || fullName.trim().length > 0);
 
   return (
     <div className="login-page">
@@ -90,56 +66,37 @@ const Login: React.FC = () => {
           <div className="login-logo">
             <Sprout size={40} color="var(--primary)" />
           </div>
-          <h1>Welcome to Agri Farms</h1>
-          <p>Your digital partner in farming</p>
+          <h1>Agri Farms</h1>
+          <p>{isSignUp ? 'Join the agricultural community' : 'Login with Mobile Number & OTP'}</p>
+        </div>
+
+        {/* Auth Mode Tabs */}
+        <div className="auth-tabs">
+          <button
+            type="button"
+            className={`tab-btn ${!isSignUp ? 'active' : ''}`}
+            onClick={() => {
+              setIsSignUp(false);
+              setErrorMsg('');
+              setSuccessMsg('');
+            }}
+          >
+            Login
+          </button>
+          <button
+            type="button"
+            className={`tab-btn ${isSignUp ? 'active' : ''}`}
+            onClick={() => {
+              setIsSignUp(true);
+              setErrorMsg('');
+              setSuccessMsg('');
+            }}
+          >
+            Sign Up
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
-          <div className="input-group">
-            <label htmlFor="email">Email Address</label>
-            <div className="input-wrapper">
-              <Mail size={20} className="input-icon" />
-              <input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setErrorMsg('');
-                  setSuccessMsg('');
-                }}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="input-group">
-            <label htmlFor="password">Password</label>
-            <div className="input-wrapper">
-              <Lock size={20} className="input-icon" />
-              <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setErrorMsg('');
-                  setSuccessMsg('');
-                }}
-                required
-              />
-              <button
-                type="button"
-                className="toggle-password"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-          </div>
-
           {isSignUp && (
             <>
               <motion.div
@@ -147,28 +104,20 @@ const Login: React.FC = () => {
                 animate={{ opacity: 1, height: 'auto' }}
                 className="input-group"
               >
-                <label htmlFor="confirmPassword">Confirm Password</label>
+                <label htmlFor="fullName">Full Name</label>
                 <div className="input-wrapper">
-                  <Lock size={20} className="input-icon" />
+                  <UserIcon size={20} className="input-icon" />
                   <input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Confirm your password"
-                    value={confirmPassword}
+                    id="fullName"
+                    type="text"
+                    placeholder="Enter your full name"
+                    value={fullName}
                     onChange={(e) => {
-                      setConfirmPassword(e.target.value);
+                      setFullName(e.target.value);
                       setErrorMsg('');
-                      setSuccessMsg('');
                     }}
-                    required
+                    required={isSignUp}
                   />
-                  <button
-                    type="button"
-                    className="toggle-password"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
                 </div>
               </motion.div>
 
@@ -183,26 +132,47 @@ const Login: React.FC = () => {
                     id="role"
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
-                    required
+                    required={isSignUp}
                   >
                     <option value="FARMER">Farmer</option>
-                    <option value="OWNER">Owner</option>
+                    <option value="OWNER">Equipment / Service Owner</option>
                   </select>
                 </div>
               </motion.div>
             </>
           )}
 
+          <div className="input-group">
+            <label htmlFor="phoneNumber">Mobile Number</label>
+            <div className="phone-input-row">
+              <div className="country-code-box">
+                <span>+91</span>
+              </div>
+              <div className="input-wrapper flex-1">
+                <Phone size={20} className="input-icon" />
+                <input
+                  id="phoneNumber"
+                  type="tel"
+                  placeholder="00000 00000"
+                  value={phoneNumber}
+                  onChange={handlePhoneChange}
+                  maxLength={10}
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
           {errorMsg && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="message-box error-message">
-              <AlertCircle size={16} />
+              <AlertCircle size={18} className="shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
             </motion.div>
           )}
 
           {successMsg && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="message-box success-message">
-              <CheckCircle2 size={16} />
+              <CheckCircle2 size={18} className="shrink-0 mt-0.5" />
               <span>{successMsg}</span>
             </motion.div>
           )}
@@ -210,9 +180,9 @@ const Login: React.FC = () => {
           <button
             type="submit"
             className="btn-login"
-            disabled={!email || !password || (isSignUp && !confirmPassword) || isLoading}
+            disabled={!isFormValid || isLoading}
           >
-            {isLoading ? 'Processing...' : (isSignUp ? 'Sign Up' : 'Login')}
+            {isLoading ? 'Sending OTP...' : (isSignUp ? 'Register & Get OTP' : 'Get OTP')}
             <ChevronRight size={20} />
           </button>
         </form>
@@ -220,7 +190,7 @@ const Login: React.FC = () => {
         <div className="login-footer">
           {isSignUp && (
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '12px', lineHeight: '1.4' }}>
-              By signing up, you agree to Agri Farms' <Link to="/terms" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Terms of Service</Link> and <Link to="/privacy-policy" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Privacy Policy</Link>.
+              By registering, you agree to Agri Farms' <Link to="/terms" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Terms of Service</Link> and <Link to="/privacy-policy" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Privacy Policy</Link>.
             </p>
           )}
           <p>
@@ -253,19 +223,19 @@ const Login: React.FC = () => {
         }
         .login-card {
           width: 100%;
-          max-width: 420px;
+          max-width: 440px;
           padding: 40px;
           border-radius: 32px;
           z-index: 1;
         }
         .login-header {
           text-align: center;
-          margin-bottom: 32px;
+          margin-bottom: 24px;
         }
         .login-logo {
           background: white;
-          width: 80px;
-          height: 80px;
+          width: 76px;
+          height: 76px;
           border-radius: 24px;
           display: flex;
           align-items: center;
@@ -275,19 +245,64 @@ const Login: React.FC = () => {
         }
         .login-header h1 {
           font-size: 1.75rem;
-          margin-bottom: 8px;
+          margin-bottom: 6px;
+          font-weight: 800;
         }
         .login-header p {
           color: var(--text-muted);
+          font-size: 0.95rem;
+        }
+        .auth-tabs {
+          display: flex;
+          background: #f1f5f9;
+          padding: 4px;
+          border-radius: 16px;
+          margin-bottom: 28px;
+        }
+        .tab-btn {
+          flex: 1;
+          padding: 10px;
+          border: none;
+          background: transparent;
+          border-radius: 12px;
+          font-weight: 700;
+          font-size: 0.9rem;
+          color: var(--text-muted);
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .tab-btn.active {
+          background: white;
+          color: var(--primary);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
         .input-group {
-          margin-bottom: 24px;
+          margin-bottom: 20px;
         }
         .input-group label {
           display: block;
-          font-weight: 600;
+          font-weight: 700;
           margin-bottom: 8px;
           font-size: 0.875rem;
+          color: var(--text-main);
+        }
+        .phone-input-row {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+        }
+        .country-code-box {
+          background: #e8f5e9;
+          border: 2px solid #c8e6c9;
+          color: #1b5e20;
+          font-weight: 800;
+          font-size: 1rem;
+          padding: 12px 16px;
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 52px;
         }
         .input-wrapper {
           display: flex;
@@ -298,10 +313,12 @@ const Login: React.FC = () => {
           border-radius: 16px;
           border: 2px solid transparent;
           transition: all 0.2s;
+          height: 52px;
         }
         .input-wrapper:focus-within {
           border-color: var(--primary);
           background: white;
+          box-shadow: 0 0 0 4px rgba(0, 170, 85, 0.1);
         }
         .input-wrapper input, .input-wrapper select {
           background: transparent;
@@ -309,8 +326,11 @@ const Login: React.FC = () => {
           outline: none;
           width: 100%;
           font-size: 1rem;
-          font-weight: 600;
+          font-weight: 700;
           color: var(--text-main);
+        }
+        .input-icon {
+          color: var(--primary);
         }
         .select-wrapper select {
           cursor: pointer;
@@ -318,38 +338,26 @@ const Login: React.FC = () => {
           -moz-appearance: none;
           appearance: none;
         }
-        .toggle-password {
-          background: none;
-          border: none;
-          cursor: pointer;
-          color: var(--text-muted);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0;
-          transition: color 0.2s;
-        }
-        .toggle-password:hover {
-          color: var(--primary);
-        }
         .message-box {
           display: flex;
           align-items: flex-start;
-          gap: 8px;
-          padding: 12px;
-          border-radius: 12px;
-          margin-bottom: 16px;
+          gap: 10px;
+          padding: 12px 16px;
+          border-radius: 14px;
+          margin-bottom: 20px;
           font-size: 0.875rem;
-          font-weight: 500;
+          font-weight: 600;
           line-height: 1.4;
         }
         .error-message {
           color: #ef4444;
           background: #fef2f2;
+          border: 1px solid #fecaca;
         }
         .success-message {
           color: #059669;
           background: #ecfdf5;
+          border: 1px solid #a7f3d0;
         }
         .btn-login {
           width: 100%;
@@ -358,23 +366,27 @@ const Login: React.FC = () => {
           padding: 16px;
           border-radius: 16px;
           font-weight: 700;
+          font-size: 1rem;
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
           transition: all 0.2s;
-          box-shadow: 0 4px 12px rgba(0, 170, 85, 0.3);
+          box-shadow: 0 4px 14px rgba(0, 170, 85, 0.3);
+          border: none;
+          cursor: pointer;
+          margin-top: 10px;
         }
         .btn-login:hover:not(:disabled) {
           transform: translateY(-2px);
-          box-shadow: 0 6px 16px rgba(0, 170, 85, 0.4);
+          box-shadow: 0 6px 18px rgba(0, 170, 85, 0.4);
         }
         .btn-login:disabled {
-          opacity: 0.6;
+          opacity: 0.5;
           cursor: not-allowed;
         }
         .login-footer {
-          margin-top: 32px;
+          margin-top: 28px;
           text-align: center;
           font-size: 0.875rem;
           color: var(--text-muted);

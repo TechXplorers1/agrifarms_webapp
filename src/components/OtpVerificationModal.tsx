@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../services/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Clock, LogOut, RefreshCw, AlertCircle, ShieldCheck } from 'lucide-react';
+import { Clock, LogOut, RefreshCw, AlertCircle, ShieldCheck } from 'lucide-react';
 
 const OtpVerificationModal: React.FC = () => {
   const {
     isVerifyingOtp,
+    pendingPhone,
     pendingEmail,
     verifyEmailOtp,
     resendEmailOtp,
@@ -169,13 +170,12 @@ const OtpVerificationModal: React.FC = () => {
             <div className="otp-shield-icon">
               <ShieldCheck size={38} color="#008947" />
             </div>
-            <h2>Verify Your Email</h2>
+            <h2>Verify Mobile Number</h2>
             <p className="otp-subtitle">
               We have sent a secure 6-digit code to
             </p>
             <div className="otp-email-box">
-              <Mail size={16} color="var(--primary)" />
-              <span>{pendingEmail}</span>
+              <span>+91 {pendingPhone || pendingEmail}</span>
             </div>
           </div>
 

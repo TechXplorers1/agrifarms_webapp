@@ -237,24 +237,24 @@ const Home: React.FC = () => {
   };
 
   const rentalItems: ServiceItem[] = [
-    { name: 'Tractors', icon: Tractor, image: 'https://images.unsplash.com/photo-1594913785162-e67853f2c522?auto=format&fit=crop&q=80&w=400', subtitle: 'Plough & Cultivate', color: '#e8f5e9', iconColor: '#2e7d32', category: 'Rentals' },
-    { name: 'Harvesters', icon: Sprout, image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&q=80&w=400', subtitle: 'Wheat & Paddy Harvest', color: '#fff9c4', iconColor: '#f9a825', category: 'Rentals' },
-    { name: 'Sprayers', icon: Droplets, image: 'https://images.unsplash.com/photo-1592842415124-7da8534b8683?auto=format&fit=crop&q=80&w=400', subtitle: 'Drone & Pest Control', color: '#e3f2fd', iconColor: '#1565c0', category: 'Rentals' },
-    { name: 'JCB', icon: Construction, image: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&q=80&w=400', subtitle: 'Digging & Leveling', color: '#fff3e0', iconColor: '#e65100', category: 'Rentals' },
+    { name: 'Tractors', icon: Tractor, image: '/red_tractor.jpg', subtitle: 'Plough & Cultivate', color: '#e8f5e9', iconColor: '#2e7d32', category: 'Rentals' },
+    { name: 'Harvesters', icon: Sprout, image: '/green_harvester.jpg', subtitle: 'Wheat & Paddy Harvest', color: '#fff9c4', iconColor: '#f9a825', category: 'Rentals' },
+    { name: 'Sprayers', icon: Droplets, image: '/crop_sprayer.jpg', subtitle: 'Drone & Pest Control', color: '#e3f2fd', iconColor: '#1565c0', category: 'Rentals' },
+    { name: 'JCB', icon: Construction, image: '/jcb_loader.jpg', subtitle: 'Digging & Leveling', color: '#fff3e0', iconColor: '#e65100', category: 'Rentals' },
   ];
 
   const transportItems: ServiceItem[] = [
-    { name: 'Trucks', icon: Truck, image: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=400', subtitle: 'Heavy Load Transport', color: '#fff3e0', iconColor: '#e65100', category: 'Transport' },
-    { name: 'Tractors with Trolley', icon: Tractor, image: 'https://images.unsplash.com/photo-1594913785162-e67853f2c522?auto=format&fit=crop&q=80&w=400', subtitle: 'Farm to Market', color: '#e8f5e9', iconColor: '#2e7d32', category: 'Transport' },
-    { name: 'Mini Trucks', icon: Truck, image: 'https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&q=80&w=400', subtitle: 'Local Delivery', color: '#e3f2fd', iconColor: '#1565c0', category: 'Transport' },
-    { name: 'Loaders', icon: Truck, image: 'https://images.unsplash.com/photo-1621993202323-f438eec934ff?auto=format&fit=crop&q=80&w=400', subtitle: 'Material Handling', color: '#fff9c4', iconColor: '#f9a825', category: 'Transport' },
+    { name: 'Trucks', icon: Truck, image: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=600', subtitle: 'Heavy Load Transport', color: '#fff3e0', iconColor: '#e65100', category: 'Transport' },
+    { name: 'Tractors with Trolley', icon: Tractor, image: '/tractor_trolley.jpg', subtitle: 'Farm to Market', color: '#e8f5e9', iconColor: '#2e7d32', category: 'Transport' },
+    { name: 'Mini Trucks', icon: Truck, image: '/mini_truck.jpg', subtitle: 'Local Delivery', color: '#e3f2fd', iconColor: '#1565c0', category: 'Transport' },
+    { name: 'Loaders', icon: Truck, image: '/jcb_loader.jpg', subtitle: 'Material Handling', color: '#fff9c4', iconColor: '#f9a825', category: 'Transport' },
   ];
 
   const serviceItems: ServiceItem[] = [
-    { name: 'Plowing', icon: Tractor, image: 'https://images.unsplash.com/photo-1594913785162-e67853f2c522?auto=format&fit=crop&q=80&w=400', subtitle: 'Field Preparation', color: '#e8f5e9', iconColor: '#2e7d32', category: 'Services' },
-    { name: 'Harvesting', icon: Sprout, image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&q=80&w=400', subtitle: 'Crop Gathering', color: '#fff9c4', iconColor: '#f9a825', category: 'Services' },
-    { name: 'Drone Spraying', icon: CloudSun, image: 'https://images.unsplash.com/photo-1592842415124-7da8534b8683?auto=format&fit=crop&q=80&w=400', subtitle: 'Precision Agriculture', color: '#e3f2fd', iconColor: '#1565c0', category: 'Services' },
-    { name: 'Seeding', icon: Sprout, image: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&q=80&w=400', subtitle: 'Planting Seeds', color: '#fff3e0', iconColor: '#e65100', category: 'Services' },
+    { name: 'Plowing', icon: Tractor, image: '/plowing_tractor.jpg', subtitle: 'Field Preparation', color: '#e8f5e9', iconColor: '#2e7d32', category: 'Services' },
+    { name: 'Harvesting', icon: Sprout, image: '/green_harvester.jpg', subtitle: 'Crop Gathering', color: '#fff9c4', iconColor: '#f9a825', category: 'Services' },
+    { name: 'Drone Spraying', icon: CloudSun, image: '/drone_sprayer.jpg', subtitle: 'Precision Agriculture', color: '#e3f2fd', iconColor: '#1565c0', category: 'Services' },
+    { name: 'Seeding', icon: Sprout, image: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&q=80&w=600', subtitle: 'Planting Seeds', color: '#fff3e0', iconColor: '#e65100', category: 'Services' },
   ];
 
 
@@ -587,6 +587,9 @@ const Home: React.FC = () => {
                 <img
                   src={item.image}
                   alt={item.name}
+                  onError={(e) => {
+                    e.currentTarget.src = '/red_tractor.jpg';
+                  }}
                   style={{
                     width: '100%',
                     height: '100%',
@@ -891,7 +894,7 @@ const Home: React.FC = () => {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: 'spring', stiffness: 60, damping: 15 }}
-            className="card"
+            className="card earn-banner-card"
             style={{
               background: 'linear-gradient(135deg, #0b1511 0%, #042f1a 100%)',
               color: 'white',
@@ -907,9 +910,9 @@ const Home: React.FC = () => {
             <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '250px', height: '250px', background: 'radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
             <div style={{ position: 'absolute', bottom: '-80px', left: '10%', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
-            <div className="flex justify-between items-center relative" style={{ zIndex: 2 }}>
-              <div style={{ maxWidth: '58%' }}>
-                <h3 style={{
+            <div className="flex justify-between items-center relative earn-banner-inner" style={{ zIndex: 2 }}>
+              <div className="earn-banner-text" style={{ maxWidth: '58%' }}>
+                <h3 className="earn-banner-title" style={{
                   fontSize: '2.8rem',
                   fontWeight: 900,
                   color: 'white',
@@ -918,14 +921,14 @@ const Home: React.FC = () => {
                   lineHeight: '1.15'
                 }}>{t('home.listAssetTitle')}</h3>
 
-                <p style={{
+                <p className="earn-banner-desc" style={{
                   color: 'rgba(255,255,255,0.75)',
                   fontSize: '1.15rem',
                   marginBottom: '36px',
                   lineHeight: '1.6'
                 }}>{t('home.listAssetDesc')}</p>
 
-                <div className="flex gap-4">
+                <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
                   {(!user || user.role !== 'FARMER') ? (
                     <motion.button
                       whileHover={{ scale: 1.05, y: -2, boxShadow: '0 8px 25px rgba(16, 185, 129, 0.4)' }}
@@ -1061,7 +1064,7 @@ const Home: React.FC = () => {
         )}
 
         {/* Quick Tools Row (Upgraded to Cards) */}
-        <section className="section" style={{ marginTop: '40px', paddingBottom: '0px' }}>
+        <section className="section" style={{ marginTop: '40px', marginBottom: '20px', paddingBottom: '0px' }}>
           <div className="section-header" style={{ marginBottom: '28px' }}>
             <div className="flex items-center gap-3">
               <div style={{

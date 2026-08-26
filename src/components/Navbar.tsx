@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Home, History, User, LayoutGrid, LogIn, Sprout, Bell, ClipboardList, 
-  X, CheckCheck, Info, Tag, MessageSquare, Menu
+  X, CheckCheck, Info, Tag, Menu
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
@@ -111,7 +111,6 @@ const Navbar: React.FC = () => {
     { name: t('nav.rentals'), path: '/rentals', icon: LayoutGrid, state: undefined },
     { name: t('nav.services'), path: '/services', icon: Sprout, state: { initialFilter: 'Services' } },
     { name: t('nav.activity'), path: '/activity', icon: History, state: undefined },
-    { name: 'Community', path: '/community', icon: MessageSquare, state: undefined },
   ];
 
   const showManageAssets = isAuthenticated && ['OWNER', 'PROVIDER'].includes(user?.role || '');
