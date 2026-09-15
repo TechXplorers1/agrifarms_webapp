@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Sprout, Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone, MapPin } from 'lucide-react';
 
 const Footer: React.FC = () => {
 
@@ -54,10 +54,8 @@ const Footer: React.FC = () => {
           {/* Brand Column */}
           <div>
             <Link to="/" className="logo" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', textDecoration: 'none' }}>
-              <div style={{ background: '#10b981', padding: '8px', borderRadius: '12px' }}>
-                <Sprout size={28} color="white" />
-              </div>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.5px', color: 'white' }}>Agri Farms</h2>
+              <img src="/logo.png" alt="AgriFarms Logo" style={{ height: '34px', width: 'auto', objectFit: 'contain' }} />
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 900, letterSpacing: '-0.5px', color: 'white' }}>Agri Farms</h2>
             </Link>
             <p style={{ color: 'rgba(255,255,255,0.7)', lineHeight: '1.6', fontSize: '0.95rem' }}>
               Empowering farmers with modern tools, equipment rentals, and a connected agricultural community.

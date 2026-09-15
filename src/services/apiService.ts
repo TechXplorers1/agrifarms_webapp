@@ -16,7 +16,7 @@ export const apiService = {
   getUserByEmail: (email: string) => api.get(`/api/users/email/${email}`),
   createUser: (data: any) => api.post('/api/users', data),
   updateUser: (id: string, data: any) => api.put(`/api/users/${id}`, data),
-  
+
   // Inventory - Fetch
   getEquipment: (params?: any) => api.get('/api/inventory/equipment', { params }),
   getServices: (params?: any) => api.get('/api/inventory/services', { params }),
@@ -26,7 +26,7 @@ export const apiService = {
   createSkill: (data: { name: string }) => api.post('/api/inventory/skills', data),
   getVehicleCategories: () => api.get('/api/inventory/vehicle-categories'),
   createVehicleCategory: (data: { name: string }) => api.post('/api/inventory/vehicle-categories', data),
-  
+
   // Inventory - Manage
   createEquipment: (data: any) => api.post('/api/inventory/equipment', data),
   createService: (data: any) => api.post('/api/inventory/services', data),
@@ -42,15 +42,15 @@ export const apiService = {
   updateService: (id: string, data: any) => api.put(`/api/inventory/services/${id}`, data),
   updateVehicle: (id: string, data: any) => api.put(`/api/inventory/vehicles/${id}`, data),
   updateWorkerGroup: (id: string, data: any) => api.put(`/api/inventory/worker-groups/${id}`, data),
-  
+
   // Bookings
   createBooking: (data: any) => api.post('/api/bookings', data),
   getFarmerBookings: (farmerId: string) => api.get(`/api/bookings/farmer/${farmerId}`),
   getProviderBookings: (providerId: string) => api.get(`/api/bookings/provider/${providerId}`),
-  updateBookingStatus: (bookingId: string, status: string, cancelledBy?: string, cancellationReason?: string) => 
+  updateBookingStatus: (bookingId: string, status: string, cancelledBy?: string, cancellationReason?: string) =>
     api.put(`/api/bookings/${bookingId}/status`, null, { params: { status, cancelledBy, cancellationReason } }),
   markAllNotificationsAsRead: (userId: string) => api.put(`/api/notifications/user/${userId}/read-all`),
-  
+
   // Notifications
   getNotifications: (userId: string) => api.get(`/api/notifications/user/${userId}`),
   markAsRead: (id: string) => api.put(`/api/notifications/${id}/read`),
@@ -60,7 +60,7 @@ export const apiService = {
   register: (email: string, password: string, role: string) => api.post('/api/auth/register', { email, password, role }),
   sendOtp: (email: string) => api.post('/api/auth/send-otp', { email }),
   verifyOtp: (email: string, otp: string) => api.post('/api/auth/verify-otp', { email, otp }),
-  
+
   // Mobile Phone Authentication Endpoints (MSG91 & Static OTP)
   sendMsg91Otp: (phoneNumber: string) => api.post('/api/auth/msg91/send-otp', { phoneNumber }),
   verifyMsg91Otp: (data: { phoneNumber: string; otp: string; role?: string; fullName?: string; isLogin?: boolean }) =>
@@ -88,7 +88,7 @@ export const apiService = {
   },
 
   // Reviews
-  submitReview: (reviewData: { bookingId: string, assetId: string, reviewerId: string, rating: number, comment?: string }) => 
+  submitReview: (reviewData: { bookingId: string, assetId: string, reviewerId: string, rating: number, comment?: string }) =>
     api.post('/api/reviews', reviewData),
   getAssetReviews: (assetId: string) => api.get(`/api/reviews/asset/${assetId}`),
 };

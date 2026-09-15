@@ -1,17 +1,7 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { 
-  Shield, 
-  Lock, 
-  Eye, 
-  CheckCircle, 
-  Share2, 
-  UserX, 
-  Server, 
-  Mail, 
-  FileText
-} from 'lucide-react';
+
 
 const PrivacyPolicy: React.FC = () => {
   useEffect(() => {
@@ -26,16 +16,7 @@ const PrivacyPolicy: React.FC = () => {
         transition={{ duration: 0.5 }}
       >
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <div style={{ display: 'inline-flex', background: '#e8f5e9', padding: '16px', borderRadius: '50%', marginBottom: '20px' }}>
-            <Shield size={40} color="#10b981" />
-          </div>
           <h1 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '10px' }}>Privacy Policy</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>
-            Google Play Store Compliant Privacy & Transparency Policy
-          </p>
-          <span style={{ fontSize: '0.85rem', color: '#10b981', background: '#e8f5e9', padding: '4px 12px', borderRadius: '12px', fontWeight: 700, display: 'inline-block', marginTop: '10px' }}>
-            Effective Date: August 27, 2026 | Version 2.0
-          </span>
         </div>
 
         {/* Tab Switcher */}
@@ -90,10 +71,7 @@ const PrivacyPolicy: React.FC = () => {
 
         {/* Section 1: Overview & Scope */}
         <section className="card" style={{ padding: '36px', marginBottom: '30px', borderRadius: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-            <Eye size={28} color="#10b981" />
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>1. Application Overview & Scope</h2>
-          </div>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '20px' }}>1. Application Overview & Scope</h2>
           <p style={{ lineHeight: '1.8', fontSize: '1.05rem', color: 'var(--text-muted)' }}>
             <strong>AgriFarms</strong> ("we", "our", or "us") operates a multi-sided agricultural technology platform across mobile (Android/iOS) and web applications. The platform connects farmers, agricultural equipment owners (tractors, harvesters, sprayers), transport vehicle providers, and farm worker group leaders to facilitate agricultural machinery rentals, field logistics, and workforce hiring. We are committed to complete transparency regarding data collection, processing, third-party disclosures, security, and user data rights.
           </p>
@@ -101,10 +79,7 @@ const PrivacyPolicy: React.FC = () => {
 
         {/* Section 2: Detailed Data Collection Inventory */}
         <section className="card" style={{ padding: '36px', marginBottom: '30px', borderRadius: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-            <CheckCircle size={28} color="#3b82f6" />
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>2. Comprehensive Data Collection Inventory</h2>
-          </div>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '20px' }}>2. Comprehensive Data Collection Inventory</h2>
           <p style={{ lineHeight: '1.8', fontSize: '1.05rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
             To deliver agricultural matching and booking services, AgriFarms collects and processes the following specific data categories:
           </p>
@@ -149,10 +124,7 @@ const PrivacyPolicy: React.FC = () => {
 
         {/* Section 3: Third-Party Service Providers & SDK Disclosures */}
         <section className="card" style={{ padding: '36px', marginBottom: '30px', borderRadius: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-            <Server size={28} color="#8b5cf6" />
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>3. Third-Party Service Providers & SDK Disclosures</h2>
-          </div>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '20px' }}>3. Third-Party Service Providers & SDK Disclosures</h2>
           <p style={{ lineHeight: '1.8', fontSize: '1.05rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
             In compliance with Google Play Store policies, we explicitly disclose all third-party services and Software Development Kits (SDKs) integrated into the AgriFarms ecosystem:
           </p>
@@ -202,10 +174,7 @@ const PrivacyPolicy: React.FC = () => {
 
         {/* Section 4: Cross-User Data Sharing & Boundaries */}
         <section className="card" style={{ padding: '36px', marginBottom: '30px', borderRadius: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-            <Share2 size={28} color="#ec4899" />
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>4. Information Sharing Boundaries & User Privacy</h2>
-          </div>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '20px' }}>4. Information Sharing Boundaries & User Privacy</h2>
           <p style={{ lineHeight: '1.8', fontSize: '1.05rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
             As an agricultural marketplace, data sharing between Farmers and Equipment/Service Providers is strictly scoped to essential operational information:
           </p>
@@ -231,10 +200,7 @@ const PrivacyPolicy: React.FC = () => {
 
         {/* Section 5: Security Architecture */}
         <section className="card" style={{ padding: '36px', marginBottom: '30px', borderRadius: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-            <Lock size={28} color="#f59e0b" />
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>5. Security Architecture & Encryption</h2>
-          </div>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '20px' }}>5. Security Architecture & Encryption</h2>
           <ul style={{ lineHeight: '1.8', fontSize: '1.05rem', color: 'var(--text-muted)', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <li><strong style={{ color: 'var(--text-main)' }}>Encryption in Transit:</strong> All data transmitted between mobile/web clients and backend servers is encrypted using industry-standard TLS 1.3 / HTTPS.</li>
             <li><strong style={{ color: 'var(--text-main)' }}>Secure Mobile Credential Storage:</strong> JWT access and refresh tokens are stored using device hardware security modules via <code>flutter_secure_storage</code> (iOS Keychain and Android KeyStore with AES-256 encryption).</li>
@@ -245,10 +211,7 @@ const PrivacyPolicy: React.FC = () => {
 
         {/* Section 6: Inactive User & Deletion Policy */}
         <section className="card" style={{ padding: '36px', marginBottom: '30px', borderRadius: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-            <UserX size={28} color="#ef4444" />
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>6. Inactive User Policy & Automatic Listing Disabling</h2>
-          </div>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '20px' }}>6. Inactive User Policy & Automatic Listing Disabling</h2>
           <p style={{ lineHeight: '1.8', fontSize: '1.05rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
             AgriFarms enforces automatic status protection and availability toggles for inactive user accounts:
           </p>
@@ -260,10 +223,7 @@ const PrivacyPolicy: React.FC = () => {
 
         {/* Section 7: User Data Rights & Play Store Account Deletion Request */}
         <section className="card" style={{ padding: '36px', marginBottom: '30px', borderRadius: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-            <FileText size={28} color="#10b981" />
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>7. User Data Rights & Account Deletion Request</h2>
-          </div>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '20px' }}>7. User Data Rights & Account Deletion Request</h2>
           <p style={{ lineHeight: '1.8', fontSize: '1.05rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
             In compliance with Google Play Store Data Safety & Account Deletion policies, you have the following rights regarding your personal data:
           </p>
@@ -277,18 +237,16 @@ const PrivacyPolicy: React.FC = () => {
               How to Request Account & Data Deletion:
             </strong>
             <p style={{ fontSize: '0.98rem', color: 'var(--text-main)', lineHeight: '1.6', margin: 0 }}>
-              1. **In-App:** Go to <strong>Profile Settings → Security & Account → Delete Account</strong>.<br />
-              2. **Via Email:** Send an email from your registered email address to <a href="mailto:privacy@agrifarms.in" style={{ color: '#10b981', fontWeight: 700 }}>privacy@agrifarms.in</a> with the subject line <code>"Account Deletion Request"</code> and include your registered mobile phone number. Account deletion requests are processed within 7 business days.
+              1. <strong>In-App:</strong> Open the AgriFarms mobile app → Navigate to <strong>Profile → Delete Account</strong>.<br />
+              2. <strong>Online Web Form:</strong> Visit our dedicated <a href="/delete-account" style={{ color: '#10b981', fontWeight: 700, textDecoration: 'underline' }}>Account Deletion Request Page</a> to submit a deletion request directly from any web browser.<br />
+              3. <strong>Via Email:</strong> Send an email to <a href="mailto:support@agrifarms.in" style={{ color: '#10b981', fontWeight: 700 }}>support@agrifarms.in</a> with the subject line <code>"Account Deletion Request"</code> and your registered phone number.
             </p>
           </div>
         </section>
 
         {/* Section 8: Contact Us */}
         <section className="card" style={{ padding: '36px', marginBottom: '30px', borderRadius: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-            <Mail size={28} color="#3b82f6" />
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>8. Contact Us & Data Protection Officer</h2>
-          </div>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '20px' }}>8. Contact Us & Data Protection Officer</h2>
           <p style={{ lineHeight: '1.8', fontSize: '1.05rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
             If you have questions, concerns, or inquiries regarding this Privacy Policy or our data protection practices, please contact our Data Protection Team:
           </p>
@@ -297,7 +255,7 @@ const PrivacyPolicy: React.FC = () => {
               AgriFarms Data Protection Office
             </p>
             <p style={{ margin: '0 0 6px 0', fontSize: '0.95rem', color: 'var(--text-muted)' }}>
-              Email: <a href="mailto:privacy@agrifarms.in" style={{ color: '#10b981', textDecoration: 'underline' }}>privacy@agrifarms.in</a> / <a href="mailto:support@agrifarms.in" style={{ color: '#10b981', textDecoration: 'underline' }}>support@agrifarms.in</a>
+              Email: <a href="mailto:support@agrifarms.in" style={{ color: '#10b981', textDecoration: 'underline' }}>support@agrifarms.in</a>
             </p>
             <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-muted)' }}>
               Jurisdiction: Andhra Pradesh, India

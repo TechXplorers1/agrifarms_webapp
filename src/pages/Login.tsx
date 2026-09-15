@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
 import { motion } from 'framer-motion';
-import { Phone, User as UserIcon, ChevronRight, Sprout, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Phone, User as UserIcon, ChevronRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const Login: React.FC = () => {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -63,8 +63,8 @@ const Login: React.FC = () => {
         className="login-card glass"
       >
         <div className="login-header">
-          <div className="login-logo">
-            <Sprout size={40} color="var(--primary)" />
+          <div className="login-logo" style={{ display: 'inline-flex', marginBottom: '10px' }}>
+            <img src="/logo.png" alt="AgriFarms Logo" style={{ height: '52px', width: 'auto', objectFit: 'contain' }} />
           </div>
           <h1>Agri Farms</h1>
           <p>{isSignUp ? 'Join the agricultural community' : 'Login with Mobile Number & OTP'}</p>
@@ -208,12 +208,15 @@ const Login: React.FC = () => {
 
       <style>{`
         .login-page {
-          min-height: calc(100vh - 70px);
+          min-height: 100vh;
+          width: 100%;
           display: flex;
           align-items: center;
           justify-content: center;
           background: url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
+          background-attachment: fixed;
           position: relative;
+          padding: 40px 20px;
         }
         .login-page::before {
           content: '';

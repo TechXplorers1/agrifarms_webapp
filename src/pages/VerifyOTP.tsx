@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
 import { motion } from 'framer-motion';
-import { ShieldCheck, ChevronRight, ArrowLeft, AlertCircle } from 'lucide-react';
+import { ChevronRight, ArrowLeft, AlertCircle } from 'lucide-react';
 
 const VerifyOTP: React.FC = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -100,8 +100,8 @@ const VerifyOTP: React.FC = () => {
         </button>
 
         <div className="login-header">
-          <div className="login-logo">
-            <ShieldCheck size={40} color="var(--primary)" />
+          <div className="login-logo" style={{ display: 'inline-flex', marginBottom: '10px' }}>
+            <img src="/logo.png" alt="AgriFarms Logo" style={{ height: '52px', width: 'auto', objectFit: 'contain' }} />
           </div>
           <h1>Verify Identity</h1>
           <p>Enter the 6-digit OTP code sent to<br/><strong>+91 {pendingPhone}</strong></p>
@@ -154,12 +154,15 @@ const VerifyOTP: React.FC = () => {
 
       <style>{`
         .login-page {
-          min-height: calc(100vh - 70px);
+          min-height: 100vh;
+          width: 100%;
           display: flex;
           align-items: center;
           justify-content: center;
           background: url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
+          background-attachment: fixed;
           position: relative;
+          padding: 40px 20px;
         }
         .login-page::before {
           content: '';

@@ -378,7 +378,7 @@ const UploadItem: React.FC = () => {
       }
 
       setSuccess(true);
-      setTimeout(() => navigate('/manage-assets'), 2000);
+      setTimeout(() => navigate('/manage-assets', { state: { activeTab: category } }), 1800);
     } catch (error) {
       console.error('Error uploading item:', error);
       alert('Error saving item. Please try again.');
@@ -1215,7 +1215,14 @@ const UploadItem: React.FC = () => {
                 <Check size={48} color="white" />
               </div>
               <h2>{editData ? 'Update Successful!' : 'Listing Successful!'}</h2>
-              <p>Your item has been submitted for moderation.</p>
+              <p>Your item has been submitted and added to your listings.</p>
+              <button
+                onClick={() => navigate('/manage-assets', { state: { activeTab: category } })}
+                className="btn-primary"
+                style={{ marginTop: '20px', padding: '12px 28px', borderRadius: '12px' }}
+              >
+                Go to My {category || 'Assets'}
+              </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>

@@ -246,22 +246,25 @@ button {
 .logo-section {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
-.logo-box {
-  background: #e8f5e9;
-  padding: 8px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
+.logo-img {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  transition: transform 0.2s ease;
+}
+
+.logo-section:hover .logo-img {
+  transform: scale(1.08);
 }
 
 .logo-text {
   font-size: 1.25rem;
   font-weight: 800;
   color: var(--primary);
-  letter-spacing: -0.5px;
+  letter-spacing: -0.4px;
 }
 
 .nav-links {

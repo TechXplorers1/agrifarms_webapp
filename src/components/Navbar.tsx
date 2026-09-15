@@ -120,9 +120,7 @@ const Navbar: React.FC = () => {
     <nav className="web-navbar">
       <div className="nav-container">
         <Link to="/" className="logo-section">
-          <div className="logo-box">
-            <Sprout size={24} color="var(--primary)" />
-          </div>
+          <img src="/logo.png" alt="AgriFarms Logo" className="logo-img" />
           <span className="logo-text">{t('logo.title')}</span>
         </Link>
         <div className="nav-links">
@@ -270,9 +268,7 @@ const Navbar: React.FC = () => {
               >
                 <div style={{ padding: '24px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafbfb' }}>
                   <div className="logo-section" onClick={() => { navigate('/'); setIsMobileMenuOpen(false); }} style={{ cursor: 'pointer' }}>
-                    <div className="logo-box">
-                      <Sprout size={24} color="var(--primary)" />
-                    </div>
+                    <img src="/logo.png" alt="AgriFarms Logo" className="logo-img" />
                     <span className="logo-text">{t('logo.title')}</span>
                   </div>
                   <button
