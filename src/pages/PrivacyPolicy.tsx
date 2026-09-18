@@ -1,15 +1,15 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { 
-  Shield, 
-  Lock, 
-  Eye, 
-  CheckCircle, 
-  Share2, 
-  UserX, 
-  Server, 
-  Mail, 
+import {
+  Shield,
+  Lock,
+  Eye,
+  CheckCircle,
+  Share2,
+  UserX,
+  Server,
+  Mail,
   FileText
 } from 'lucide-react';
 
@@ -108,7 +108,7 @@ const PrivacyPolicy: React.FC = () => {
           <p style={{ lineHeight: '1.8', fontSize: '1.05rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
             To deliver agricultural matching and booking services, AgriFarms collects and processes the following specific data categories:
           </p>
-          
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ background: 'rgba(0,0,0,0.02)', padding: '18px', borderRadius: '16px' }}>
               <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>a. Personal Identifiable Information (PII)</h3>
@@ -156,7 +156,7 @@ const PrivacyPolicy: React.FC = () => {
           <p style={{ lineHeight: '1.8', fontSize: '1.05rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
             In compliance with Google Play Store policies, we explicitly disclose all third-party services and Software Development Kits (SDKs) integrated into the AgriFarms ecosystem:
           </p>
-          
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
             <div style={{ border: '1px solid rgba(0,0,0,0.08)', padding: '20px', borderRadius: '16px' }}>
               <strong style={{ color: '#10b981', fontSize: '1.1rem' }}>MSG91 Gateway</strong>
@@ -278,7 +278,7 @@ const PrivacyPolicy: React.FC = () => {
             </strong>
             <p style={{ fontSize: '0.98rem', color: 'var(--text-main)', lineHeight: '1.6', margin: 0 }}>
               1. **In-App:** Go to <strong>Profile Settings → Security & Account → Delete Account</strong>.<br />
-              2. **Via Email:** Send an email from your registered email address to <a href="mailto:privacy@agrifarms.in" style={{ color: '#10b981', fontWeight: 700 }}>privacy@agrifarms.in</a> with the subject line <code>"Account Deletion Request"</code> and include your registered mobile phone number. Account deletion requests are processed within 7 business days.
+              2. **Via Email:** Send an email from your registered email address to <a href="mailto:support@agrifarms.in" style={{ color: '#10b981', fontWeight: 700 }}>support@agrifarms.in</a> with the subject line <code>"Account Deletion Request"</code> and include your registered mobile phone number. Account deletion requests are processed within 7 business days.
             </p>
           </div>
         </section>
@@ -297,7 +297,7 @@ const PrivacyPolicy: React.FC = () => {
               AgriFarms Data Protection Office
             </p>
             <p style={{ margin: '0 0 6px 0', fontSize: '0.95rem', color: 'var(--text-muted)' }}>
-              Email: <a href="mailto:privacy@agrifarms.in" style={{ color: '#10b981', textDecoration: 'underline' }}>privacy@agrifarms.in</a> / <a href="mailto:support@agrifarms.in" style={{ color: '#10b981', textDecoration: 'underline' }}>support@agrifarms.in</a>
+              Email: <a href="mailto:support@agrifarms.in" style={{ color: '#10b981', textDecoration: 'underline' }}>support@agrifarms.in</a>
             </p>
             <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-muted)' }}>
               Jurisdiction: Andhra Pradesh, India

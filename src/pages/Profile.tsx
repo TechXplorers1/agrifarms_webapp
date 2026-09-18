@@ -22,6 +22,10 @@ const Profile: React.FC = () => {
   const [infoMsg, setInfoMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const handleLogoutClick = () => setShowLogoutConfirm(true);
+  const confirmLogout = () => { setShowLogoutConfirm(false); logout(); };
 
   const [profile, setProfile] = useState<any>(null);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
@@ -863,10 +867,41 @@ const Profile: React.FC = () => {
           ))}
         </div>
 
-        <button className="btn-logout" onClick={logout}>
+        <button className="btn-logout" onClick={handleLogoutClick}>
           <LogOut size={20} />
           <span>{t('profile.logoutBtn')}</span>
         </button>
+
+        {/* Logout Confirm Modal */}
+        <AnimatePresence>
+          {showLogoutConfirm && (
+            <motion.div
+              className="profile-logout-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowLogoutConfirm(false)}
+            >
+              <motion.div
+                className="profile-logout-box"
+                initial={{ scale: 0.9, y: 16 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 16 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="profile-logout-icon">
+                  <LogOut size={28} color="#ef4444" />
+                </div>
+                <h3>Logout from Account?</h3>
+                <p>Are you sure you want to logout from your Agri Farms account?</p>
+                <div className="profile-logout-actions">
+                  <button className="plb-stay" onClick={() => setShowLogoutConfirm(false)}>Stay</button>
+                  <button className="plb-confirm" onClick={confirmLogout}>Yes, Logout</button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <style>{`
@@ -1320,6 +1355,82 @@ const Profile: React.FC = () => {
             padding: 24px;
           }
         }
+
+        /* Logout Confirm Modal */
+        .profile-logout-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.45);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          z-index: 9999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+        }
+        .profile-logout-box {
+          background: white;
+          border-radius: 24px;
+          padding: 32px 28px;
+          max-width: 360px;
+          width: 100%;
+          text-align: center;
+          box-shadow: 0 25px 60px rgba(0,0,0,0.18);
+        }
+        .profile-logout-icon {
+          width: 60px;
+          height: 60px;
+          border-radius: 18px;
+          background: #fff1f2;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 16px;
+        }
+        .profile-logout-box h3 {
+          font-size: 1.25rem;
+          font-weight: 800;
+          color: #111827;
+          margin-bottom: 8px;
+        }
+        .profile-logout-box p {
+          font-size: 0.9rem;
+          color: #6b7280;
+          line-height: 1.5;
+          margin-bottom: 24px;
+        }
+        .profile-logout-actions {
+          display: flex;
+          gap: 12px;
+        }
+        .plb-stay {
+          flex: 1;
+          padding: 12px;
+          border-radius: 14px;
+          border: 2px solid #e5e7eb;
+          background: white;
+          font-weight: 700;
+          font-size: 0.95rem;
+          color: #374151;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .plb-stay:hover { background: #f9fafb; }
+        .plb-confirm {
+          flex: 1;
+          padding: 12px;
+          border-radius: 14px;
+          border: none;
+          background: #ef4444;
+          color: white;
+          font-weight: 700;
+          font-size: 0.95rem;
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+        .plb-confirm:hover { background: #dc2626; }
       `}</style>
     </div>
   );

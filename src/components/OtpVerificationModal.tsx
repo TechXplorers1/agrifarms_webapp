@@ -18,9 +18,10 @@ const OtpVerificationModal: React.FC = () => {
   const [success, setSuccess] = useState<boolean>(false);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [isResending, setIsResending] = useState<boolean>(false);
-  
-  // Timer state - 2 minutes (120 seconds)
-  const [timeLeft, setTimeLeft] = useState<number>(120);
+
+  // Timer state - 1 minute (60 seconds)
+  const [timeLeft, setTimeLeft] = useState<number>(60);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState<boolean>(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -39,7 +40,7 @@ const OtpVerificationModal: React.FC = () => {
       setTimeout(() => {
         inputRefs.current[0]?.focus();
       }, 100);
-      setTimeLeft(120);
+      setTimeLeft(60);
       setOtp(['', '', '', '', '', '']);
       setError('');
       setSuccess(false);
@@ -97,7 +98,7 @@ const OtpVerificationModal: React.FC = () => {
     const digits = pasteData.split('');
     setOtp(digits);
     setError('');
-    
+
     // Focus last input
     inputRefs.current[5]?.focus();
   };
@@ -123,15 +124,14 @@ const OtpVerificationModal: React.FC = () => {
 
   const handleResend = async () => {
     if (timeLeft > 0 || isResending) return;
-    
+
     setIsResending(true);
     setError('');
     try {
       await resendEmailOtp();
-      setTimeLeft(120);
+      setTimeLeft(60);
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
-      // Temporary user visual feedback
       setError('A fresh 6-digit OTP has been sent successfully.');
     } catch (err: any) {
       setError('Failed to resend OTP. Please try again later.');
@@ -140,7 +140,10 @@ const OtpVerificationModal: React.FC = () => {
     }
   };
 
-  const handleLogout = async () => {
+  const handleLogout = () => setShowLogoutConfirm(true);
+
+  const confirmLogout = async () => {
+    setShowLogoutConfirm(false);
     try {
       await logout();
     } catch (err) {
@@ -158,7 +161,7 @@ const OtpVerificationModal: React.FC = () => {
           exit={{ opacity: 0 }}
           onClick={handleLogout}
         />
-        
+
         <motion.div
           className="otp-modal-card glass"
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -193,15 +196,26 @@ const OtpVerificationModal: React.FC = () => {
                   onChange={(e) => handleChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   onPaste={handlePaste}
-                  disabled={isVerifying || success}
-                  className={`otp-digit-input ${error && !digit ? 'input-error' : ''} ${digit ? 'input-filled' : ''}`}
+                  disabled={isVerifying || success || timeLeft === 0}
+                  className={`otp-digit-input ${timeLeft === 0 ? 'input-expired' : ''} ${error && !digit && timeLeft > 0 ? 'input-error' : ''} ${digit && timeLeft > 0 ? 'input-filled' : ''}`}
                   autoComplete="one-time-code"
                 />
               ))}
             </div>
 
-            {error && (
-              <motion.div 
+            {timeLeft === 0 && !success && (
+              <motion.div
+                className="otp-feedback-msg expired-msg"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <AlertCircle size={16} />
+                <span>OTP has expired. Please resend a new code.</span>
+              </motion.div>
+            )}
+
+            {error && timeLeft > 0 && (
+              <motion.div
                 className={`otp-feedback-msg ${error.includes('sent successfully') ? 'info-msg' : 'error-msg'}`}
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -211,23 +225,71 @@ const OtpVerificationModal: React.FC = () => {
               </motion.div>
             )}
 
-            <button
-              type="submit"
-              className="btn-primary otp-submit-btn"
-              disabled={otp.join('').length < 6 || isVerifying || success}
-            >
-              {isVerifying ? (
-                <span className="otp-loader-flex">
-                  <RefreshCw className="animate-spin" size={18} />
-                  Verifying...
-                </span>
-              ) : success ? (
-                'Verified Successfully!'
-              ) : (
-                'Verify & Login'
-              )}
-            </button>
+            {timeLeft > 0 ? (
+              <button
+                type="submit"
+                className="btn-primary otp-submit-btn"
+                disabled={otp.join('').length < 6 || isVerifying || success}
+              >
+                {isVerifying ? (
+                  <span className="otp-loader-flex">
+                    <RefreshCw className="animate-spin" size={18} />
+                    Verifying...
+                  </span>
+                ) : success ? (
+                  'Verified Successfully!'
+                ) : (
+                  'Verify & Login'
+                )}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn-primary otp-submit-btn otp-resend-btn"
+                onClick={handleResend}
+                disabled={isResending}
+              >
+                {isResending ? (
+                  <span className="otp-loader-flex">
+                    <RefreshCw className="animate-spin" size={18} />
+                    Sending new OTP...
+                  </span>
+                ) : (
+                  <span className="otp-loader-flex">
+                    <RefreshCw size={18} />
+                    Resend OTP
+                  </span>
+                )}
+              </button>
+            )}
           </form>
+
+          {/* Logout Confirm Dialog */}
+          <AnimatePresence>
+            {showLogoutConfirm && (
+              <motion.div
+                className="logout-confirm-overlay"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <motion.div
+                  className="logout-confirm-box"
+                  initial={{ scale: 0.9, y: 10 }}
+                  animate={{ scale: 1, y: 0 }}
+                  exit={{ scale: 0.9, y: 10 }}
+                >
+                  <div className="logout-confirm-icon">⚠️</div>
+                  <h3>Cancel Verification?</h3>
+                  <p>Are you sure you want to cancel OTP verification and logout?</p>
+                  <div className="logout-confirm-actions">
+                    <button className="btn-cancel-logout" onClick={() => setShowLogoutConfirm(false)}>Stay</button>
+                    <button className="btn-confirm-logout" onClick={confirmLogout}>Yes, Logout</button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div className="otp-modal-footer">
             <div className="otp-timer-box">
@@ -404,8 +466,14 @@ const OtpVerificationModal: React.FC = () => {
             background: #fff5f5;
           }
 
+          .otp-digit-input.input-expired {
+            border-color: #fca5a5;
+            background: #fef2f2;
+            color: #9ca3af;
+          }
+
           .otp-digit-input:disabled {
-            opacity: 0.6;
+            opacity: 0.55;
             cursor: not-allowed;
           }
 
@@ -427,10 +495,87 @@ const OtpVerificationModal: React.FC = () => {
             background: rgba(239, 68, 68, 0.08);
           }
 
+          .expired-msg {
+            color: #b45309;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            font-weight: 700;
+          }
+
           .info-msg {
             color: var(--primary);
             background: rgba(16, 185, 129, 0.08);
           }
+
+          .otp-resend-btn {
+            background: #f59e0b !important;
+            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35) !important;
+          }
+          .otp-resend-btn:hover {
+            background: #d97706 !important;
+          }
+
+          .logout-confirm-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(6px);
+            border-radius: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            padding: 24px;
+          }
+          .logout-confirm-box {
+            text-align: center;
+            max-width: 280px;
+          }
+          .logout-confirm-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+          }
+          .logout-confirm-box h3 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 8px;
+          }
+          .logout-confirm-box p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-bottom: 20px;
+          }
+          .logout-confirm-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+          }
+          .btn-cancel-logout {
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            font-weight: 700;
+            font-size: 0.875rem;
+            cursor: pointer;
+            color: var(--text-main);
+            transition: all 0.2s;
+          }
+          .btn-cancel-logout:hover { background: #f8fafc; }
+          .btn-confirm-logout {
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: none;
+            background: #ef4444;
+            color: white;
+            font-weight: 700;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+          .btn-confirm-logout:hover { background: #dc2626; }
 
           .otp-submit-btn {
             width: 100%;
