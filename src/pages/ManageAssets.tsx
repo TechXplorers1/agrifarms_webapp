@@ -6,18 +6,35 @@ import {
   Package, Plus, Edit2, Trash2, 
   CheckCircle, Clock, XCircle, Loader2
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type AssetType = 'Vehicles' | 'Equipment' | 'Services' | 'Workers';
 
 const ManageAssets: React.FC = () => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<AssetType>('Vehicles');
+  const location = useLocation();
+  const stateTab = (location.state as any)?.activeTab;
+  const queryTab = new URLSearchParams(location.search).get('tab');
+  const targetTab = stateTab || queryTab;
+
+  const [activeTab, setActiveTab] = useState<AssetType>(() => {
+    if (targetTab && ['Vehicles', 'Equipment', 'Services', 'Workers'].includes(targetTab)) {
+      return targetTab as AssetType;
+    }
+    return 'Equipment';
+  });
+
   const [assets, setAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (targetTab && ['Vehicles', 'Equipment', 'Services', 'Workers'].includes(targetTab)) {
+      setActiveTab(targetTab as AssetType);
+    }
+  }, [location.state, location.search]);
 
   const fetchAssets = async () => {
     setLoading(true);

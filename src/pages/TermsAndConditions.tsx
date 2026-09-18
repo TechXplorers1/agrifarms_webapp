@@ -1,16 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { 
-  FileText, 
-  ShieldCheck, 
-  UserCheck, 
-  Truck, 
-  Clock, 
-  AlertTriangle, 
-  Scale, 
-  HelpCircle 
-} from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 
 const TermsAndConditions: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'terms' | 'privacy'>('terms');
@@ -28,9 +19,6 @@ const TermsAndConditions: React.FC = () => {
       >
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div style={{ display: 'inline-flex', background: '#e8f5e9', padding: '16px', borderRadius: '50%', marginBottom: '20px' }}>
-            <FileText size={40} color="#10b981" />
-          </div>
           <h1 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '10px' }}>Terms & Conditions</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>
             Please read these terms carefully before using the Agri Farms platform.
@@ -90,12 +78,7 @@ const TermsAndConditions: React.FC = () => {
 
         {/* Clause 1 */}
         <section className="card" style={{ padding: '36px', marginBottom: '24px', borderRadius: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
-            <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '10px', borderRadius: '14px' }}>
-              <ShieldCheck size={26} color="#10b981" />
-            </div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>1. Acceptance of Terms</h2>
-          </div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '16px' }}>1. Acceptance of Terms</h2>
           <p style={{ lineHeight: '1.8', fontSize: '1.02rem', color: 'var(--text-muted)' }}>
             By registering, downloading, browsing, or using the Agri Farms web or mobile application, you agree to be bound by these Terms and Conditions and our Privacy Policy. If you do not agree to all terms, you must immediately cease using our platform.
           </p>
@@ -103,12 +86,7 @@ const TermsAndConditions: React.FC = () => {
 
         {/* Clause 2 */}
         <section className="card" style={{ padding: '36px', marginBottom: '24px', borderRadius: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
-            <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '10px', borderRadius: '14px' }}>
-              <UserCheck size={26} color="#3b82f6" />
-            </div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>2. User Registration & Account Responsibilities</h2>
-          </div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '16px' }}>2. User Registration & Account Responsibilities</h2>
           <p style={{ lineHeight: '1.8', fontSize: '1.02rem', color: 'var(--text-muted)', marginBottom: '14px' }}>
             Users may register as either a <strong>Farmer</strong> (requesting rentals/services) or an <strong>Owner/Provider</strong> (listing equipment or workforce).
           </p>
@@ -121,12 +99,7 @@ const TermsAndConditions: React.FC = () => {
 
         {/* Clause 3 */}
         <section className="card" style={{ padding: '36px', marginBottom: '24px', borderRadius: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
-            <div style={{ background: 'rgba(168, 85, 247, 0.1)', padding: '10px', borderRadius: '14px' }}>
-              <Truck size={26} color="#a855f7" />
-            </div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>3. Rental Marketplace & Service Listings</h2>
-          </div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '16px' }}>3. Rental Marketplace & Service Listings</h2>
           <p style={{ lineHeight: '1.8', fontSize: '1.02rem', color: 'var(--text-muted)', marginBottom: '14px' }}>
             Agri Farms acts as a digital intermediary platform connecting farmers with agricultural machinery owners and skilled farm workforce groups.
           </p>
@@ -139,12 +112,7 @@ const TermsAndConditions: React.FC = () => {
 
         {/* Clause 4 */}
         <section className="card" style={{ padding: '36px', marginBottom: '24px', borderRadius: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
-            <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: '10px', borderRadius: '14px' }}>
-              <Clock size={26} color="#f59e0b" />
-            </div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>4. Bookings, Payments & Cancellations</h2>
-          </div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '16px' }}>4. Bookings, Payments & Cancellations</h2>
           <ul style={{ lineHeight: '1.8', fontSize: '1rem', color: 'var(--text-muted)', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <li><strong>Booking Confirmation:</strong> Bookings are subject to asset availability and provider confirmation.</li>
             <li><strong>Pricing:</strong> Rental rates per hour, day, or acre are specified in listing details. Explicit asset rental terms set by the owner take precedence.</li>
@@ -154,12 +122,7 @@ const TermsAndConditions: React.FC = () => {
 
         {/* Clause 5 */}
         <section className="card" style={{ padding: '36px', marginBottom: '24px', borderRadius: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
-            <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '10px', borderRadius: '14px' }}>
-              <AlertTriangle size={26} color="#ef4444" />
-            </div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>5. Limitation of Liability & Disclaimers</h2>
-          </div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '16px' }}>5. Limitation of Liability & Disclaimers</h2>
           <p style={{ lineHeight: '1.8', fontSize: '1.02rem', color: 'var(--text-muted)' }}>
             The materials and services on the Agri Farms application are provided on an <strong>"AS IS"</strong> and <strong>"AS AVAILABLE"</strong> basis. Agri Farms makes no warranties, expressed or implied, regarding field performance, weather interruptions, machine breakdowns, or third-party disputes. In no event shall Agri Farms be liable for indirect, incidental, or consequential damages resulting from platform use.
           </p>
@@ -167,12 +130,7 @@ const TermsAndConditions: React.FC = () => {
 
         {/* Clause 6 */}
         <section className="card" style={{ padding: '36px', marginBottom: '30px', borderRadius: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
-            <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '10px', borderRadius: '14px' }}>
-              <Scale size={26} color="#10b981" />
-            </div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>6. Governing Law & Contact Information</h2>
-          </div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '16px' }}>6. Governing Law & Contact Information</h2>
           <p style={{ lineHeight: '1.8', fontSize: '1.02rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
             These Terms shall be governed by and construed in accordance with the laws of India. Any legal disputes arising out of the use of Agri Farms services shall be subject to jurisdiction in Andhra Pradesh, India.
           </p>
