@@ -337,8 +337,10 @@ const Rentals: React.FC = () => {
                       <span className="unit">/hr</span>
                     </div>
                     <button
-                      className="btn-book"
+                      className={`btn-book ${!item.isAvailable ? 'btn-book-disabled' : ''}`}
+                      disabled={!item.isAvailable}
                       onClick={() => {
+                        if (!item.isAvailable) return;
                         if (!isAuthenticated) {
                           navigate('/login');
                           return;
@@ -358,7 +360,7 @@ const Rentals: React.FC = () => {
                         navigate('/book', { state: { asset: assetData } });
                       }}
                     >
-                      {t('rentals.bookNow')}
+                      {item.isAvailable ? t('rentals.bookNow') : 'Not Available'}
                     </button>
                   </div>
                 </div>
@@ -497,6 +499,15 @@ const Rentals: React.FC = () => {
         .btn-book:hover {
           background: var(--primary-dark);
           transform: scale(1.05);
+        }
+        .btn-book-disabled {
+          background: #94a3b8 !important;
+          cursor: not-allowed !important;
+          opacity: 0.7;
+        }
+        .btn-book-disabled:hover {
+          background: #94a3b8 !important;
+          transform: none !important;
         }
         .skeleton-card {
           height: 320px;

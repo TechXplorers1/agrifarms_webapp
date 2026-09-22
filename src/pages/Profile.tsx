@@ -36,6 +36,7 @@ const Profile: React.FC = () => {
     houseNo: '',
     street: '',
     village: '',
+    mandal: '',
     district: '',
     state: '',
     country: 'India',
@@ -89,6 +90,7 @@ const Profile: React.FC = () => {
             houseNo: formData.houseNo || profile.houseNo,
             street: formData.street || profile.street,
             village: formData.village || profile.village,
+            mandal: formData.mandal || profile.mandal,
             district: formData.district || profile.district,
             state: formData.state || profile.state,
             country: formData.country || profile.country || 'India',
@@ -164,6 +166,7 @@ const Profile: React.FC = () => {
           houseNo: data.houseNo || '',
           street: data.street || '',
           village: data.village || '',
+          mandal: data.mandal || '',
           district: data.district || '',
           state: data.state || '',
           country: data.country || 'India',
@@ -241,6 +244,7 @@ const Profile: React.FC = () => {
               ...prev,
               street: street,
               village: village,
+              mandal: formData.mandal || '',
               district: district,
               state: state,
               pincode: pincode,
@@ -322,6 +326,7 @@ const Profile: React.FC = () => {
         houseNo: formData.houseNo,
         street: formData.street,
         village: formData.village,
+        mandal: formData.mandal,
         district: formData.district,
         state: formData.state,
         country: formData.country,
@@ -469,7 +474,7 @@ const Profile: React.FC = () => {
                   <MapPin size={15} color="var(--primary)" />
                   <span>
                     {profile?.village || profile?.district
-                      ? `${profile.houseNo ? profile.houseNo + ', ' : ''}${profile.street ? profile.street + ', ' : ''}${profile.village || ''}, ${profile.district || ''}, ${profile.state || ''} - ${profile.pincode || ''}`
+                      ? `${profile.houseNo ? profile.houseNo + ', ' : ''}${profile.street ? profile.street + ', ' : ''}${profile.village || ''}, ${profile.mandal ? profile.mandal + ', ' : ''}${profile.district || ''}, ${profile.state || ''} - ${profile.pincode || ''}`
                       : t('profile.noAddress')}
                   </span>
                 </div>
@@ -710,6 +715,21 @@ const Profile: React.FC = () => {
                           type="text"
                           placeholder="e.g. Guntakal"
                           value={formData.village}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="mandal">Mandal</label>
+                      <div className="input-wrapper">
+                        <MapPin size={18} className="input-icon" />
+                        <input
+                          id="mandal"
+                          name="mandal"
+                          type="text"
+                          placeholder="e.g. Mandal Name"
+                          value={formData.mandal}
                           onChange={handleInputChange}
                         />
                       </div>

@@ -18,14 +18,35 @@ const UploadItem: React.FC = () => {
     approvalStatus: 'Approved',
     rating: 0,
     village: '',
+    mandal: '',
     district: '',
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const { user } = useAuth();
   const navigate = useNavigate();
 
   const [isUploading, setIsUploading] = useState(false);
+
+  // Helper: render a red error message under a field
+  const errMsg = (key: string) =>
+    fieldErrors[key] ? (
+      <span style={{
+        display: 'flex', alignItems: 'center', gap: '5px',
+        color: '#dc2626', fontSize: '0.78rem', fontWeight: 600,
+        marginTop: '5px', animationName: 'fadeIn', animationDuration: '0.2s'
+      }}>
+        <AlertCircle size={13} />
+        {fieldErrors[key]}
+      </span>
+    ) : null;
+
+  const clearError = (key: string) => {
+    if (fieldErrors[key]) {
+      setFieldErrors(prev => { const n = { ...prev }; delete n[key]; return n; });
+    }
+  };
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Worker Skills & Allocation States
@@ -41,10 +62,90 @@ const UploadItem: React.FC = () => {
   const [newVehicleCategoryName, setNewVehicleCategoryName] = useState('');
   const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false);
 
-  // Equipment Brand States
+  // Equipment Brand / Make / Model States
   const [showCustomBrandInput, setShowCustomBrandInput] = useState(false);
   const [newBrandName, setNewBrandName] = useState('');
   const [brandList, setBrandList] = useState(['Mahindra', 'Sonalika', 'Swaraj', 'John Deere', 'Massey Ferguson', 'New Holland']);
+  const [selectedEquipMake, setSelectedEquipMake] = useState<string | null>(null);
+  const [selectedEquipModel, setSelectedEquipModel] = useState<string | null>(null);
+
+  // Equipment Attached / Trolley chip states
+  const [selectedAttachedEquipments, setSelectedAttachedEquipments] = useState<string[]>([]);
+  const [otherAttachedInput, setOtherAttachedInput] = useState('');
+  const [showOtherAttachedInput, setShowOtherAttachedInput] = useState(false);
+  const [attachedEquipmentOptions, setAttachedEquipmentOptions] = useState([
+    'Mouldboard Plow', 'Disc Plow', 'Chisel Plow', 'Rotavator (Rotary Tiller)', 'Disc Harrow', 'Other'
+  ]);
+
+  const [selectedTrolleyTypes, setSelectedTrolleyTypes] = useState<string[]>([]);
+  const [otherTrolleyInput, setOtherTrolleyInput] = useState('');
+  const [showOtherTrolleyInput, setShowOtherTrolleyInput] = useState(false);
+  const [trolleyTypeOptions, setTrolleyTypeOptions] = useState([
+    '2-Wheel Hydraulic', '4-Wheel Hydraulic', '2-Wheel Non-Tipping', '4-Wheel Non-Tipping', 'Other'
+  ]);
+
+  // Harvester Capacities State
+  const [harvestCapacitiesMap, setHarvestCapacitiesMap] = useState<Record<string, string[]>>({});
+  const [currentHarvestType, setCurrentHarvestType] = useState<string>('');
+  const [currentOtherHarvestType, setCurrentOtherHarvestType] = useState<string>('');
+  const [currentHarvestCapacity, setCurrentHarvestCapacity] = useState<string>('');
+  const [currentHarvestUnit, setCurrentHarvestUnit] = useState<string>('HP');
+  const harvestCapacityUnits = ['HP', 'Ft', 'Bags/Hr', 'Tons/Hr'];
+  const [availableHarvestTypes, setAvailableHarvestTypes] = useState([
+    'Track / Chain Model (Wet Land)', 'Wheel Harvester (4 Wheeler Tyres)', 'Wheel Harvester (2 Tyres)',
+    'Combine Harvester', 'Paddy Harvester', 'Mini Harvester', 'Sugarcane Harvester', 'Maize Harvester', 'Other'
+  ]);
+
+  // Sprayer Capacities State
+  const [sprayerCapacitiesMap, setSprayerCapacitiesMap] = useState<Record<string, string[]>>({});
+  const [currentSprayerType, setCurrentSprayerType] = useState<string>('');
+  const [currentOtherSprayerType, setCurrentOtherSprayerType] = useState<string>('');
+  const [currentSprayerCapacity, setCurrentSprayerCapacity] = useState<string>('');
+  const [availableSprayerTypes, setAvailableSprayerTypes] = useState([
+    'Boom Sprayer', 'Knapsack Sprayer', 'Tractor Mounted Sprayer', 'Battery Sprayer',
+    'Hand Compression Sprayer', 'Power Sprayer', 'Aerial / Drone Sprayer', 'Other'
+  ]);
+
+  // Operator toggle state for Equipment
+  const [operatorAvailable, setOperatorAvailable] = useState(false);
+
+  // VehicleData inline (mirrors vehicle_data.dart)
+  const vehicleData: Record<string, Record<string, string[]>> = {
+    Tractors: {
+      Mahindra: ['575 DI', '275 DI TU', '475 DI', 'Yuvo 575 DI', 'Jivo 245 DI', 'Arjun Novo 605 Di-i', 'XP Plus 265 DI', 'Oja 3140', '585 DI XP Plus', 'Other'],
+      Swaraj: ['744 FE', '855 FE', '735 FE', '717', '963 FE', '724 XM', '742 XT', '843 XM', 'Other'],
+      'John Deere': ['5310', '5050 D', '5105', '5405', '3028 EN', '5045 D', '5075 E', '5210', 'Other'],
+      Sonalika: ['DI 745 III', 'DI 35', 'DI 60', 'DI 750 III', 'Tiger 55', 'GT 20', 'Sikander DI 35', 'Other'],
+      'Escorts Powertrac': ['Euro 50', '439 DS Plus', '434 DS', 'Euro 60', 'ALT 4000', 'Other'],
+      Farmtrac: ['60 Powermaxx', '45', '6055 Powermaxx', 'Champion 35', 'Atom 26', 'Other'],
+      'New Holland': ['3630 TX Special Edition', '3230 TX', '3600-2 TX', '4710', '5620 TX Plus', 'Other'],
+      Eicher: ['380', '242', '551', '333', '485', '557', '188', 'Other'],
+      Kubota: ['MU4501 2WD', 'L4508', 'A211N', 'NeoStar B2741', 'MU5501', 'Other'],
+      Other: [],
+    },
+    Harvesters: {
+      Preet: ['987', '949', '749', 'Other'],
+      Claas: ['Crop Tiger 30', 'Crop Tiger 40', 'Dominator 40', 'Other'],
+      Dasmesh: ['9100', '7100', '3100', 'Other'],
+      Kartar: ['4000', '3500', 'Other'],
+      Malkit: ['897', '997', 'Other'],
+      Swaraj: ['8100', 'Pro Combine 7060', 'Other'],
+      'John Deere': ['W50', 'W70', 'Other'],
+      Mahindra: ['HarvestMaster H12 4WD', 'Other'],
+      Other: [],
+    },
+    JCB: {
+      JCB: ['3DX', '3DX Super', '3DX Plus', '4DX', 'Other'],
+      Case: ['770', '851', 'Other'],
+      CAT: ['424', 'Other'],
+      Other: [],
+    },
+    Trolleys: {
+      Standard: ['Hydraulic Tipping', 'Non-Tipping', '2 Wheel', '4 Wheel'],
+      Other: [],
+    },
+    Sprayers: {},
+  };
 
   const handleUploadBoxClick = () => {
     fileInputRef.current?.click();
@@ -91,7 +192,7 @@ const UploadItem: React.FC = () => {
     if (editData) {
       setFormData(editData);
       if (initialCategory) setCategory(initialCategory);
-      
+
       if (editData.brandModel && !editData.brand) {
         const parts = editData.brandModel.split(' ');
         if (parts.length > 1) {
@@ -200,10 +301,72 @@ const UploadItem: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
+    clearError(name);
     setFormData((prev: any) => ({
       ...prev,
       [name]: type === 'number' ? parseFloat(value) : value
     }));
+  };
+
+  // ── Validation ──────────────────────────────────────────────────
+  const validate = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    // Common location fields
+    if (!formData.village?.trim()) errors.village = 'Village / City is required';
+    if (!formData.district?.trim()) errors.district = 'District is required';
+
+    if (category === 'Equipment') {
+      if (!formData.category) errors.category = 'Please select an equipment category';
+      if (!formData.ownerBusinessName?.trim()) errors.ownerBusinessName = 'Owner / Business Name is required';
+      const equipCat = formData.category || '';
+      const isSprayer = equipCat === 'Sprayers';
+      const isTrolley = equipCat === 'Trolleys';
+      if (!isSprayer) {
+        const hasDropdownMake = selectedEquipMake && selectedEquipMake !== 'Other';
+        const hasDropdownModel = selectedEquipModel && selectedEquipModel !== 'Other';
+        const hasManualEntry = formData.brandModel?.trim();
+        if (!hasDropdownMake && !hasManualEntry) errors.brand = 'Please select or enter a Make / Brand';
+        if (hasDropdownMake && !hasDropdownModel && !hasManualEntry) errors.model = 'Please select or enter a Model';
+      }
+      if (!formData.pricePerDay && !formData.pricePerHour) errors.pricePerDay = isTrolley ? 'Full Day Price is required' : 'Rental Price is required';
+      if (operatorAvailable && !formData.operatorPrice) errors.operatorPrice = 'Operator price is required when operator is available';
+    }
+
+    if (category === 'Vehicles') {
+      if (!formData.ownerBusinessName?.trim()) errors.ownerBusinessName = 'Owner / Business Name is required';
+      if (!formData.vehicleType?.trim()) errors.vehicleType = 'Vehicle type / category is required';
+      if (!formData.brand?.trim()) errors.brand = 'Brand is required';
+      if (!formData.model?.trim()) errors.model = 'Model is required';
+      if (!formData.vehicleNumber?.trim()) errors.vehicleNumber = 'Vehicle number is required';
+      if (!formData.loadCapacity) errors.loadCapacity = 'Load capacity is required';
+      if (!formData.vehicleCondition) errors.vehicleCondition = 'Condition is required';
+      if (!formData.pricePerKm) errors.pricePerKm = 'Price per KM is required';
+      if (!formData.pricePerHour) errors.pricePerHour = 'Price per hour is required';
+      if (formData.driverIncluded && !formData.operatorPrice) errors.operatorPrice = 'Operator price is required';
+    }
+
+    if (category === 'Services') {
+      if (!formData.serviceName?.trim()) errors.serviceName = 'Service name is required';
+      if (!formData.pricePerDay) errors.pricePerDay = 'Price is required';
+    }
+
+    if (category === 'Workers') {
+      if (!formData.groupName?.trim()) errors.groupName = 'Group name is required';
+      if (!formData.maleCount && !formData.femaleCount) errors.maleCount = 'Enter at least one worker count (male or female)';
+      if (!formData.pricePerMale && !formData.pricePerFemale) errors.pricePerMale = 'At least one rate (male or female) is required';
+    }
+
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      // Scroll to first error
+      setTimeout(() => {
+        const firstErrorEl = document.querySelector('[data-error="true"]');
+        firstErrorEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      return false;
+    }
+    return true;
   };
 
   const handleDetectGpsLocation = () => {
@@ -253,6 +416,7 @@ const UploadItem: React.FC = () => {
               ...prev,
               street: street,
               village: village,
+              mandal: formData.mandal || '',
               district: district,
               state: state,
               pincode: pincode,
@@ -289,6 +453,7 @@ const UploadItem: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
     setLoading(true);
     try {
       const id = user?.id || JSON.parse(localStorage.getItem('agrifarm_user') || '{}').id;
@@ -348,7 +513,36 @@ const UploadItem: React.FC = () => {
       }
 
       if (category === 'Equipment') {
-        finalPayload.operatorAvailable = !!formData.operatorPrice && parseFloat(String(formData.operatorPrice)) > 0;
+        finalPayload.operatorAvailable = operatorAvailable;
+        // Encode attached equipments and trolley types into description/notes
+        if (selectedAttachedEquipments.length > 0) {
+          finalPayload.attachedEquipments = selectedAttachedEquipments.join(', ');
+        }
+        if (selectedTrolleyTypes.length > 0) {
+          finalPayload.trolleyTypes = selectedTrolleyTypes.join(', ');
+        }
+
+        const equipCat = formData.category;
+
+        if (equipCat === 'Sprayers') {
+          finalPayload.sprayerTypes = Object.entries(sprayerCapacitiesMap).map(([k, v]) => `${k} - ${v.join('/')} L`);
+          const allCaps: string[] = [];
+          Object.values(sprayerCapacitiesMap).forEach(list => allCaps.push(...list));
+          finalPayload.sprayerCapacities = Array.from(new Set(allCaps));
+        }
+
+        if (equipCat === 'Harvesters') {
+          if (Object.keys(harvestCapacitiesMap).length > 0) {
+            finalPayload.harvestCapacities = Object.entries(harvestCapacitiesMap).map(([k, v]) => `${k} - ${v.join('/')}`);
+          }
+        }
+
+        // Set brandModel from Make + Model if selected from dropdowns
+        if (selectedEquipMake && selectedEquipModel && selectedEquipModel !== 'Other') {
+          finalPayload.brandModel = `${selectedEquipMake} ${selectedEquipModel}`;
+          finalPayload.brand = selectedEquipMake;
+          finalPayload.model = selectedEquipModel;
+        }
       }
 
       // Auto-resolve manual coordinates if not detected via GPS already
@@ -389,184 +583,706 @@ const UploadItem: React.FC = () => {
 
   const renderFormFields = () => {
     switch (category) {
-      case 'Equipment':
-        return (
-          <div className="form-fields grid-2">
-            <div className="input-group">
-              <label>Owner / Business Name</label>
-              <input
-                name="ownerBusinessName"
-                value={formData.ownerBusinessName || ''}
-                placeholder="e.g. Baldev Singh Farms"
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="input-group">
-              <label>Category</label>
-              <select name="category" value={formData.category || ''} onChange={handleInputChange} required>
-                <option value="">Select Category</option>
-                <option value="Tractor">Tractor</option>
-                <option value="Harvester">Harvester</option>
-                <option value="Plough">Plough</option>
-                <option value="Seeder">Seeder</option>
-                <option value="Sprayer">Sprayer</option>
-                <option value="Trolley">Trolley</option>
-              </select>
-            </div>
-            
-            <div className="input-group" style={{ position: 'relative' }}>
-              <label>Brand / Make</label>
-              <select
-                name="brand"
-                value={formData.brand || ''}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === 'Others') {
-                    setShowCustomBrandInput(true);
-                    setFormData((prev: any) => ({ ...prev, brand: '' }));
-                  } else {
-                    setShowCustomBrandInput(false);
-                    setFormData((prev: any) => ({ ...prev, brand: val }));
-                  }
-                }}
-                required
-              >
-                <option value="">Select Brand</option>
-                {brandList.map(b => (
-                  <option key={b} value={b}>{b}</option>
-                ))}
-                <option value="Others">Others (Add custom brand)</option>
-              </select>
+      case 'Equipment': {
+        const equipCat = formData.category || '';
+        const makes = equipCat && vehicleData[equipCat] ? Object.keys(vehicleData[equipCat]).filter(k => k !== 'Other') : [];
+        const allMakes = makes.length > 0 ? [...makes, 'Other'] : [];
+        const models = equipCat && selectedEquipMake && vehicleData[equipCat]?.[selectedEquipMake]
+          ? vehicleData[equipCat][selectedEquipMake]
+          : [];
+        const showManualBrandModel = allMakes.length === 0 || selectedEquipMake === 'Other' || equipCat === 'Sprayers';
+        const showManualModel = showManualBrandModel || models.length === 0 || selectedEquipModel === 'Other';
+        const isTrolley = equipCat === 'Trolleys';
+        const isTractor = equipCat === 'Tractors';
+        const isSprayer = equipCat === 'Sprayers';
 
-              {showCustomBrandInput && (
-                <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+            {/* ─── Equipment Info Card ─── */}
+            <div style={{
+              background: 'white',
+              borderRadius: '20px',
+              padding: '28px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+              border: '1px solid #f1f5f9'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
+                <div style={{ background: 'linear-gradient(135deg, #00aa55, #00cc66)', borderRadius: '10px', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Tractor size={18} color="white" />
+                </div>
+                <span style={{ fontWeight: 800, fontSize: '1rem', color: '#1a2e1a' }}>Equipment Info</span>
+              </div>
+
+              <div className="form-fields grid-2">
+
+                {/* Category */}
+                <div className="input-group" data-error={!!fieldErrors.category}>
+                  <label>Category *</label>
+                  <select
+                    name="category"
+                    value={equipCat}
+                    onChange={(e) => {
+                      clearError('category');
+                      setFormData((prev: any) => ({ ...prev, category: e.target.value, brand: '', model: '' }));
+                      setSelectedEquipMake(null);
+                      setSelectedEquipModel(null);
+                      setSelectedAttachedEquipments([]);
+                      setSelectedTrolleyTypes([]);
+                      setOperatorAvailable(e.target.value === 'Sprayers');
+                    }}
+                    style={{ border: fieldErrors.category ? '2px solid #dc2626' : undefined }}>
+                    <option value="">Select Category</option>
+                    <option value="Tractors">🚜 Tractors</option>
+                    <option value="Harvesters">🌾 Harvesters</option>
+                    <option value="Sprayers">💧 Sprayers</option>
+                    <option value="Trolleys">🪝 Trolleys</option>
+                    <option value="JCB">🏗️ JCB / Excavator</option>
+                  </select>
+                  {errMsg('category')}
+                </div>
+
+                {/* Owner / Business Name */}
+                <div className="input-group" data-error={!!fieldErrors.ownerBusinessName}>
+                  <label>Owner / Business Name *</label>
                   <input
-                    type="text"
-                    placeholder="Type new brand..."
-                    value={newBrandName}
-                    onChange={(e) => setNewBrandName(e.target.value)}
+                    name="ownerBusinessName"
+                    value={formData.ownerBusinessName || ''}
+                    placeholder="e.g. Baldev Singh Farms"
+                    onChange={handleInputChange}
+                    style={{ border: fieldErrors.ownerBusinessName ? '2px solid #dc2626' : undefined }} />
+                  {errMsg('ownerBusinessName')}
+                </div>
+
+                {/* Harvester Capacity Section */}
+                {equipCat === 'Harvesters' && (
+                  <div className="form-section capacity-section" style={{ gridColumn: '1 / -1', background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', marginTop: '10px', marginBottom: '10px' }}>
+                    <h4 style={{ margin: '0 0 15px 0', display: 'flex', alignItems: 'center', gap: '8px', color: '#1B5E20' }}><AlertCircle size={16} /> Harvesting Equipment Types</h4>
+                    <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '15px' }}>Add harvester types and their capacities:</p>
+
+                    <div className="grid-2" style={{ alignItems: 'end', marginBottom: '15px' }}>
+                      <div className="input-group">
+                        <label>Harvester Type</label>
+                        <select
+                          value={currentHarvestType}
+                          onChange={(e) => setCurrentHarvestType(e.target.value)}>
+                          <option value="">Select Harvester Type</option>
+                          {availableHarvestTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+
+                      {currentHarvestType === 'Other' && (
+                        <div className="input-group">
+                          <label>Custom Harvester Name</label>
+                          <input
+                            value={currentOtherHarvestType}
+                            placeholder="e.g. Special Harvester"
+                            onChange={(e) => setCurrentOtherHarvestType(e.target.value)} />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid-2" style={{ alignItems: 'end', gridTemplateColumns: '1fr 1fr auto', gap: '15px' }}>
+                      <div className="input-group">
+                        <label>Capacity</label>
+                        <input
+                          type="number"
+                          value={currentHarvestCapacity}
+                          placeholder="e.g. 45"
+                          onChange={(e) => setCurrentHarvestCapacity(e.target.value)} />
+                      </div>
+                      <div className="input-group">
+                        <label>Unit</label>
+                        <select
+                          value={currentHarvestUnit}
+                          onChange={(e) => setCurrentHarvestUnit(e.target.value)}>
+                          {harvestCapacityUnits.map(u => <option key={u} value={u}>{u}</option>)}
+                        </select>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-primary"
+                        style={{ height: '42px', padding: '0 20px', borderRadius: '8px', marginBottom: '8px' }}
+                        onClick={() => {
+                          if (!currentHarvestType) return;
+                          let type = currentHarvestType;
+                          if (type === 'Other') {
+                            if (!currentOtherHarvestType.trim()) return;
+                            type = currentOtherHarvestType.trim();
+                            if (!availableHarvestTypes.includes(type)) setAvailableHarvestTypes(prev => [...prev.slice(0, prev.length - 1), type, 'Other']);
+                          }
+                          const capText = currentHarvestCapacity.trim();
+                          if (capText) {
+                            const formattedCap = `${capText} ${currentHarvestUnit}`;
+                            setHarvestCapacitiesMap(prev => {
+                              const map = { ...prev };
+                              if (!map[type]) map[type] = [];
+                              if (!map[type].includes(formattedCap)) map[type].push(formattedCap);
+                              return map;
+                            });
+                            setCurrentHarvestCapacity('');
+                            setCurrentOtherHarvestType('');
+                            setCurrentHarvestType('');
+                          }
+                        }}>
+                        Add
+                      </button>
+                    </div>
+
+                    {Object.keys(harvestCapacitiesMap).length > 0 && (
+                      <div style={{ marginTop: '20px' }}>
+                        <h5 style={{ margin: '0 0 10px 0', color: '#334155' }}>Added Equipment:</h5>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                          {Object.entries(harvestCapacitiesMap).map(([type, capacities]) =>
+                            capacities.map(cap => (
+                              <div key={`${type}-${cap}`} style={{ background: '#dcfce7', color: '#166534', padding: '6px 12px', borderRadius: '20px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #bbf7d0' }}>
+                                {type} - {cap}
+                                <button type="button" style={{ background: 'none', border: 'none', color: '#166534', cursor: 'pointer', padding: 0, display: 'flex' }} onClick={() => {
+                                  setHarvestCapacitiesMap(prev => {
+                                    const map = { ...prev };
+                                    map[type] = map[type].filter(c => c !== cap);
+                                    if (map[type].length === 0) delete map[type];
+                                    return map;
+                                  });
+                                }}>&#x2715;</button>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Sprayer Capacity Section */}
+                {equipCat === 'Sprayers' && (
+                  <div className="form-section capacity-section" style={{ gridColumn: '1 / -1', background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', marginTop: '10px', marginBottom: '10px' }}>
+                    <h4 style={{ margin: '0 0 15px 0', display: 'flex', alignItems: 'center', gap: '8px', color: '#0369a1' }}><AlertCircle size={16} /> Sprayer Types</h4>
+                    <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '15px' }}>Add sprayers and their capacities:</p>
+
+                    <div className="input-group" style={{ marginBottom: '15px' }}>
+                      <label>Sprayer Type</label>
+                      <select
+                        value={currentSprayerType}
+                        onChange={(e) => setCurrentSprayerType(e.target.value)}>
+                        <option value="">Select Sprayer Type</option>
+                        {availableSprayerTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+
+                    {currentSprayerType === 'Other' && (
+                      <div className="input-group" style={{ marginBottom: '15px' }}>
+                        <label>Custom Sprayer Name</label>
+                        <input
+                          value={currentOtherSprayerType}
+                          placeholder="e.g. Special Sprayer"
+                          onChange={(e) => setCurrentOtherSprayerType(e.target.value)} />
+                      </div>
+                    )}
+
+                    <div className="grid-2" style={{ alignItems: 'end', gridTemplateColumns: '1fr auto', gap: '15px' }}>
+                      <div className="input-group">
+                        <label>Capacity (Litres)</label>
+                        <input
+                          type="number"
+                          value={currentSprayerCapacity}
+                          placeholder="e.g. 150"
+                          onChange={(e) => setCurrentSprayerCapacity(e.target.value)} />
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-primary"
+                        style={{ height: '42px', padding: '0 20px', borderRadius: '8px', marginBottom: '8px', background: '#0284c7', borderColor: '#0284c7' }}
+                        onClick={() => {
+                          if (!currentSprayerType) return;
+                          let type = currentSprayerType;
+                          if (type === 'Other') {
+                            if (!currentOtherSprayerType.trim()) return;
+                            type = currentOtherSprayerType.trim();
+                            if (!availableSprayerTypes.includes(type)) setAvailableSprayerTypes(prev => [...prev.slice(0, prev.length - 1), type, 'Other']);
+                          }
+                          const capText = currentSprayerCapacity.trim();
+                          if (capText) {
+                            setSprayerCapacitiesMap(prev => {
+                              const map = { ...prev };
+                              if (!map[type]) map[type] = [];
+                              if (!map[type].includes(capText)) map[type].push(capText);
+                              return map;
+                            });
+                            setCurrentSprayerCapacity('');
+                            setCurrentOtherSprayerType('');
+                            setCurrentSprayerType('');
+                          }
+                        }}>
+                        Add
+                      </button>
+                    </div>
+
+                    {Object.keys(sprayerCapacitiesMap).length > 0 && (
+                      <div style={{ marginTop: '20px' }}>
+                        <h5 style={{ margin: '0 0 10px 0', color: '#334155' }}>Added Sprayers:</h5>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                          {Object.entries(sprayerCapacitiesMap).map(([type, capacities]) =>
+                            capacities.map(cap => (
+                              <div key={`${type}-${cap}`} style={{ background: '#e0f2fe', color: '#0369a1', padding: '6px 12px', borderRadius: '20px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #bae6fd' }}>
+                                {type} - {cap} L
+                                <button type="button" style={{ background: 'none', border: 'none', color: '#0369a1', cursor: 'pointer', padding: 0, display: 'flex' }} onClick={() => {
+                                  setSprayerCapacitiesMap(prev => {
+                                    const map = { ...prev };
+                                    map[type] = map[type].filter(c => c !== cap);
+                                    if (map[type].length === 0) delete map[type];
+                                    return map;
+                                  });
+                                }}>&#x2715;</button>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Make dropdown (category-aware) */}
+                {!isSprayer && allMakes.length > 0 && (
+                  <div className="input-group" data-error={!!fieldErrors.brand}>
+                    <label>Make (Brand) *</label>
+                    <select
+                      value={selectedEquipMake || ''}
+                      onChange={(e) => {
+                        clearError('brand');
+                        const v = e.target.value;
+                        setSelectedEquipMake(v || null);
+                        setSelectedEquipModel(null);
+                        setFormData((prev: any) => ({ ...prev, brand: v === 'Other' ? '' : v, model: '' }));
+                      }}
+                      style={{ border: fieldErrors.brand ? '2px solid #dc2626' : undefined }}>
+                      <option value="">Select Make</option>
+                      {allMakes.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                    {errMsg('brand')}
+                  </div>
+                )}
+
+                {/* Model dropdown */}
+                {!isSprayer && !showManualBrandModel && models.length > 0 && (
+                  <div className="input-group" data-error={!!fieldErrors.model}>
+                    <label>Model *</label>
+                    <select
+                      value={selectedEquipModel || ''}
+                      onChange={(e) => {
+                        clearError('model');
+                        const v = e.target.value;
+                        setSelectedEquipModel(v || null);
+                        if (v && v !== 'Other') {
+                          setFormData((prev: any) => ({ ...prev, model: v, brandModel: `${selectedEquipMake} ${v}` }));
+                        } else {
+                          setFormData((prev: any) => ({ ...prev, model: '', brandModel: '' }));
+                        }
+                      }}
+                      style={{ border: fieldErrors.model ? '2px solid #dc2626' : undefined }}>
+                      <option value="">Select Model</option>
+                      {models.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                    {errMsg('model')}
+                  </div>
+                )}
+
+                {/* Manual Brand/Model fallback */}
+                {!isSprayer && (showManualBrandModel || showManualModel) && (
+                  <div className="input-group" data-error={!!fieldErrors.brand}>
+                    <label>Brand / Model *</label>
+                    <input
+                      name="brandModel"
+                      value={formData.brandModel || ''}
+                      placeholder="e.g. John Deere 5310"
+                      onChange={handleInputChange}
+                      style={{ border: fieldErrors.brand ? '2px solid #dc2626' : undefined }} />
+                    {errMsg('brand')}
+                  </div>
+                )}
+
+                {/* Sprayer brand/model manual */}
+                {isSprayer && (
+                  <div className="input-group">
+                    <label>Brand / Model</label>
+                    <input
+                      name="brandModel"
+                      value={formData.brandModel || ''}
+                      placeholder="e.g. Aspee 500L, Solo 425"
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                )}
+
+                {/* Year of Manufacture */}
+                <div className="input-group">
+                  <label>Year of Manufacture</label>
+                  <input
+                    type="number"
+                    name="yearOfManufacture"
+                    value={formData.yearOfManufacture || ''}
+                    placeholder="e.g. 2021"
+                    onChange={handleInputChange}
+                    min="1990"
+                    max={new Date().getFullYear()}
+                  />
+                </div>
+
+                {/* Vehicle Number (not for Sprayers) */}
+                {!isSprayer && (
+                  <div className="input-group">
+                    <label>Vehicle / Registration Number (Optional)</label>
+                    <input
+                      name="vehicleNumber"
+                      value={formData.vehicleNumber || ''}
+                      placeholder="e.g. TN 37 BY 1234"
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                )}
+
+              </div>
+            </div>
+
+            {/* ─── Attached Equipments (Tractors only) ─── */}
+            {isTractor && (
+              <div style={{
+                background: 'white',
+                borderRadius: '20px',
+                padding: '28px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+                border: '1px solid #f1f5f9'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                  <div style={{ background: 'linear-gradient(135deg, #00aa55, #00cc66)', borderRadius: '10px', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Sprout size={18} color="white" />
+                  </div>
+                  <span style={{ fontWeight: 800, fontSize: '1rem', color: '#1a2e1a' }}>Attached Equipments</span>
+                </div>
+                <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '16px' }}>Select any attached equipments available with the tractor:</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                  {attachedEquipmentOptions.map(eq => {
+                    const sel = selectedAttachedEquipments.includes(eq);
+                    return (
+                      <button
+                        key={eq}
+                        type="button"
+                        onClick={() => {
+                          if (eq === 'Other') {
+                            setShowOtherAttachedInput(prev => !prev);
+                          } else {
+                            setSelectedAttachedEquipments(prev =>
+                              sel ? prev.filter(x => x !== eq) : [...prev, eq]
+                            );
+                          }
+                        }}
+                        style={{
+                          padding: '8px 16px',
+                          borderRadius: '20px',
+                          border: `2px solid ${sel ? '#00aa55' : '#e2e8f0'}`,
+                          background: sel ? '#e8f5e9' : 'white',
+                          color: sel ? '#1b5e20' : '#475569',
+                          fontWeight: sel ? 700 : 500,
+                          fontSize: '0.85rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        {sel && <Check size={13} style={{ marginRight: '5px', display: 'inline' }} />}
+                        {eq}
+                      </button>
+                    );
+                  })}
+                </div>
+                {showOtherAttachedInput && (
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
+                    <input
+                      type="text"
+                      placeholder="e.g. Cultivator"
+                      value={otherAttachedInput}
+                      onChange={e => setOtherAttachedInput(e.target.value)}
+                      style={{ flex: 1, padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #cbd5e1', fontSize: '0.9rem' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const t = otherAttachedInput.trim();
+                        if (!t) return;
+                        if (!attachedEquipmentOptions.includes(t)) {
+                          setAttachedEquipmentOptions(prev => [...prev.slice(0, -1), t, 'Other']);
+                        }
+                        if (!selectedAttachedEquipments.includes(t)) {
+                          setSelectedAttachedEquipments(prev => [...prev, t]);
+                        }
+                        setOtherAttachedInput('');
+                        setShowOtherAttachedInput(false);
+                      }}
+                      className="btn-primary"
+                      style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: 700 }}
+                    >
+                      Add
+                    </button>
+                    <button type="button" onClick={() => { setShowOtherAttachedInput(false); setOtherAttachedInput(''); }}
+                      style={{ background: '#f1f5f9', border: 'none', color: '#64748b', padding: '10px', borderRadius: '10px', cursor: 'pointer' }}>
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ─── Trolley Types (Trolleys only) ─── */}
+            {isTrolley && (
+              <div style={{
+                background: 'white',
+                borderRadius: '20px',
+                padding: '28px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+                border: '1px solid #f1f5f9'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                  <div style={{ background: 'linear-gradient(135deg, #00aa55, #00cc66)', borderRadius: '10px', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Truck size={18} color="white" />
+                  </div>
+                  <span style={{ fontWeight: 800, fontSize: '1rem', color: '#1a2e1a' }}>Trolley Types</span>
+                </div>
+                <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '16px' }}>Select the available trolley types:</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                  {trolleyTypeOptions.map(tt => {
+                    const sel = selectedTrolleyTypes.includes(tt);
+                    return (
+                      <button
+                        key={tt}
+                        type="button"
+                        onClick={() => {
+                          if (tt === 'Other') {
+                            setShowOtherTrolleyInput(prev => !prev);
+                          } else {
+                            setSelectedTrolleyTypes(prev =>
+                              sel ? prev.filter(x => x !== tt) : [...prev, tt]
+                            );
+                          }
+                        }}
+                        style={{
+                          padding: '8px 16px',
+                          borderRadius: '20px',
+                          border: `2px solid ${sel ? '#00aa55' : '#e2e8f0'}`,
+                          background: sel ? '#e8f5e9' : 'white',
+                          color: sel ? '#1b5e20' : '#475569',
+                          fontWeight: sel ? 700 : 500,
+                          fontSize: '0.85rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        {sel && <Check size={13} style={{ marginRight: '5px', display: 'inline' }} />}
+                        {tt}
+                      </button>
+                    );
+                  })}
+                </div>
+                {showOtherTrolleyInput && (
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
+                    <input
+                      type="text"
+                      placeholder="e.g. 6-Wheel Hydraulic"
+                      value={otherTrolleyInput}
+                      onChange={e => setOtherTrolleyInput(e.target.value)}
+                      style={{ flex: 1, padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #cbd5e1', fontSize: '0.9rem' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const t = otherTrolleyInput.trim();
+                        if (!t) return;
+                        if (!trolleyTypeOptions.includes(t)) {
+                          setTrolleyTypeOptions(prev => [...prev.slice(0, -1), t, 'Other']);
+                        }
+                        if (!selectedTrolleyTypes.includes(t)) {
+                          setSelectedTrolleyTypes(prev => [...prev, t]);
+                        }
+                        setOtherTrolleyInput('');
+                        setShowOtherTrolleyInput(false);
+                      }}
+                      className="btn-primary"
+                      style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: 700 }}
+                    >
+                      Add
+                    </button>
+                    <button type="button" onClick={() => { setShowOtherTrolleyInput(false); setOtherTrolleyInput(''); }}
+                      style={{ background: '#f1f5f9', border: 'none', color: '#64748b', padding: '10px', borderRadius: '10px', cursor: 'pointer' }}>
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ─── Rental Terms & Condition Card ─── */}
+            <div style={{
+              background: 'white',
+              borderRadius: '20px',
+              padding: '28px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+              border: '1px solid #f1f5f9'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
+                <div style={{ background: 'linear-gradient(135deg, #00aa55, #00cc66)', borderRadius: '10px', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Check size={18} color="white" />
+                </div>
+                <span style={{ fontWeight: 800, fontSize: '1rem', color: '#1a2e1a' }}>Rental Terms &amp; Condition</span>
+              </div>
+
+              <div className="form-fields grid-2">
+                {/* Price fields */}
+                {isTrolley ? (
+                  <>
+                    <div className="input-group" data-error={!!fieldErrors.pricePerDay}>
+                      <label>Full Day Price (₹) *</label>
+                      <input
+                        type="number" name="pricePerDay"
+                        value={formData.pricePerDay || ''}
+                        placeholder="e.g. 1500"
+                        onChange={handleInputChange}
+                        style={{ border: fieldErrors.pricePerDay ? '2px solid #dc2626' : undefined }} />
+                      {errMsg('pricePerDay')}
+                    </div>
+                    <div className="input-group">
+                      <label>Half Day Price (₹)</label>
+                      <input type="number" name="halfDayPrice" value={formData.halfDayPrice || ''} placeholder="e.g. 800" onChange={handleInputChange} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="input-group" data-error={!!fieldErrors.pricePerDay}>
+                    <label>Rental Price *</label>
+                    <input
+                      type="number"
+                      name="pricePerDay"
+                      value={formData.pricePerDay || ''}
+                      placeholder={isSprayer ? 'e.g. ₹50 per litre' : 'e.g. ₹500 per hour'}
+                      onChange={handleInputChange}
+                      style={{ border: fieldErrors.pricePerDay ? '2px solid #dc2626' : undefined }} />
+                    {errMsg('pricePerDay')}
+                  </div>
+                )}
+
+                {/* Condition */}
+                <div className="input-group">
+                  <label>Condition</label>
+                  <select name="conditionStatus" value={formData.conditionStatus || 'Good'} onChange={handleInputChange}>
+                    <option value="New">New</option>
+                    <option value="Good">Good</option>
+                    <option value="Average">Average</option>
+                    <option value="Poor">Poor</option>
+                  </select>
+                </div>
+
+                {/* Operator Available toggle */}
+                <div className="input-group span-2">
+                  <label style={{ display: 'block', fontWeight: 800, marginBottom: '8px' }}>Operator Available</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: operatorAvailable ? '16px' : '0' }}>
+                    <button
+                      type="button"
+                      onClick={() => setOperatorAvailable(prev => !prev)}
+                      style={{
+                        position: 'relative',
+                        width: '52px',
+                        height: '28px',
+                        background: operatorAvailable ? '#00aa55' : '#cbd5e1',
+                        borderRadius: '14px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'background 0.3s',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <div style={{
+                        position: 'absolute',
+                        top: '3px',
+                        left: operatorAvailable ? '27px' : '3px',
+                        width: '22px',
+                        height: '22px',
+                        background: 'white',
+                        borderRadius: '50%',
+                        transition: 'left 0.3s',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+                      }} />
+                    </button>
+                    <div>
+                      <p style={{ fontWeight: 700, fontSize: '0.9rem', margin: 0, color: '#1a2e1a' }}>
+                        {operatorAvailable ? 'Operator Included' : 'No Operator (Self-use)'}
+                      </p>
+                      <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0 }}>Does an operator come along with this equipment?</p>
+                    </div>
+                  </div>
+                  {operatorAvailable && (
+                    <div className="input-group" style={{ marginBottom: 0 }} data-error={!!fieldErrors.operatorPrice}>
+                      <label>Operator Price (₹/day) *</label>
+                      <input
+                        type="number"
+                        name="operatorPrice"
+                        value={formData.operatorPrice || ''}
+                        placeholder="e.g. ₹300 / day"
+                        onChange={handleInputChange}
+                        style={{ border: fieldErrors.operatorPrice ? '2px solid #dc2626' : undefined }}
+                      />
+                      {errMsg('operatorPrice')}
+                    </div>
+                  )}
+                </div>
+
+                {/* Description */}
+                <div className="input-group span-2">
+                  <label>Description / Extra Details (Optional)</label>
+                  <textarea
+                    name="description"
+                    value={formData.description || ''}
+                    onChange={handleInputChange}
+                    placeholder="Enter details like accessories included, service history, specific rules..."
+                    rows={3}
                     style={{
-                      flex: 1,
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      border: '1px solid var(--border)',
-                      fontSize: '0.85rem'
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      border: '2px solid #f1f5f9',
+                      background: '#f8fafc',
+                      fontWeight: 600,
+                      outline: 'none',
+                      transition: 'all 0.2s',
+                      minHeight: '80px',
+                      resize: 'vertical',
                     }}
                   />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const trimmed = newBrandName.trim();
-                      if (!trimmed) return;
-                      if (!brandList.includes(trimmed)) {
-                        setBrandList(prev => [...prev, trimmed]);
-                      }
-                      setFormData((prev: any) => ({ ...prev, brand: trimmed }));
-                      setNewBrandName('');
-                      setShowCustomBrandInput(false);
-                    }}
-                    className="btn-primary"
-                    style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700 }}
-                  >
-                    Add
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCustomBrandInput(false);
-                      setNewBrandName('');
-                    }}
-                    style={{
-                      background: '#f1f5f9',
-                      border: 'none',
-                      color: '#64748b',
-                      padding: '8px',
-                      borderRadius: '8px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <X size={16} />
-                  </button>
                 </div>
-              )}
+              </div>
             </div>
 
-            <div className="input-group">
-              <label>Model</label>
-              <input
-                name="model"
-                value={formData.model || ''}
-                placeholder="e.g. 575 DI, 5310"
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-
-            <div className="input-group">
-              <label>Horse Power (HP)</label>
-              <input type="number" name="hp" value={formData.hp || ''} placeholder="50" onChange={handleInputChange} required />
-            </div>
-            <div className="input-group">
-              <label>Price Per Hour (₹)</label>
-              <input type="number" name="pricePerHour" value={formData.pricePerHour || ''} placeholder="500" onChange={handleInputChange} required />
-            </div>
-            <div className="input-group">
-              <label>Operator Price (₹/hr)</label>
-              <input type="number" name="operatorPrice" value={formData.operatorPrice || ''} placeholder="200" onChange={handleInputChange} />
-            </div>
-            <div className="input-group">
-              <label>Condition Status</label>
-              <select name="conditionStatus" value={formData.conditionStatus || 'EXCELLENT'} onChange={handleInputChange}>
-                <option value="EXCELLENT">Excellent</option>
-                <option value="GOOD">Good</option>
-                <option value="FAIR">Fair</option>
-              </select>
-            </div>
-            <div className="input-group span-2">
-              <label>Description / Extra Details (Optional)</label>
-              <textarea
-                name="description"
-                value={formData.description || ''}
-                onChange={handleInputChange}
-                placeholder="Enter details like accessories included, service history, specific rules..."
-                rows={3}
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: '12px',
-                  border: '2px solid #f1f5f9',
-                  background: '#f8fafc',
-                  fontWeight: 600,
-                  outline: 'none',
-                  transition: 'all 0.2s',
-                  minHeight: '80px'
-                }}
-              />
-            </div>
           </div>
         );
+      }
       case 'Vehicles':
         {
           const isDriverIncluded = formData.driverIncluded === true;
           return (
             <div className="form-fields grid-2">
-              <div className="input-group">
-                <label>Owner / Business Name</label>
+              <div className="input-group" data-error={!!fieldErrors.ownerBusinessName}>
+                <label>Owner / Business Name *</label>
                 <input
                   name="ownerBusinessName"
                   value={formData.ownerBusinessName || ''}
                   placeholder="e.g. Ram Singh Transports"
                   onChange={handleInputChange}
-                  required
-                />
+                  style={{ border: fieldErrors.ownerBusinessName ? '2px solid #dc2626' : undefined }} />
+                {errMsg('ownerBusinessName')}
               </div>
 
-              <div className="input-group" style={{ position: 'relative' }}>
-                <label>Vehicle Type (Category)</label>
+              <div className="input-group" style={{ position: 'relative' }} data-error={!!fieldErrors.vehicleType}>
+                <label>Vehicle Type (Category) *</label>
                 <select
                   name="vehicleType"
                   value={formData.vehicleType || ''}
                   onChange={(e) => {
+                    clearError('vehicleType');
                     const val = e.target.value;
                     if (val === 'Others') {
                       setShowCustomCategoryInput(true);
@@ -576,8 +1292,7 @@ const UploadItem: React.FC = () => {
                       setFormData((prev: any) => ({ ...prev, vehicleType: val }));
                     }
                   }}
-                  required
-                >
+                  style={{ border: fieldErrors.vehicleType ? '2px solid #dc2626' : undefined }}>
                   <option value="">Select Category</option>
                   {dbVehicleCategories.map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
@@ -645,78 +1360,91 @@ const UploadItem: React.FC = () => {
                     </button>
                   </div>
                 )}
+                {errMsg('vehicleType')}
               </div>
 
-              <div className="input-group">
-                <label>Brand</label>
+              <div className="input-group" data-error={!!fieldErrors.brand}>
+                <label>Brand *</label>
                 <input
                   name="brand"
                   value={formData.brand || ''}
                   placeholder="e.g. Tata, Mahindra"
                   onChange={handleInputChange}
-                  required
-                />
+                  style={{ border: fieldErrors.brand ? '2px solid #dc2626' : undefined }} />
+                {errMsg('brand')}
               </div>
 
-              <div className="input-group">
-                <label>Model</label>
+              <div className="input-group" data-error={!!fieldErrors.model}>
+                <label>Model *</label>
                 <input
                   name="model"
                   value={formData.model || ''}
                   placeholder="e.g. Ace Gold, Bolero Pikup"
                   onChange={handleInputChange}
-                  required
-                />
+                  style={{ border: fieldErrors.model ? '2px solid #dc2626' : undefined }} />
+                {errMsg('model')}
               </div>
 
-              <div className="input-group">
-                <label>Vehicle Number</label>
-                <input name="vehicleNumber" value={formData.vehicleNumber || ''} placeholder="PB-XX-XXXX" onChange={handleInputChange} required />
+              <div className="input-group" data-error={!!fieldErrors.vehicleNumber}>
+                <label>Vehicle Number *</label>
+                <input
+                  name="vehicleNumber"
+                  value={formData.vehicleNumber || ''}
+                  placeholder="PB-XX-XXXX"
+                  onChange={handleInputChange}
+                  style={{ border: fieldErrors.vehicleNumber ? '2px solid #dc2626' : undefined }} />
+                {errMsg('vehicleNumber')}
               </div>
 
-              <div className="input-group">
-                <label>Load Capacity (Tons)</label>
-                <input type="number" name="loadCapacity" value={formData.loadCapacity || ''} placeholder="2" onChange={handleInputChange} required />
+              <div className="input-group" data-error={!!fieldErrors.loadCapacity}>
+                <label>Load Capacity (Tons) *</label>
+                <input
+                  type="number" name="loadCapacity"
+                  value={formData.loadCapacity || ''}
+                  placeholder="2"
+                  onChange={handleInputChange}
+                  style={{ border: fieldErrors.loadCapacity ? '2px solid #dc2626' : undefined }} />
+                {errMsg('loadCapacity')}
               </div>
 
-              <div className="input-group">
-                <label>Vehicle Condition</label>
+              <div className="input-group" data-error={!!fieldErrors.vehicleCondition}>
+                <label>Vehicle Condition *</label>
                 <select
                   name="vehicleCondition"
                   value={formData.vehicleCondition || ''}
                   onChange={handleInputChange}
-                  required
-                >
+                  style={{ border: fieldErrors.vehicleCondition ? '2px solid #dc2626' : undefined }}>
                   <option value="">Select Condition</option>
                   <option value="NEW">New</option>
                   <option value="GOOD">Good</option>
                   <option value="MANAGABLE">Manageable</option>
                   <option value="AVERAGE">Average</option>
                 </select>
+                {errMsg('vehicleCondition')}
               </div>
 
-              <div className="input-group">
-                <label>Price Per KM (₹)</label>
+              <div className="input-group" data-error={!!fieldErrors.pricePerKm}>
+                <label>Price Per KM (₹) *</label>
                 <input
                   type="number"
                   name="pricePerKm"
                   value={formData.pricePerKm || ''}
                   placeholder="e.g. 15"
                   onChange={handleInputChange}
-                  required
-                />
+                  style={{ border: fieldErrors.pricePerKm ? '2px solid #dc2626' : undefined }} />
+                {errMsg('pricePerKm')}
               </div>
 
-              <div className="input-group">
-                <label>Price Per Hour (₹)</label>
+              <div className="input-group" data-error={!!fieldErrors.pricePerHour}>
+                <label>Price Per Hour (₹) *</label>
                 <input
                   type="number"
                   name="pricePerHour"
                   value={formData.pricePerHour || ''}
                   placeholder="e.g. 300"
                   onChange={handleInputChange}
-                  required
-                />
+                  style={{ border: fieldErrors.pricePerHour ? '2px solid #dc2626' : undefined }} />
+                {errMsg('pricePerHour')}
               </div>
 
               <div className="input-group" style={{ gridColumn: 'span 2' }}>
@@ -751,9 +1479,7 @@ const UploadItem: React.FC = () => {
                     name="operatorPrice"
                     value={formData.operatorPrice || ''}
                     placeholder="e.g. 500"
-                    onChange={handleInputChange}
-                    required
-                  />
+                    onChange={handleInputChange} />
                 </div>
               )}
             </div>
@@ -764,18 +1490,30 @@ const UploadItem: React.FC = () => {
           <div className="form-fields">
             {/* Row 1: Group Name + Counts */}
             <div className="grid-2" style={{ marginBottom: '24px' }}>
-              <div className="input-group">
-                <label>Group Name</label>
-                <input name="groupName" value={formData.groupName || ''} placeholder="e.g. Skilled Harvest Team" onChange={handleInputChange} required />
+              <div className="input-group" data-error={!!fieldErrors.groupName}>
+                <label>Group Name *</label>
+                <input
+                  name="groupName"
+                  value={formData.groupName || ''}
+                  placeholder="e.g. Skilled Harvest Team"
+                  onChange={handleInputChange}
+                  style={{ border: fieldErrors.groupName ? '2px solid #dc2626' : undefined }} />
+                {errMsg('groupName')}
               </div>
               <div className="grid-2">
-                <div className="input-group">
+                <div className="input-group" data-error={!!fieldErrors.maleCount}>
                   <label>Male Count</label>
-                  <input type="number" name="maleCount" value={formData.maleCount || ''} placeholder="0" onChange={handleInputChange} required />
+                  <input
+                    type="number" name="maleCount"
+                    value={formData.maleCount || ''}
+                    placeholder="0"
+                    onChange={handleInputChange}
+                    style={{ border: fieldErrors.maleCount ? '2px solid #dc2626' : undefined }} />
+                  {errMsg('maleCount')}
                 </div>
                 <div className="input-group">
                   <label>Female Count</label>
-                  <input type="number" name="femaleCount" value={formData.femaleCount || ''} placeholder="0" onChange={handleInputChange} required />
+                  <input type="number" name="femaleCount" value={formData.femaleCount || ''} placeholder="0" onChange={handleInputChange} />
                 </div>
               </div>
             </div>
@@ -793,9 +1531,15 @@ const UploadItem: React.FC = () => {
                 <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#1565c0' }}>Male Worker Rates</span>
               </div>
               <div className="grid-2">
-                <div className="input-group">
-                  <label>Daily Rate per Male (₹/day)</label>
-                  <input type="number" name="pricePerMale" value={formData.pricePerMale || ''} placeholder="e.g. 500" onChange={handleInputChange} required />
+                <div className="input-group" data-error={!!fieldErrors.pricePerMale}>
+                  <label>Daily Rate per Male (₹/day) *</label>
+                  <input
+                    type="number" name="pricePerMale"
+                    value={formData.pricePerMale || ''}
+                    placeholder="e.g. 500"
+                    onChange={handleInputChange}
+                    style={{ border: fieldErrors.pricePerMale ? '2px solid #dc2626' : undefined }} />
+                  {errMsg('pricePerMale')}
                 </div>
                 <div className="input-group">
                   <label>Hourly Rate per Male (₹/hr)</label>
@@ -819,7 +1563,7 @@ const UploadItem: React.FC = () => {
               <div className="grid-2">
                 <div className="input-group">
                   <label>Daily Rate per Female (₹/day)</label>
-                  <input type="number" name="pricePerFemale" value={formData.pricePerFemale || ''} placeholder="e.g. 400" onChange={handleInputChange} required />
+                  <input type="number" name="pricePerFemale" value={formData.pricePerFemale || ''} placeholder="e.g. 400" onChange={handleInputChange} />
                 </div>
                 <div className="input-group">
                   <label>Hourly Rate per Female (₹/hr)</label>
@@ -1134,9 +1878,13 @@ const UploadItem: React.FC = () => {
       case 'Services':
         return (
           <div className="form-fields grid-2">
-            <div className="input-group">
-              <label>Service Type</label>
-              <select name="serviceType" value={formData.serviceType || ''} onChange={handleInputChange} required>
+            <div className="input-group" data-error={!!fieldErrors.serviceName}>
+              <label>Service Type *</label>
+              <select
+                name="serviceName"
+                value={formData.serviceName || ''}
+                onChange={handleInputChange}
+                style={{ border: fieldErrors.serviceName ? '2px solid #dc2626' : undefined }}>
                 <option value="">Select Service Type</option>
                 <option value="Land Levelling">Land Levelling</option>
                 <option value="Harvesting">Harvesting</option>
@@ -1148,14 +1896,20 @@ const UploadItem: React.FC = () => {
                 <option value="Crop Advisory">Crop Advisory</option>
                 <option value="Other Service">Other Service</option>
               </select>
+              {errMsg('serviceName')}
             </div>
             <div className="input-group">
               <label>Business Name</label>
-              <input name="businessName" value={formData.businessName || ''} onChange={handleInputChange} required />
+              <input name="businessName" value={formData.businessName || ''} onChange={handleInputChange} />
             </div>
-            <div className="input-group">
-              <label>Base Price Rate (₹)</label>
-              <input type="number" name="priceRate" value={formData.priceRate || ''} onChange={handleInputChange} required />
+            <div className="input-group" data-error={!!fieldErrors.pricePerDay}>
+              <label>Base Price Rate (₹) *</label>
+              <input
+                type="number" name="pricePerDay"
+                value={formData.pricePerDay || ''}
+                onChange={handleInputChange}
+                style={{ border: fieldErrors.pricePerDay ? '2px solid #dc2626' : undefined }} />
+              {errMsg('pricePerDay')}
             </div>
             <div className="input-group">
               <label>Operator Price (₹/hr)</label>
@@ -1225,7 +1979,7 @@ const UploadItem: React.FC = () => {
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
               <div className="form-section">
                 <h3><AlertCircle size={18} /> Basic Information</h3>
                 {renderFormFields()}
@@ -1261,27 +2015,47 @@ const UploadItem: React.FC = () => {
                 <div className="grid-2" style={{ gap: '16px 24px' }}>
                   <div className="input-group">
                     <label>House No / Flat / Plot</label>
-                    <input name="houseNo" value={formData.houseNo || ''} placeholder="e.g. D-14" onChange={handleInputChange} required />
+                    <input name="houseNo" value={formData.houseNo || ''} placeholder="e.g. D-14" onChange={handleInputChange} />
                   </div>
                   <div className="input-group">
                     <label>Street / Area / Colony</label>
-                    <input name="street" value={formData.street || ''} placeholder="e.g. Main Road" onChange={handleInputChange} required />
+                    <input name="street" value={formData.street || ''} placeholder="e.g. Main Road" onChange={handleInputChange} />
+                  </div>
+                  <div className="input-group" data-error={!!fieldErrors.village}>
+                    <label>Village / City / Town *</label>
+                    <input
+                      name="village"
+                      value={formData.village || ''}
+                      placeholder="Enter Village"
+                      onChange={handleInputChange}
+                      style={{ border: fieldErrors.village ? '2px solid #dc2626' : undefined }} />
+                    {errMsg('village')}
                   </div>
                   <div className="input-group">
-                    <label>Village / City / Town</label>
-                    <input name="village" value={formData.village || ''} placeholder="Enter Village" onChange={handleInputChange} required />
+                    <label>Mandal</label>
+                    <input
+                      name="mandal"
+                      value={formData.mandal || ''}
+                      placeholder="Enter Mandal"
+                      onChange={handleInputChange} />
                   </div>
-                  <div className="input-group">
-                    <label>District</label>
-                    <input name="district" value={formData.district || ''} placeholder="Enter District" onChange={handleInputChange} required />
+                  <div className="input-group" data-error={!!fieldErrors.district}>
+                    <label>District *</label>
+                    <input
+                      name="district"
+                      value={formData.district || ''}
+                      placeholder="Enter District"
+                      onChange={handleInputChange}
+                      style={{ border: fieldErrors.district ? '2px solid #dc2626' : undefined }} />
+                    {errMsg('district')}
                   </div>
                   <div className="input-group">
                     <label>State</label>
-                    <input name="state" value={formData.state || ''} placeholder="Enter State" onChange={handleInputChange} required />
+                    <input name="state" value={formData.state || ''} placeholder="Enter State" onChange={handleInputChange} />
                   </div>
                   <div className="input-group">
                     <label>Pincode</label>
-                    <input name="pincode" value={formData.pincode || ''} placeholder="Enter Pincode" onChange={handleInputChange} required />
+                    <input name="pincode" value={formData.pincode || ''} placeholder="Enter Pincode" onChange={handleInputChange} />
                   </div>
                 </div>
               </div>
@@ -1405,6 +2179,10 @@ const UploadItem: React.FC = () => {
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-4px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>
