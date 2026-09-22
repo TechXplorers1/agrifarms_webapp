@@ -30,11 +30,24 @@ const ManageAssets: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
+  const assetIdToHighlight = new URLSearchParams(location.search).get('assetId');
+
   useEffect(() => {
     if (targetTab && ['Vehicles', 'Equipment', 'Services', 'Workers'].includes(targetTab)) {
       setActiveTab(targetTab as AssetType);
     }
   }, [location.state, location.search]);
+
+  useEffect(() => {
+    if (assetIdToHighlight && assets.length > 0) {
+      setTimeout(() => {
+        const cardElement = document.getElementById(`asset-card-${assetIdToHighlight}`);
+        if (cardElement) {
+          cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500); // slight delay to ensure render
+    }
+  }, [assetIdToHighlight, assets, activeTab]);
 
   const fetchAssets = async () => {
     setLoading(true);
@@ -163,14 +176,22 @@ const ManageAssets: React.FC = () => {
                   ? `${asset.pricePerKm || 0}/km • ₹${asset.pricePerHour || 0}/hr` 
                   : (asset.pricePerKmOrTrip || asset.pricePerHour || asset.priceRate || asset.pricePerMale);
                 
+                const isHighlighted = assetIdToHighlight === String(id);
+                
                 return (
                   <motion.div 
                     key={id}
                     layout
+                    id={`asset-card-${id}`}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="asset-card-managed"
+                    className={`asset-card-managed ${isHighlighted ? 'highlighted-asset-card' : ''}`}
+                    style={isHighlighted ? {
+                      border: '2px solid var(--primary)',
+                      boxShadow: '0 0 15px rgba(16, 185, 129, 0.4)',
+                      transform: 'scale(1.02)'
+                    } : undefined}
                   >
                     <div className="card-main">
                       <div className="asset-img-managed">
@@ -372,6 +393,16 @@ const ManageAssets: React.FC = () => {
         
         .empty-state h3 { color: #1b5e20; font-weight: 800; margin-bottom: 8px; }
         .empty-state p { color: var(--text-muted); font-size: 0.9rem; }
+        
+        .highlighted-asset-card {
+          animation: highlightAssetGlow 2.5s ease-out;
+        }
+        @keyframes highlightAssetGlow {
+          0% { border-color: transparent; box-shadow: none; }
+          15% { border-color: var(--primary); box-shadow: 0 0 20px rgba(16, 185, 129, 0.6); }
+          85% { border-color: var(--primary); box-shadow: 0 0 20px rgba(16, 185, 129, 0.6); }
+          100% { border-color: var(--primary); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+        }
       `}</style>
     </div>
   );

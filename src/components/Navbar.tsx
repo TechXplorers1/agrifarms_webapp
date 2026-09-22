@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { 
-  Home, History, User, LayoutGrid, LogIn, Sprout, Bell, ClipboardList, 
+import {
+  Home, History, User, LayoutGrid, LogIn, Sprout, Bell, ClipboardList,
   X, CheckCheck, Info, Tag, Menu
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -61,16 +61,16 @@ const Navbar: React.FC = () => {
     if (notif.read === false || notif.isRead === false) {
       await handleMarkAsRead(notif.id);
     }
-    
+
     // 2. Close notifications panel
     setIsNotificationsOpen(false);
-    
+
     // 3. Determine target route based on type, title, and message
     const type = (notif.type || '').toLowerCase();
     const title = (notif.title || '').toLowerCase();
     const message = (notif.message || '').toLowerCase();
     const relatedId = notif.relatedId || notif.bookingId || '';
-    
+
     if (type.includes('booking') || title.includes('booking') || message.includes('booking') || message.includes('confirmed') || message.includes('requested')) {
       if (relatedId) {
         navigate(`/activity?bookingId=${relatedId}`);
@@ -78,7 +78,17 @@ const Navbar: React.FC = () => {
         navigate('/activity');
       }
     } else if (type.includes('approval') || type.includes('asset') || title.includes('approved') || title.includes('rejected') || message.includes('approved') || message.includes('rejected')) {
-      navigate('/manage-assets');
+      let tab = 'Equipment';
+      if (message.includes('vehicle') || title.includes('vehicle') || type.includes('vehicle')) tab = 'Vehicles';
+      else if (message.includes('service') || title.includes('service') || type.includes('service')) tab = 'Services';
+      else if (message.includes('worker') || title.includes('worker') || type.includes('worker')) tab = 'Workers';
+      else if (message.includes('equipment') || title.includes('equipment') || type.includes('equipment')) tab = 'Equipment';
+
+      if (relatedId) {
+        navigate(`/manage-assets?tab=${tab}&assetId=${relatedId}`);
+      } else {
+        navigate(`/manage-assets?tab=${tab}`);
+      }
     } else if (type.includes('advice') || type.includes('crop') || title.includes('advice') || title.includes('crop') || message.includes('pesticide') || message.includes('crop')) {
       navigate('/services');
     } else if (type.includes('price') || type.includes('mandi') || title.includes('price') || title.includes('mandi') || message.includes('price') || message.includes('mandi')) {
@@ -159,11 +169,11 @@ const Navbar: React.FC = () => {
             <button
               onClick={() => setIsNotificationsOpen(true)}
               className={`nav-item ${isNotificationsOpen ? 'active' : ''}`}
-              style={{ 
-                background: 'none', 
-                border: 'none', 
-                font: 'inherit', 
-                padding: 0, 
+              style={{
+                background: 'none',
+                border: 'none',
+                font: 'inherit',
+                padding: 0,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -206,16 +216,16 @@ const Navbar: React.FC = () => {
               style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
             >
               {user?.profilePic ? (
-                <img 
-                  src={apiService.getFullImageUrl(user.profilePic)} 
-                  alt={user?.name || 'Profile'} 
-                  style={{ 
-                    width: '24px', 
-                    height: '24px', 
-                    borderRadius: '50%', 
-                    objectFit: 'cover', 
-                    border: '1.5px solid var(--primary-light)' 
-                  }} 
+                <img
+                  src={apiService.getFullImageUrl(user.profilePic)}
+                  alt={user?.name || 'Profile'}
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '1.5px solid var(--primary-light)'
+                  }}
                 />
               ) : (
                 <User size={20} />
@@ -231,8 +241,8 @@ const Navbar: React.FC = () => {
         </div>
 
         {/* Hamburger Menu Button (Mobile) */}
-        <button 
-          className="mobile-menu-btn" 
+        <button
+          className="mobile-menu-btn"
           onClick={() => setIsMobileMenuOpen(true)}
           style={{ display: 'none', background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: '8px' }}
         >
@@ -372,203 +382,203 @@ const Navbar: React.FC = () => {
                   overflow: 'hidden'
                 }}
               >
-              {/* Header */}
-              <div style={{
-                padding: '24px 20px',
-                borderBottom: '1px solid #f1f5f9',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                background: '#fafbfb'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Bell size={22} color="var(--primary)" />
-                  <div>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>{t('notifications.title')}</h3>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                      {t('notifications.unreadAlerts').replace('{count}', String(unreadCount))}
-                    </p>
+                {/* Header */}
+                <div style={{
+                  padding: '24px 20px',
+                  borderBottom: '1px solid #f1f5f9',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  background: '#fafbfb'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Bell size={22} color="var(--primary)" />
+                    <div>
+                      <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>{t('notifications.title')}</h3>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                        {t('notifications.unreadAlerts').replace('{count}', String(unreadCount))}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  {unreadCount > 0 && (
-                    <button 
-                      onClick={handleMarkAllAsRead}
+
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={handleMarkAllAsRead}
+                        style={{
+                          padding: '6px 12px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          color: 'var(--primary)',
+                          background: '#e8f5e9',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          border: 'none',
+                          cursor: 'pointer'
+                        }}
+                        title="Mark all as read"
+                      >
+                        <CheckCheck size={14} />
+                        <span>{t('notifications.readAll')}</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setIsNotificationsOpen(false)}
                       style={{
-                        padding: '6px 12px',
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        color: 'var(--primary)',
-                        background: '#e8f5e9',
-                        borderRadius: '8px',
+                        background: '#f1f5f9',
+                        border: 'none',
+                        padding: '8px',
+                        borderRadius: '50%',
+                        cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '4px',
-                        border: 'none',
-                        cursor: 'pointer'
+                        justifyContent: 'center',
+                        color: 'var(--text-muted)'
                       }}
-                      title="Mark all as read"
                     >
-                      <CheckCheck size={14} />
-                      <span>{t('notifications.readAll')}</span>
+                      <X size={18} />
                     </button>
+                  </div>
+                </div>
+
+                {/* Drawer Body */}
+                <div style={{
+                  flex: 1,
+                  overflowY: 'auto',
+                  padding: '20px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}>
+                  {notifications.length === 0 ? (
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: '100%',
+                      color: 'var(--text-muted)',
+                      gap: '12px',
+                      textAlign: 'center',
+                      padding: '0 24px'
+                    }}>
+                      <div style={{ background: '#f1f5f9', padding: '16px', borderRadius: '50%' }}>
+                        <Bell size={36} style={{ opacity: 0.4 }} />
+                      </div>
+                      <div>
+                        <h4 style={{ fontWeight: 800, color: 'var(--text-main)' }}>{t('notifications.emptyTitle')}</h4>
+                        <p style={{ fontSize: '0.85rem', marginTop: '4px' }}>{t('notifications.emptyDesc')}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    notifications.map((notif, index) => {
+                      const tLower = (notif.type || '').toLowerCase();
+                      const isApproval = tLower === 'asset_approval' || tLower.includes('approval') || tLower.includes('approve') || tLower.includes('reject');
+                      const isRejected = (notif.title || '').toLowerCase().includes('reject') || (notif.message || '').toLowerCase().includes('reject');
+
+                      const iconBg = isApproval ? (isRejected ? '#fde8e8' : '#e8f5e9') : notif.type === 'booking' ? '#e8f5e9' : notif.type === 'advice' ? '#e3f2fd' : '#fff8e1';
+                      const iconColor = isApproval ? (isRejected ? '#dc2626' : '#2e7d32') : notif.type === 'booking' ? '#2e7d32' : notif.type === 'advice' ? '#1565c0' : '#b78103';
+                      const IconComp = isApproval ? (isRejected ? X : CheckCheck) : notif.type === 'booking' ? CheckCheck : notif.type === 'advice' ? Info : Tag;
+
+                      return (
+                        <div
+                          key={notif.id || `notif-${index}`}
+                          onClick={() => handleNotificationClick(notif)}
+                          style={{
+                            display: 'flex',
+                            gap: '14px',
+                            padding: '16px',
+                            borderRadius: '16px',
+                            background: (notif.read || notif.isRead) ? '#ffffff' : '#f8fafc',
+                            border: (notif.read || notif.isRead) ? '1px solid #f1f5f9' : '1px solid rgba(16, 185, 129, 0.15)',
+                            cursor: 'pointer',
+                            position: 'relative',
+                            transition: 'all 0.2s ease',
+                            textAlign: 'left'
+                          }}
+                        >
+                          {!(notif.read || notif.isRead) && (
+                            <div style={{
+                              position: 'absolute',
+                              top: '16px',
+                              right: '16px',
+                              width: '8px',
+                              height: '8px',
+                              background: '#ef4444',
+                              borderRadius: '50%'
+                            }} />
+                          )}
+
+                          <div style={{
+                            background: iconBg,
+                            color: iconColor,
+                            width: '42px',
+                            height: '42px',
+                            borderRadius: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0
+                          }}>
+                            <IconComp size={20} />
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <h4 style={{
+                              fontSize: '0.95rem',
+                              fontWeight: (notif.read || notif.isRead) ? 700 : 900,
+                              color: 'var(--text-main)',
+                              margin: 0
+                            }}>{notif.title}</h4>
+                            <p style={{
+                              fontSize: '0.85rem',
+                              color: '#475569',
+                              margin: 0,
+                              lineHeight: '1.4'
+                            }}>{notif.message}</p>
+                            <span style={{
+                              fontSize: '0.75rem',
+                              color: 'var(--text-muted)',
+                              marginTop: '4px',
+                              fontWeight: 600
+                            }}>{notif.time}</span>
+                          </div>
+                        </div>
+                      );
+                    })
                   )}
+                </div>
+
+                {/* Drawer Footer */}
+                <div style={{
+                  padding: '20px',
+                  borderTop: '1px solid #f1f5f9',
+                  background: '#fafbfb',
+                  display: 'flex',
+                  justifyContent: 'center'
+                }}>
                   <button
                     onClick={() => setIsNotificationsOpen(false)}
                     style={{
-                      background: '#f1f5f9',
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: '12px',
+                      background: 'var(--grad-primary)',
+                      color: 'white',
+                      fontWeight: 800,
+                      fontSize: '0.95rem',
                       border: 'none',
-                      padding: '8px',
-                      borderRadius: '50%',
                       cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'var(--text-muted)'
+                      boxShadow: '0 4px 12px rgba(5, 150, 105, 0.2)',
+                      textAlign: 'center'
                     }}
                   >
-                    <X size={18} />
+                    {t('notifications.close')}
                   </button>
                 </div>
-              </div>
-
-              {/* Drawer Body */}
-              <div style={{
-                flex: 1,
-                overflowY: 'auto',
-                padding: '20px 16px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px'
-              }}>
-                {notifications.length === 0 ? (
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '100%',
-                    color: 'var(--text-muted)',
-                    gap: '12px',
-                    textAlign: 'center',
-                    padding: '0 24px'
-                  }}>
-                    <div style={{ background: '#f1f5f9', padding: '16px', borderRadius: '50%' }}>
-                      <Bell size={36} style={{ opacity: 0.4 }} />
-                    </div>
-                    <div>
-                      <h4 style={{ fontWeight: 800, color: 'var(--text-main)' }}>{t('notifications.emptyTitle')}</h4>
-                      <p style={{ fontSize: '0.85rem', marginTop: '4px' }}>{t('notifications.emptyDesc')}</p>
-                    </div>
-                  </div>
-                ) : (
-                  notifications.map((notif, index) => {
-                    const tLower = (notif.type || '').toLowerCase();
-                    const isApproval = tLower === 'asset_approval' || tLower.includes('approval') || tLower.includes('approve') || tLower.includes('reject');
-                    const isRejected = (notif.title || '').toLowerCase().includes('reject') || (notif.message || '').toLowerCase().includes('reject');
-
-                    const iconBg = isApproval ? (isRejected ? '#fde8e8' : '#e8f5e9') : notif.type === 'booking' ? '#e8f5e9' : notif.type === 'advice' ? '#e3f2fd' : '#fff8e1';
-                    const iconColor = isApproval ? (isRejected ? '#dc2626' : '#2e7d32') : notif.type === 'booking' ? '#2e7d32' : notif.type === 'advice' ? '#1565c0' : '#b78103';
-                    const IconComp = isApproval ? (isRejected ? X : CheckCheck) : notif.type === 'booking' ? CheckCheck : notif.type === 'advice' ? Info : Tag;
-
-                    return (
-                      <div
-                        key={notif.id || `notif-${index}`}
-                        onClick={() => handleNotificationClick(notif)}
-                        style={{
-                          display: 'flex',
-                          gap: '14px',
-                          padding: '16px',
-                          borderRadius: '16px',
-                          background: (notif.read || notif.isRead) ? '#ffffff' : '#f8fafc',
-                          border: (notif.read || notif.isRead) ? '1px solid #f1f5f9' : '1px solid rgba(16, 185, 129, 0.15)',
-                          cursor: 'pointer',
-                          position: 'relative',
-                          transition: 'all 0.2s ease',
-                          textAlign: 'left'
-                        }}
-                      >
-                        {!(notif.read || notif.isRead) && (
-                          <div style={{
-                            position: 'absolute',
-                            top: '16px',
-                            right: '16px',
-                            width: '8px',
-                            height: '8px',
-                            background: '#ef4444',
-                            borderRadius: '50%'
-                          }} />
-                        )}
-
-                        <div style={{
-                          background: iconBg,
-                          color: iconColor,
-                          width: '42px',
-                          height: '42px',
-                          borderRadius: '12px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0
-                        }}>
-                          <IconComp size={20} />
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <h4 style={{
-                            fontSize: '0.95rem',
-                            fontWeight: (notif.read || notif.isRead) ? 700 : 900,
-                            color: 'var(--text-main)',
-                            margin: 0
-                          }}>{notif.title}</h4>
-                          <p style={{
-                            fontSize: '0.85rem',
-                            color: '#475569',
-                            margin: 0,
-                            lineHeight: '1.4'
-                          }}>{notif.message}</p>
-                          <span style={{
-                            fontSize: '0.75rem',
-                            color: 'var(--text-muted)',
-                            marginTop: '4px',
-                            fontWeight: 600
-                          }}>{notif.time}</span>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              {/* Drawer Footer */}
-              <div style={{
-                padding: '20px',
-                borderTop: '1px solid #f1f5f9',
-                background: '#fafbfb',
-                display: 'flex',
-                justifyContent: 'center'
-              }}>
-                <button
-                  onClick={() => setIsNotificationsOpen(false)}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    borderRadius: '12px',
-                    background: 'var(--grad-primary)',
-                    color: 'white',
-                    fontWeight: 800,
-                    fontSize: '0.95rem',
-                    border: 'none',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(5, 150, 105, 0.2)',
-                    textAlign: 'center'
-                  }}
-                >
-                  {t('notifications.close')}
-                </button>
-              </div>
-            </motion.div>
+              </motion.div>
             </>
           )}
         </AnimatePresence>,
