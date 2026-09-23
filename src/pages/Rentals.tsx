@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
 import { apiService } from '../services/apiService';
 import { useLanguage } from '../services/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Star, MapPin, SlidersHorizontal, Info, Loader2 } from 'lucide-react';
+import { Search, Star, MapPin, Info, Loader2 } from 'lucide-react';
+import { LocationFilterBar, type LocationTarget } from '../components/LocationFilterBar';
 
 
 interface Equipment {
@@ -50,8 +51,13 @@ const Rentals: React.FC = () => {
   const [filter, setFilter] = useState(initialFilter);
   const [searchQuery, setSearchQuery] = useState(location.state?.initialSearch || '');
   const [_userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [showDistanceDropdown, setShowDistanceDropdown] = useState(false);
   const [maxDistance, setMaxDistance] = useState<number | 'All'>('All');
+  const [targetLocation, setTargetLocation] = useState<LocationTarget | null>(null);
+
+  // Re-apply filter whenever navigation state changes
+  useEffect(() => {
+    setFilter(location.state?.initialFilter || 'All');
+  }, [location.state?.initialFilter, location.key]);
 
   const categories = [
     { value: 'All', label: t('rentals.all') },
@@ -125,8 +131,7 @@ const Rentals: React.FC = () => {
       try {
         const [equipRes, vehRes] = await Promise.all([
           apiService.getEquipment(),
-          apiService.getVehicles(),
-          new Promise(resolve => setTimeout(resolve, 1000))
+          apiService.getVehicles()
         ]);
         const rawEquip = equipRes.data || [];
         const rawVeh = (vehRes.data || []).map((v: any) => ({
@@ -167,6 +172,13 @@ const Rentals: React.FC = () => {
     fetchEquipmentAndCoords();
   }, [isAuthenticated]);
 
+  // Derive location filter items for the LocationFilterBar
+  const locationItems = React.useMemo(() => equipment.map(item => ({
+    location: (item as any).village || (item as any).district,
+    latitude: item.latitude,
+    longitude: item.longitude,
+  })), [equipment]);
+
   const filteredEquipment = equipment.filter(item => {
     if (user?.id && item.ownerId === user.id) return false;
 
@@ -186,7 +198,18 @@ const Rentals: React.FC = () => {
     const matchesDistance = maxDistance === 'All' ||
       (item.distance !== undefined && item.distance <= maxDistance);
 
-    return matchesFilter && matchesSearch && matchesDistance;
+    let matchesLocation = true;
+    if (targetLocation && !targetLocation.isCurrentLocation) {
+      const tLoc = (targetLocation.village || targetLocation.name || '').toLowerCase();
+      const tDistrict = (targetLocation.district || '').toLowerCase();
+      const iVill = ((item as any).village || '').toLowerCase();
+      const iDist = ((item as any).district || '').toLowerCase();
+      
+      matchesLocation = (tLoc && (iVill.includes(tLoc) || iDist.includes(tLoc))) || 
+                        (tDistrict && (iVill.includes(tDistrict) || iDist.includes(tDistrict)));
+    }
+
+    return matchesFilter && matchesSearch && matchesDistance && matchesLocation;
   });
 
   return (
@@ -196,74 +219,15 @@ const Rentals: React.FC = () => {
           <h1 className="text-3xl font-bold">{t('rentals.title')}</h1>
           <p className="text-slate-500">{t('rentals.desc')}</p>
         </div>
-        <div style={{ position: 'relative' }}>
-          <button
-            className="filter-btn"
-            onClick={() => setShowDistanceDropdown(!showDistanceDropdown)}
-            style={{ cursor: 'pointer' }}
-          >
-            <SlidersHorizontal size={20} />
-            <span>{maxDistance === 'All' ? 'Distance Filter' : `Distance: ${maxDistance} km`}</span>
-          </button>
-
-          {showDistanceDropdown && (
-            <div style={{
-              position: 'absolute',
-              top: '100%',
-              right: 0,
-              marginTop: '8px',
-              background: 'white',
-              borderRadius: '16px',
-              boxShadow: 'var(--shadow-lg)',
-              border: '1px solid var(--border)',
-              padding: '8px',
-              zIndex: 100,
-              minWidth: '180px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '4px'
-            }}>
-              {[
-                { label: 'All Distances', value: 'All' },
-                { label: 'Within 5 km', value: 5 },
-                { label: 'Within 10 km', value: 10 },
-                { label: 'Within 25 km', value: 25 },
-                { label: 'Within 50 km', value: 50 },
-                { label: 'Within 100 km', value: 100 }
-              ].map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => {
-                    setMaxDistance(opt.value as any);
-                    setShowDistanceDropdown(false);
-                  }}
-                  style={{
-                    padding: '10px 14px',
-                    borderRadius: '10px',
-                    textAlign: 'left',
-                    fontWeight: 700,
-                    fontSize: '0.9rem',
-                    background: maxDistance === opt.value ? 'var(--bg-main)' : 'transparent',
-                    color: maxDistance === opt.value ? 'var(--primary)' : 'var(--text-main)',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    whiteSpace: 'nowrap'
-                  }}
-                  onMouseOver={(e) => {
-                    if (maxDistance !== opt.value) e.currentTarget.style.background = '#f8fafc';
-                  }}
-                  onMouseOut={(e) => {
-                    if (maxDistance !== opt.value) e.currentTarget.style.background = 'transparent';
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
+
+      <LocationFilterBar
+        allItems={locationItems}
+        targetLocation={targetLocation}
+        onLocationChange={setTargetLocation}
+        maxDistance={maxDistance}
+        onDistanceChange={setMaxDistance}
+      />
 
       <div className="search-bar-row">
         <div className="search-box">
