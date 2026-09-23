@@ -4,7 +4,8 @@ import { useAuth } from '../services/AuthContext';
 import { apiService } from '../services/apiService';
 import { useLanguage } from '../services/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Star, MapPin, Info, Hammer, Truck, Users, SlidersHorizontal, Loader2 } from 'lucide-react';
+import { Search, Star, MapPin, Info, Hammer, Truck, Users, Loader2 } from 'lucide-react';
+import { LocationFilterBar, type LocationTarget } from '../components/LocationFilterBar';
 
 
 interface ServiceItem {
@@ -46,9 +47,9 @@ const calculateHaversine = (lat1: number, lon1: number, lat2: number, lon2: numb
   const R = 6371; // Radius of Earth in km
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
+  const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
@@ -66,13 +67,11 @@ const Services: React.FC = () => {
 
   // Re-apply filter whenever navigation state changes (e.g. clicking Services in navbar while already on this page)
   useEffect(() => {
-    if (location.state?.initialFilter) {
-      setFilter(location.state.initialFilter);
-    }
-  }, [location.state?.initialFilter]);
+    setFilter(location.state?.initialFilter || 'All');
+  }, [location.state?.initialFilter, location.key]);
   const [_userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [showDistanceDropdown, setShowDistanceDropdown] = useState(false);
   const [maxDistance, setMaxDistance] = useState<number | 'All'>('All');
+  const [targetLocation, setTargetLocation] = useState<LocationTarget | null>(null);
 
   const categories = [
     { value: 'All', label: 'All Services' },
@@ -88,7 +87,7 @@ const Services: React.FC = () => {
 
       // 1. Get user coordinates
       let coords: { latitude: number; longitude: number } | null = null;
-      
+
       // Try guest location coordinates first
       const guestLocStr = localStorage.getItem('agrifarm_guest_location');
       if (guestLocStr) {
@@ -144,7 +143,8 @@ const Services: React.FC = () => {
       try {
         const [serv] = await Promise.all([
           apiService.getServices(),
-          new Promise(resolve => setTimeout(resolve, 1000))
+          apiService.getVehicles(),
+          apiService.getWorkerGroups()
         ]);
 
         const normalized: ServiceItem[] = [
@@ -189,17 +189,37 @@ const Services: React.FC = () => {
         setLoading(false);
       }
     };
-    
+
     fetchServicesAndCoords();
   }, [isAuthenticated]);
 
+  // Derive location filter items for the LocationFilterBar
+  const locationItems = React.useMemo(() => items.map(item => ({
+    location: item.location,
+    latitude: item.latitude,
+    longitude: item.longitude,
+  })), [items]);
+
   const filteredItems = items.filter(item => {
-    const matchesFilter = filter === 'All' || item.category === filter;
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          item.category.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesDistance = maxDistance === 'All' || 
-                            (item.distance !== undefined && item.distance <= maxDistance);
-    return matchesFilter && matchesSearch && matchesDistance;
+    const matchesFilter = filter === 'All' ||
+      (filter === 'Services' && item.type === 'Service') ||
+      (filter === 'Transport' && item.type === 'Transport') ||
+      (filter === 'Workers' && item.type === 'Worker');
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesDistance = maxDistance === 'All' ||
+      (item.distance !== undefined && item.distance <= maxDistance);
+
+    // Location filter: if a custom target is selected, match by location string OR by distance (if coords available)
+    let matchesLocation = true;
+    if (targetLocation && !targetLocation.isCurrentLocation) {
+      const tLoc = (targetLocation.village || targetLocation.name || '').toLowerCase();
+      const tDistrict = (targetLocation.district || '').toLowerCase();
+      const iLoc = (item.location || '').toLowerCase();
+      matchesLocation = (tLoc && iLoc.includes(tLoc)) || (tDistrict && iLoc.includes(tDistrict));
+    }
+
+    return matchesFilter && matchesSearch && matchesDistance && matchesLocation;
   });
 
   return (
@@ -209,108 +229,36 @@ const Services: React.FC = () => {
           <h1 className="text-3xl font-bold">{t('services.title')}</h1>
           <p className="text-slate-500">{t('services.desc')}</p>
         </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative', flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative' }}>
-            <button 
-              onClick={() => setShowDistanceDropdown(!showDistanceDropdown)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 20px',
-                borderRadius: '12px',
-                fontSize: '0.95rem',
-                fontWeight: 700,
-                border: '1px solid var(--border)',
-                background: 'white',
-                color: 'var(--text-main)',
-                cursor: 'pointer'
-              }}
-            >
-              <SlidersHorizontal size={18} />
-              <span>{maxDistance === 'All' ? 'Distance Filter' : `Distance: ${maxDistance} km`}</span>
-            </button>
-            {showDistanceDropdown && (
-              <div style={{
-                position: 'absolute',
-                top: '100%',
-                right: 0,
-                marginTop: '8px',
-                background: 'white',
-                borderRadius: '16px',
-                boxShadow: 'var(--shadow-lg)',
-                border: '1px solid var(--border)',
-                padding: '8px',
-                zIndex: 100,
-                minWidth: '180px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '4px'
-              }}>
-                {[
-                  { label: 'All Distances', value: 'All' },
-                  { label: 'Within 5 km', value: 5 },
-                  { label: 'Within 10 km', value: 10 },
-                  { label: 'Within 25 km', value: 25 },
-                  { label: 'Within 50 km', value: 50 },
-                  { label: 'Within 100 km', value: 100 }
-                ].map(opt => (
-                  <button
-                    key={opt.value}
-                    onClick={() => {
-                      setMaxDistance(opt.value as any);
-                      setShowDistanceDropdown(false);
-                    }}
-                    style={{
-                      padding: '10px 14px',
-                      borderRadius: '10px',
-                      textAlign: 'left',
-                      fontWeight: 700,
-                      fontSize: '0.9rem',
-                      background: maxDistance === opt.value ? 'var(--bg-main)' : 'transparent',
-                      color: maxDistance === opt.value ? 'var(--primary)' : 'var(--text-main)',
-                      border: 'none',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      whiteSpace: 'nowrap'
-                    }}
-                    onMouseOver={(e) => {
-                      if (maxDistance !== opt.value) e.currentTarget.style.background = '#f8fafc';
-                    }}
-                    onMouseOut={(e) => {
-                      if (maxDistance !== opt.value) e.currentTarget.style.background = 'transparent';
-                    }}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          
-          <button 
-            className="btn-primary" 
-            onClick={() => navigate('/upload-item')}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '8px', 
-              padding: '10px 20px', 
-              borderRadius: '12px',
-              fontSize: '0.95rem',
-              fontWeight: 700
-            }}
-          >
-            <span>{t('services.addBtn')}</span>
-          </button>
-        </div>
+        <button
+          className="btn-primary"
+          onClick={() => navigate('/upload-item')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            borderRadius: '12px',
+            fontSize: '0.95rem',
+            fontWeight: 700
+          }}
+        >
+          <span>{t('services.addBtn')}</span>
+        </button>
       </div>
+
+      <LocationFilterBar
+        allItems={locationItems}
+        targetLocation={targetLocation}
+        onLocationChange={setTargetLocation}
+        maxDistance={maxDistance}
+        onDistanceChange={setMaxDistance}
+      />
 
       <div className="search-bar-row">
         <div className="search-box">
           <Search size={20} className="text-slate-400" />
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder={t('services.placeholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -320,7 +268,7 @@ const Services: React.FC = () => {
 
       <div className="category-pills">
         {categories.map(cat => (
-          <button 
+          <button
             key={cat.value}
             className={`pill ${filter === cat.value ? 'active' : ''}`}
             onClick={() => setFilter(cat.value)}
@@ -338,7 +286,7 @@ const Services: React.FC = () => {
         <div className="assets-grid">
           <AnimatePresence>
             {filteredItems.map((item) => (
-              <motion.div 
+              <motion.div
                 key={item.id}
                 layout
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -484,8 +432,8 @@ const Services: React.FC = () => {
                               <span style={{ fontWeight: 600, color: '#475569' }}>
                                 {r.taskName.charAt(0).toUpperCase() + r.taskName.slice(1)}
                               </span>
-                              <span style={{ 
-                                fontWeight: 800, 
+                              <span style={{
+                                fontWeight: 800,
                                 fontSize: '0.75rem',
                                 color: r.gender === 'MALE' ? '#0284c7' : '#db2777',
                                 display: 'flex',
@@ -512,7 +460,7 @@ const Services: React.FC = () => {
                     <div className="price-tag">
                       <span className="amount">{item.price}</span>
                     </div>
-                    <button 
+                    <button
                       className="btn-book"
                       onClick={() => {
                         if (!isAuthenticated) {
