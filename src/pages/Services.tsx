@@ -61,7 +61,6 @@ const Services: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [items, setItems] = useState<ServiceItem[]>([]);
-
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState(location.state?.initialFilter || 'All');
   const [searchQuery, setSearchQuery] = useState(location.state?.initialSearch || '');
@@ -225,8 +224,6 @@ const Services: React.FC = () => {
         });
 
         setItems(processedItems);
-
-
       } catch (error) {
         console.error('Error fetching services:', error);
       } finally {
