@@ -675,7 +675,7 @@ const Home: React.FC = () => {
                 cursor: 'pointer',
                 fontSize: '0.95rem'
               }}
-              onClick={() => navigate('/services', { state: { initialFilter: 'Services' } })}
+              onClick={() => navigate('/services', { state: { initialFilter: 'All' } })}
             >
               {t('home.viewAll')} <ChevronRight size={18} />
             </motion.button>
@@ -707,7 +707,12 @@ const Home: React.FC = () => {
                   borderRadius: '28px',
                   boxShadow: '0 12px 30px -10px rgba(15, 23, 42, 0.08)'
                 }}
-                onClick={() => navigate('/services', { state: { initialFilter: item.name } })}
+                onClick={() => {
+                  let filterVal = item.name;
+                  if (item.name === 'Plowing') filterVal = 'Ploughing';
+                  if (item.name === 'Seeding') filterVal = 'Sowing/Seeding';
+                  navigate('/services', { state: { initialFilter: filterVal } });
+                }}
               >
                 <img
                   src={item.image}
@@ -797,7 +802,7 @@ const Home: React.FC = () => {
                 cursor: 'pointer',
                 fontSize: '0.95rem'
               }}
-              onClick={() => navigate('/services', { state: { initialFilter: 'Transport' } })}
+              onClick={() => navigate('/transport', { state: { initialFilter: 'All' } })}
             >
               {t('home.viewAll')} <ChevronRight size={18} />
             </motion.button>
@@ -829,7 +834,7 @@ const Home: React.FC = () => {
                   borderRadius: '28px',
                   boxShadow: '0 12px 30px -10px rgba(15, 23, 42, 0.08)'
                 }}
-                onClick={() => navigate('/services', { state: { initialFilter: item.name } })}
+                onClick={() => navigate('/transport', { state: { initialFilter: item.name } })}
               >
                 <img
                   src={item.image}

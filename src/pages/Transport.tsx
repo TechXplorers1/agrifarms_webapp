@@ -54,7 +54,7 @@ const calculateHaversine = (lat1: number, lon1: number, lat2: number, lon2: numb
   return R * c;
 };
 
-const Services: React.FC = () => {
+const Transport: React.FC = () => {
   const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
@@ -75,11 +75,11 @@ const Services: React.FC = () => {
   const [maxDistance, setMaxDistance] = useState<number | 'All'>('All');
 
   const categories = [
-    { value: 'All', label: 'All Services' },
-    { value: 'Ploughing', label: 'Plowing' },
-    { value: 'Harvesting', label: 'Harvesting' },
-    { value: 'Drone Spraying', label: 'Drone Spraying' },
-    { value: 'Sowing/Seeding', label: 'Seeding' }
+    { value: 'All', label: 'All Transport' },
+    { value: 'Trucks', label: 'Trucks' },
+    { value: 'Tractors with Trolley', label: 'Tractors with Trolley' },
+    { value: 'Mini Trucks', label: 'Mini Trucks' },
+    { value: 'Loaders', label: 'Loaders' }
   ];
 
   useEffect(() => {
@@ -142,26 +142,32 @@ const Services: React.FC = () => {
       setUserCoords(coords);
 
       try {
-        const [serv] = await Promise.all([
-          apiService.getServices(),
+        const [veh] = await Promise.all([
+          apiService.getVehicles(),
           new Promise(resolve => setTimeout(resolve, 1000))
         ]);
 
         const normalized: ServiceItem[] = [
-          ...(serv.data || []).map((s: any) => ({
-            id: s.serviceId,
-            name: s.businessName,
-            category: s.serviceType,
-            price: `₹${s.priceRate}`,
-            imageUrl: s.imageUrl,
-            type: 'Service',
-            location: s.village,
-            providerId: s.ownerId,
-            providerName: s.ownerName,
-            operatorPrice: s.operatorPrice,
-            operatorAvailable: s.operatorIncluded,
-            latitude: s.latitude,
-            longitude: s.longitude
+          ...(veh.data || []).map((v: any) => ({
+            id: v.vehicleId,
+            name: v.brand && v.model ? `${v.brand} ${v.model}` : (v.vehicleType || 'Transport'),
+            category: v.vehicleType || 'Transport',
+            price: v.pricePerHour ? `₹${v.pricePerHour}/hr` : (v.pricePerKm ? `₹${v.pricePerKm}/km` : `₹${v.pricePerKmOrTrip || 0}`),
+            imageUrl: v.imageUrl,
+            type: 'Transport',
+            location: v.village,
+            specs: v.loadCapacity ? `${v.loadCapacity} Ton` : (v.tonnage ? `${v.tonnage} Ton` : undefined),
+            providerId: v.ownerId,
+            providerName: v.ownerBusinessName || v.ownerName || 'Service Provider',
+            latitude: v.latitude,
+            longitude: v.longitude,
+            pricePerKm: v.pricePerKm,
+            pricePerHour: v.pricePerHour,
+            brand: v.brand,
+            model: v.model,
+            yearOfManufacture: v.yearOfManufacture,
+            vehicleCondition: v.vehicleCondition,
+            ownerBusinessName: v.ownerBusinessName
           }))
         ];
 
@@ -194,7 +200,14 @@ const Services: React.FC = () => {
   }, [isAuthenticated]);
 
   const filteredItems = items.filter(item => {
-    const matchesFilter = filter === 'All' || item.category === filter;
+    let matchesFilter = filter === 'All';
+    if (!matchesFilter) {
+      if (filter === 'Trucks' && item.category?.toLowerCase().includes('truck') && !item.category?.toLowerCase().includes('mini')) matchesFilter = true;
+      else if (filter === 'Tractors with Trolley' && item.category?.toLowerCase().includes('tractor')) matchesFilter = true;
+      else if (filter === 'Mini Trucks' && (item.category?.toLowerCase().includes('mini') || item.category?.toLowerCase().includes('pick up'))) matchesFilter = true;
+      else if (filter === 'Loaders' && (item.category?.toLowerCase().includes('jcb') || item.category?.toLowerCase().includes('loader'))) matchesFilter = true;
+      else if (item.category === filter) matchesFilter = true;
+    }
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           item.category.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesDistance = maxDistance === 'All' || 
@@ -206,8 +219,8 @@ const Services: React.FC = () => {
     <div className="services-page container fade-in">
       <div className="page-header">
         <div>
-          <h1 className="text-3xl font-bold">{t('services.title')}</h1>
-          <p className="text-slate-500">{t('services.desc')}</p>
+          <h1 className="text-3xl font-bold">Agri Transport</h1>
+          <p className="text-slate-500">Hire professional agricultural transport and vehicles</p>
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative', flexWrap: 'wrap' }}>
           <div style={{ position: 'relative' }}>
@@ -621,5 +634,5 @@ const Services: React.FC = () => {
   );
 };
 
-export default Services;
+export default Transport;
 

@@ -57,10 +57,9 @@ const Rentals: React.FC = () => {
     { value: 'All', label: t('rentals.all') },
     { value: 'Tractor', label: t('home.tractors') },
     { value: 'Harvester', label: t('home.harvesters') },
-    { value: 'Plough', label: t('rentals.plough') },
-    { value: 'Seeder', label: t('rentals.seeder') },
     { value: 'Sprayer', label: t('home.sprayers') },
-    { value: 'Trolley', label: t('rentals.trolley') }
+    { value: 'JCB', label: 'JCB' },
+    { value: 'Trolley', label: 'Trolleys' }
   ];
 
   useEffect(() => {

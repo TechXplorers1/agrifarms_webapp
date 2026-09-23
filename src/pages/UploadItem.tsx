@@ -63,9 +63,9 @@ const UploadItem: React.FC = () => {
   const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false);
 
   // Equipment Brand / Make / Model States
-  const [showCustomBrandInput, setShowCustomBrandInput] = useState(false);
-  const [newBrandName, setNewBrandName] = useState('');
-  const [brandList, setBrandList] = useState(['Mahindra', 'Sonalika', 'Swaraj', 'John Deere', 'Massey Ferguson', 'New Holland']);
+  // const [showCustomBrandInput, setShowCustomBrandInput] = useState(false);
+  // const [newBrandName, setNewBrandName] = useState('');
+  // const [brandList, setBrandList] = useState(['Mahindra', 'Sonalika', 'Swaraj', 'John Deere', 'Massey Ferguson', 'New Holland']);
   const [selectedEquipMake, setSelectedEquipMake] = useState<string | null>(null);
   const [selectedEquipModel, setSelectedEquipModel] = useState<string | null>(null);
 
@@ -104,6 +104,17 @@ const UploadItem: React.FC = () => {
   const [availableSprayerTypes, setAvailableSprayerTypes] = useState([
     'Boom Sprayer', 'Knapsack Sprayer', 'Tractor Mounted Sprayer', 'Battery Sprayer',
     'Hand Compression Sprayer', 'Power Sprayer', 'Aerial / Drone Sprayer', 'Other'
+  ]);
+
+  // Plough Capacities State
+  const [ploughCapacitiesMap, setPloughCapacitiesMap] = useState<Record<string, string[]>>({});
+  const [currentPloughType, setCurrentPloughType] = useState<string>('');
+  const [currentOtherPloughType, setCurrentOtherPloughType] = useState<string>('');
+  const [currentPloughCapacity, setCurrentPloughCapacity] = useState<string>('');
+  const [currentPloughUnit, setCurrentPloughUnit] = useState<string>('Discs');
+  const ploughCapacityUnits = ['Discs', 'Tines', 'Blades', 'Tyne', 'Bottom', 'Other'];
+  const [availablePloughTypes, setAvailablePloughTypes] = useState([
+    'Mould Board Plough', 'Disc Plough', 'Rotavator', 'Cultivator', 'Chisel Plough', 'Harrow', 'Other'
   ]);
 
   // Operator toggle state for Equipment
@@ -542,6 +553,24 @@ const UploadItem: React.FC = () => {
           finalPayload.brandModel = `${selectedEquipMake} ${selectedEquipModel}`;
           finalPayload.brand = selectedEquipMake;
           finalPayload.model = selectedEquipModel;
+        }
+      }
+
+      if (category === 'Services') {
+        const sType = formData.serviceName;
+        if (sType === 'Ploughing') {
+          if (Object.keys(ploughCapacitiesMap).length > 0) {
+            finalPayload.ploughCapacities = Object.entries(ploughCapacitiesMap).map(([k, v]) => `${k} - ${v.join('/')}`);
+          }
+        } else if (sType === 'Harvesting') {
+          if (Object.keys(harvestCapacitiesMap).length > 0) {
+            finalPayload.harvestCapacities = Object.entries(harvestCapacitiesMap).map(([k, v]) => `${k} - ${v.join('/')}`);
+          }
+        } else if (sType === 'Drone Spraying' || sType === 'Pesticide Spraying') {
+          finalPayload.sprayerTypes = Object.entries(sprayerCapacitiesMap).map(([k, v]) => `${k} - ${v.join('/')} L`);
+          const allCaps: string[] = [];
+          Object.values(sprayerCapacitiesMap).forEach(list => allCaps.push(...list));
+          finalPayload.sprayerCapacities = Array.from(new Set(allCaps));
         }
       }
 
@@ -1875,7 +1904,31 @@ const UploadItem: React.FC = () => {
             })()}
           </div>
         );
-      case 'Services':
+      case 'Services': {
+        const sType = formData.serviceName || '';
+        let nameLabel = 'Provider / Business Name';
+        let namePlaceholder = 'e.g. Ramesh Services';
+        let descLabel = 'Detailed Description';
+        let descPlaceholder = 'Tell users more about your service...';
+
+        if (sType === 'Vet Care') {
+          nameLabel = 'Clinic / Doctor Name';
+          namePlaceholder = 'e.g. Dr. Ramesh (Vet Clinic)';
+          descLabel = 'Specialization / Animals Treated';
+          descPlaceholder = 'e.g. Cows, Buffaloes, Sheep, Poultry, Pets';
+        } else if (sType === 'Electricians' || sType === 'Mechanics') {
+          nameLabel = 'Technician / Business Name';
+          namePlaceholder = 'e.g. Ramesh Electricals';
+          descLabel = 'Specialization / Skills';
+          descPlaceholder = sType === 'Mechanics' ? 'e.g. Tractor repair, Harvester servicing, Engine work' : 'e.g. Motor rewinding, House wiring, Pump repair';
+        } else if (sType === 'Soil Testing') {
+          descLabel = 'Testing Methods / Parameters';
+          descPlaceholder = 'e.g. NPK analysis, pH testing, Soil moisture';
+        } else if (sType === 'Drone Spraying' || sType === 'Pesticide Spraying') {
+          descLabel = 'Drone / Sprayer Details';
+          descPlaceholder = 'e.g. DJI Agras T30 Drone';
+        }
+
         return (
           <div className="form-fields grid-2">
             <div className="input-group" data-error={!!fieldErrors.serviceName}>
@@ -1886,12 +1939,16 @@ const UploadItem: React.FC = () => {
                 onChange={handleInputChange}
                 style={{ border: fieldErrors.serviceName ? '2px solid #dc2626' : undefined }}>
                 <option value="">Select Service Type</option>
-                <option value="Land Levelling">Land Levelling</option>
+                <option value="Ploughing">Ploughing</option>
                 <option value="Harvesting">Harvesting</option>
+                <option value="Drone Spraying">Drone Spraying</option>
+                <option value="Vet Care">Vet Care</option>
+                <option value="Electricians">Electricians</option>
+                <option value="Mechanics">Mechanics</option>
+                <option value="Land Levelling">Land Levelling</option>
                 <option value="Sowing/Seeding">Sowing/Seeding</option>
                 <option value="Pesticide Spraying">Pesticide Spraying</option>
                 <option value="Irrigation Service">Irrigation Service</option>
-                <option value="Ploughing">Ploughing</option>
                 <option value="Soil Testing">Soil Testing</option>
                 <option value="Crop Advisory">Crop Advisory</option>
                 <option value="Other Service">Other Service</option>
@@ -1899,9 +1956,297 @@ const UploadItem: React.FC = () => {
               {errMsg('serviceName')}
             </div>
             <div className="input-group">
-              <label>Business Name</label>
-              <input name="businessName" value={formData.businessName || ''} onChange={handleInputChange} />
+              <label>{nameLabel}</label>
+              <input name="businessName" value={formData.businessName || ''} onChange={handleInputChange} placeholder={namePlaceholder} />
             </div>
+
+            {/* Specialized Capacity Sections */}
+            {sType === 'Ploughing' && (
+              <div className="form-section capacity-section span-2" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', marginTop: '10px', marginBottom: '10px' }}>
+                <h4 style={{ margin: '0 0 15px 0', display: 'flex', alignItems: 'center', gap: '8px', color: '#1B5E20' }}><AlertCircle size={16} /> Ploughing Equipment Types</h4>
+                <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '15px' }}>Add equipment and their capacities:</p>
+
+                <div className="grid-2" style={{ alignItems: 'end', marginBottom: '15px' }}>
+                  <div className="input-group">
+                    <label>Equipment Type</label>
+                    <select
+                      value={currentPloughType}
+                      onChange={(e) => setCurrentPloughType(e.target.value)}>
+                      <option value="">Select Equipment Type</option>
+                      {availablePloughTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+
+                  {currentPloughType === 'Other' && (
+                    <div className="input-group">
+                      <label>Custom Equipment Name</label>
+                      <input
+                        value={currentOtherPloughType}
+                        placeholder="e.g. Special Plough"
+                        onChange={(e) => setCurrentOtherPloughType(e.target.value)} />
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid-2" style={{ alignItems: 'end', gridTemplateColumns: '1fr 1fr auto', gap: '15px' }}>
+                  <div className="input-group">
+                    <label>Capacity</label>
+                    <input
+                      type="number"
+                      value={currentPloughCapacity}
+                      placeholder="e.g. 45"
+                      onChange={(e) => setCurrentPloughCapacity(e.target.value)} />
+                  </div>
+                  <div className="input-group">
+                    <label>Unit</label>
+                    <select
+                      value={currentPloughUnit}
+                      onChange={(e) => setCurrentPloughUnit(e.target.value)}>
+                      {ploughCapacityUnits.map(u => <option key={u} value={u}>{u}</option>)}
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    style={{ height: '42px', padding: '0 20px', borderRadius: '8px', marginBottom: '8px' }}
+                    onClick={() => {
+                      if (!currentPloughType) return;
+                      let type = currentPloughType;
+                      if (type === 'Other') {
+                        if (!currentOtherPloughType.trim()) return;
+                        type = currentOtherPloughType.trim();
+                        if (!availablePloughTypes.includes(type)) setAvailablePloughTypes(prev => [...prev.slice(0, prev.length - 1), type, 'Other']);
+                      }
+                      const capText = currentPloughCapacity.trim();
+                      if (capText) {
+                        const formattedCap = `${capText} ${currentPloughUnit}`;
+                        setPloughCapacitiesMap(prev => {
+                          const map = { ...prev };
+                          if (!map[type]) map[type] = [];
+                          if (!map[type].includes(formattedCap)) map[type].push(formattedCap);
+                          return map;
+                        });
+                        setCurrentPloughCapacity('');
+                        setCurrentOtherPloughType('');
+                        setCurrentPloughType('');
+                      }
+                    }}>
+                    Add
+                  </button>
+                </div>
+
+                {Object.keys(ploughCapacitiesMap).length > 0 && (
+                  <div style={{ marginTop: '20px' }}>
+                    <h5 style={{ margin: '0 0 10px 0', color: '#334155' }}>Added Equipment:</h5>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {Object.entries(ploughCapacitiesMap).map(([type, capacities]) =>
+                        capacities.map(cap => (
+                          <div key={`${type}-${cap}`} style={{ background: '#dcfce7', color: '#166534', padding: '6px 12px', borderRadius: '20px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #bbf7d0' }}>
+                            {type} - {cap}
+                            <button type="button" style={{ background: 'none', border: 'none', color: '#166534', cursor: 'pointer', padding: 0, display: 'flex' }} onClick={() => {
+                              setPloughCapacitiesMap(prev => {
+                                const map = { ...prev };
+                                map[type] = map[type].filter(c => c !== cap);
+                                if (map[type].length === 0) delete map[type];
+                                return map;
+                              });
+                            }}>&#x2715;</button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {sType === 'Harvesting' && (
+              <div className="form-section capacity-section span-2" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', marginTop: '10px', marginBottom: '10px' }}>
+                <h4 style={{ margin: '0 0 15px 0', display: 'flex', alignItems: 'center', gap: '8px', color: '#1B5E20' }}><AlertCircle size={16} /> Harvesting Equipment Types</h4>
+                <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '15px' }}>Add harvester types and their capacities:</p>
+
+                <div className="grid-2" style={{ alignItems: 'end', marginBottom: '15px' }}>
+                  <div className="input-group">
+                    <label>Harvester Type</label>
+                    <select
+                      value={currentHarvestType}
+                      onChange={(e) => setCurrentHarvestType(e.target.value)}>
+                      <option value="">Select Harvester Type</option>
+                      {availableHarvestTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+
+                  {currentHarvestType === 'Other' && (
+                    <div className="input-group">
+                      <label>Custom Harvester Name</label>
+                      <input
+                        value={currentOtherHarvestType}
+                        placeholder="e.g. Special Harvester"
+                        onChange={(e) => setCurrentOtherHarvestType(e.target.value)} />
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid-2" style={{ alignItems: 'end', gridTemplateColumns: '1fr 1fr auto', gap: '15px' }}>
+                  <div className="input-group">
+                    <label>Capacity</label>
+                    <input
+                      type="number"
+                      value={currentHarvestCapacity}
+                      placeholder="e.g. 45"
+                      onChange={(e) => setCurrentHarvestCapacity(e.target.value)} />
+                  </div>
+                  <div className="input-group">
+                    <label>Unit</label>
+                    <select
+                      value={currentHarvestUnit}
+                      onChange={(e) => setCurrentHarvestUnit(e.target.value)}>
+                      {harvestCapacityUnits.map(u => <option key={u} value={u}>{u}</option>)}
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    style={{ height: '42px', padding: '0 20px', borderRadius: '8px', marginBottom: '8px' }}
+                    onClick={() => {
+                      if (!currentHarvestType) return;
+                      let type = currentHarvestType;
+                      if (type === 'Other') {
+                        if (!currentOtherHarvestType.trim()) return;
+                        type = currentOtherHarvestType.trim();
+                        if (!availableHarvestTypes.includes(type)) setAvailableHarvestTypes(prev => [...prev.slice(0, prev.length - 1), type, 'Other']);
+                      }
+                      const capText = currentHarvestCapacity.trim();
+                      if (capText) {
+                        const formattedCap = `${capText} ${currentHarvestUnit}`;
+                        setHarvestCapacitiesMap(prev => {
+                          const map = { ...prev };
+                          if (!map[type]) map[type] = [];
+                          if (!map[type].includes(formattedCap)) map[type].push(formattedCap);
+                          return map;
+                        });
+                        setCurrentHarvestCapacity('');
+                        setCurrentOtherHarvestType('');
+                        setCurrentHarvestType('');
+                      }
+                    }}>
+                    Add
+                  </button>
+                </div>
+
+                {Object.keys(harvestCapacitiesMap).length > 0 && (
+                  <div style={{ marginTop: '20px' }}>
+                    <h5 style={{ margin: '0 0 10px 0', color: '#334155' }}>Added Equipment:</h5>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {Object.entries(harvestCapacitiesMap).map(([type, capacities]) =>
+                        capacities.map(cap => (
+                          <div key={`${type}-${cap}`} style={{ background: '#dcfce7', color: '#166534', padding: '6px 12px', borderRadius: '20px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #bbf7d0' }}>
+                            {type} - {cap}
+                            <button type="button" style={{ background: 'none', border: 'none', color: '#166534', cursor: 'pointer', padding: 0, display: 'flex' }} onClick={() => {
+                              setHarvestCapacitiesMap(prev => {
+                                const map = { ...prev };
+                                map[type] = map[type].filter(c => c !== cap);
+                                if (map[type].length === 0) delete map[type];
+                                return map;
+                              });
+                            }}>&#x2715;</button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {(sType === 'Drone Spraying' || sType === 'Pesticide Spraying') && (
+              <div className="form-section capacity-section span-2" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', marginTop: '10px', marginBottom: '10px' }}>
+                <h4 style={{ margin: '0 0 15px 0', display: 'flex', alignItems: 'center', gap: '8px', color: '#0369a1' }}><AlertCircle size={16} /> Sprayer Types</h4>
+                <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '15px' }}>Add sprayers and their capacities:</p>
+
+                <div className="input-group" style={{ marginBottom: '15px' }}>
+                  <label>Sprayer Type</label>
+                  <select
+                    value={currentSprayerType}
+                    onChange={(e) => setCurrentSprayerType(e.target.value)}>
+                    <option value="">Select Sprayer Type</option>
+                    {availableSprayerTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+
+                {currentSprayerType === 'Other' && (
+                  <div className="input-group" style={{ marginBottom: '15px' }}>
+                    <label>Custom Sprayer Name</label>
+                    <input
+                      value={currentOtherSprayerType}
+                      placeholder="e.g. Special Sprayer"
+                      onChange={(e) => setCurrentOtherSprayerType(e.target.value)} />
+                  </div>
+                )}
+
+                <div className="grid-2" style={{ alignItems: 'end', gridTemplateColumns: '1fr auto', gap: '15px' }}>
+                  <div className="input-group">
+                    <label>Capacity (Litres)</label>
+                    <input
+                      type="number"
+                      value={currentSprayerCapacity}
+                      placeholder="e.g. 150"
+                      onChange={(e) => setCurrentSprayerCapacity(e.target.value)} />
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    style={{ height: '42px', padding: '0 20px', borderRadius: '8px', marginBottom: '8px', background: '#0284c7', borderColor: '#0284c7' }}
+                    onClick={() => {
+                      if (!currentSprayerType) return;
+                      let type = currentSprayerType;
+                      if (type === 'Other') {
+                        if (!currentOtherSprayerType.trim()) return;
+                        type = currentOtherSprayerType.trim();
+                        if (!availableSprayerTypes.includes(type)) setAvailableSprayerTypes(prev => [...prev.slice(0, prev.length - 1), type, 'Other']);
+                      }
+                      const capText = currentSprayerCapacity.trim();
+                      if (capText) {
+                        setSprayerCapacitiesMap(prev => {
+                          const map = { ...prev };
+                          if (!map[type]) map[type] = [];
+                          if (!map[type].includes(capText)) map[type].push(capText);
+                          return map;
+                        });
+                        setCurrentSprayerCapacity('');
+                        setCurrentOtherSprayerType('');
+                        setCurrentSprayerType('');
+                      }
+                    }}>
+                    Add
+                  </button>
+                </div>
+
+                {Object.keys(sprayerCapacitiesMap).length > 0 && (
+                  <div style={{ marginTop: '20px' }}>
+                    <h5 style={{ margin: '0 0 10px 0', color: '#334155' }}>Added Sprayers:</h5>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {Object.entries(sprayerCapacitiesMap).map(([type, capacities]) =>
+                        capacities.map(cap => (
+                          <div key={`${type}-${cap}`} style={{ background: '#e0f2fe', color: '#0369a1', padding: '6px 12px', borderRadius: '20px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #bae6fd' }}>
+                            {type} - {cap} L
+                            <button type="button" style={{ background: 'none', border: 'none', color: '#0369a1', cursor: 'pointer', padding: 0, display: 'flex' }} onClick={() => {
+                              setSprayerCapacitiesMap(prev => {
+                                const map = { ...prev };
+                                map[type] = map[type].filter(c => c !== cap);
+                                if (map[type].length === 0) delete map[type];
+                                return map;
+                              });
+                            }}>&#x2715;</button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="input-group" data-error={!!fieldErrors.pricePerDay}>
               <label>Base Price Rate (₹) *</label>
               <input
@@ -1916,11 +2261,12 @@ const UploadItem: React.FC = () => {
               <input type="number" name="operatorPrice" value={formData.operatorPrice || ''} onChange={handleInputChange} />
             </div>
             <div className="input-group span-2">
-              <label>Detailed Description</label>
-              <textarea name="description" value={formData.description || ''} onChange={handleInputChange} placeholder="Tell users more about your service..."></textarea>
+              <label>{descLabel}</label>
+              <textarea name="description" value={formData.description || ''} onChange={handleInputChange} placeholder={descPlaceholder}></textarea>
             </div>
           </div>
         );
+      }
       default:
         return null;
     }
