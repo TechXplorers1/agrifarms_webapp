@@ -47,56 +47,40 @@ const calculateHaversine = (lat1: number, lon1: number, lat2: number, lon2: numb
   const R = 6371; // Radius of Earth in km
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a =
+  const a = 
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
 
-const Services: React.FC = () => {
+const Transport: React.FC = () => {
   const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [items, setItems] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const transportTypesList = ['Trucks', 'Tractors with Trolley', 'Mini Trucks', 'Loaders'];
-
-  const initialMainFilter = transportTypesList.includes(location.state?.initialFilter)
-    ? 'Transport'
-    : (location.state?.initialFilter || 'All');
-
-  const initialSubFilter = transportTypesList.includes(location.state?.initialFilter)
-    ? location.state?.initialFilter
-    : 'All';
-
-  const [filter, setFilter] = useState(initialMainFilter);
-  const [subFilter, setSubFilter] = useState(initialSubFilter);
+  const [filter, setFilter] = useState(location.state?.initialFilter || 'All');
   const [searchQuery, setSearchQuery] = useState(location.state?.initialSearch || '');
 
   // Re-apply filter whenever navigation state changes (e.g. clicking Services in navbar while already on this page)
   useEffect(() => {
-    const initF = location.state?.initialFilter;
-    if (transportTypesList.includes(initF)) {
-      setFilter('Transport');
-      setSubFilter(initF);
-    } else {
-      setFilter(initF || 'All');
-      setSubFilter('All');
+    if (location.state?.initialFilter) {
+      setFilter(location.state.initialFilter);
     }
-  }, [location.state?.initialFilter, location.key]);
+  }, [location.state?.initialFilter]);
   const [_userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [maxDistance, setMaxDistance] = useState<number | 'All'>(50);
   const [targetLocation, setTargetLocation] = useState<LocationTarget | null>(null);
 
   const categories = [
-    { value: 'All', label: 'All Services' },
-    { value: 'Ploughing', label: 'Plowing' },
-    { value: 'Harvesting', label: 'Harvesting' },
-    { value: 'Drone Spraying', label: 'Drone Spraying' },
-    { value: 'Sowing/Seeding', label: 'Seeding' }
+    { value: 'All', label: 'All Transport' },
+    { value: 'Trucks', label: 'Trucks' },
+    { value: 'Tractors with Trolley', label: 'Tractors with Trolley' },
+    { value: 'Mini Trucks', label: 'Mini Trucks' },
+    { value: 'Loaders', label: 'Loaders' }
   ];
 
   useEffect(() => {
@@ -105,7 +89,7 @@ const Services: React.FC = () => {
 
       // 1. Get user coordinates
       let coords: { latitude: number; longitude: number } | null = null;
-
+      
       // Try guest location coordinates first
       const guestLocStr = localStorage.getItem('agrifarm_guest_location');
       if (guestLocStr) {
@@ -159,27 +143,32 @@ const Services: React.FC = () => {
       setUserCoords(coords);
 
       try {
-        const [serv] = await Promise.all([
-          apiService.getServices(),
+        const [veh] = await Promise.all([
           apiService.getVehicles(),
-          apiService.getWorkerGroups()
+          new Promise(resolve => setTimeout(resolve, 1000))
         ]);
 
         const normalized: ServiceItem[] = [
-          ...(serv.data || []).map((s: any) => ({
-            id: s.serviceId,
-            name: s.businessName,
-            category: s.serviceType,
-            price: `₹${s.priceRate}`,
-            imageUrl: s.imageUrl,
-            type: 'Service',
-            location: s.village,
-            providerId: s.ownerId,
-            providerName: s.ownerName,
-            operatorPrice: s.operatorPrice,
-            operatorAvailable: s.operatorIncluded,
-            latitude: s.latitude,
-            longitude: s.longitude
+          ...(veh.data || []).map((v: any) => ({
+            id: v.vehicleId,
+            name: v.brand && v.model ? `${v.brand} ${v.model}` : (v.vehicleType || 'Transport'),
+            category: v.vehicleType || 'Transport',
+            price: v.pricePerHour ? `₹${v.pricePerHour}/hr` : (v.pricePerKm ? `₹${v.pricePerKm}/km` : `₹${v.pricePerKmOrTrip || 0}`),
+            imageUrl: v.imageUrl,
+            type: 'Transport',
+            location: v.village,
+            specs: v.loadCapacity ? `${v.loadCapacity} Ton` : (v.tonnage ? `${v.tonnage} Ton` : undefined),
+            providerId: v.ownerId,
+            providerName: v.ownerBusinessName || v.ownerName || 'Service Provider',
+            latitude: v.latitude,
+            longitude: v.longitude,
+            pricePerKm: v.pricePerKm,
+            pricePerHour: v.pricePerHour,
+            brand: v.brand,
+            model: v.model,
+            yearOfManufacture: v.yearOfManufacture,
+            vehicleCondition: v.vehicleCondition,
+            ownerBusinessName: v.ownerBusinessName
           }))
         ];
 
@@ -207,7 +196,7 @@ const Services: React.FC = () => {
         setLoading(false);
       }
     };
-
+    
     fetchServicesAndCoords();
   }, [isAuthenticated]);
 
@@ -230,19 +219,21 @@ const Services: React.FC = () => {
   });
 
   const filteredItems = processedItems.filter(item => {
-    const matchesFilter = filter === 'All' ||
-      (filter === 'Services' && item.type === 'Service') ||
-      (filter === 'Transport' && item.type === 'Transport' && (subFilter === 'All' || item.category === subFilter)) ||
-      (filter === 'Workers' && item.type === 'Worker');
+    let matchesFilter = filter === 'All';
+    if (!matchesFilter) {
+      if (filter === 'Trucks' && item.category?.toLowerCase().includes('truck') && !item.category?.toLowerCase().includes('mini')) matchesFilter = true;
+      else if (filter === 'Tractors with Trolley' && item.category?.toLowerCase().includes('tractor')) matchesFilter = true;
+      else if (filter === 'Mini Trucks' && (item.category?.toLowerCase().includes('mini') || item.category?.toLowerCase().includes('pick up'))) matchesFilter = true;
+      else if (filter === 'Loaders' && (item.category?.toLowerCase().includes('jcb') || item.category?.toLowerCase().includes('loader'))) matchesFilter = true;
+      else if (item.category === filter) matchesFilter = true;
+    }
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          item.category.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesDistance = maxDistance === 'All' ||
-      (item.computedDist !== undefined && item.computedDist <= maxDistance) ||
-      (item.computedDist === undefined && targetLocation && !targetLocation.isCurrentLocation);
-
-    // Location filter: if a custom target is selected and we couldn't calculate distance, match by string
+    const matchesDistance = maxDistance === 'All' || 
+                            (item.computedDist !== undefined && item.computedDist <= maxDistance) ||
+                            (item.computedDist === undefined && targetLocation && !targetLocation.isCurrentLocation);
+                            
     let matchesLocation = true;
     if (targetLocation && !targetLocation.isCurrentLocation && item.computedDist === undefined) {
       const tLoc = (targetLocation.village || targetLocation.name || '').toLowerCase();
@@ -250,7 +241,7 @@ const Services: React.FC = () => {
       const iLoc = (item.location || '').toLowerCase();
       matchesLocation = !!((tLoc && iLoc.includes(tLoc)) || (tDistrict && iLoc.includes(tDistrict)));
     }
-
+    
     return matchesFilter && matchesSearch && matchesDistance && matchesLocation;
   });
 
@@ -258,26 +249,11 @@ const Services: React.FC = () => {
     <div className="services-page container fade-in">
       <div className="page-header">
         <div>
-          <h1 className="text-3xl font-bold">{filter === 'Transport' ? 'Transports' : t('services.title')}</h1>
-          <p className="text-slate-500">{filter === 'Transport' ? 'Hire professional transport services' : t('services.desc')}</p>
+          <h1 className="text-3xl font-bold">Agri Transport</h1>
+          <p className="text-slate-500">Hire professional agricultural transport and vehicles</p>
         </div>
-        <button
-          className="btn-primary"
-          onClick={() => navigate('/upload-item')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 20px',
-            borderRadius: '12px',
-            fontSize: '0.95rem',
-            fontWeight: 700
-          }}
-        >
-          <span>{t('services.addBtn')}</span>
-        </button>
       </div>
-
+      
       <LocationFilterBar
         allItems={locationItems}
         targetLocation={targetLocation}
@@ -289,8 +265,8 @@ const Services: React.FC = () => {
       <div className="search-bar-row">
         <div className="search-box">
           <Search size={20} className="text-slate-400" />
-          <input
-            type="text"
+          <input 
+            type="text" 
             placeholder={t('services.placeholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -298,77 +274,17 @@ const Services: React.FC = () => {
         </div>
       </div>
 
-      {filter !== 'Transport' && (
-        <div className="category-pills">
-          {categories.map(cat => (
-            <button
-              key={cat.value}
-              className={`pill ${filter === cat.value ? 'active' : ''}`}
-              onClick={() => {
-                setFilter(cat.value);
-                setSubFilter('All');
-              }}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {filter === 'Transport' && (
-        <div className="sub-category-tabs" style={{ 
-          display: 'flex', 
-          gap: '10px', 
-          padding: '0 20px', 
-          marginBottom: '24px', 
-          overflowX: 'auto', 
-          msOverflowStyle: 'none', 
-          scrollbarWidth: 'none',
-          WebkitOverflowScrolling: 'touch'
-        }}>
-          <button
-            className={`sub-pill ${subFilter === 'All' ? 'active' : ''}`}
-            onClick={() => setSubFilter('All')}
-            style={{ 
-              padding: '8px 18px', 
-              borderRadius: '100px', 
-              fontSize: '0.85rem', 
-              fontWeight: 700, 
-              border: subFilter === 'All' ? '1px solid var(--primary)' : '1px solid var(--border)', 
-              background: subFilter === 'All' ? 'var(--primary)' : 'white', 
-              color: subFilter === 'All' ? 'white' : 'var(--text-main)', 
-              cursor: 'pointer', 
-              whiteSpace: 'nowrap', 
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-              boxShadow: subFilter === 'All' ? '0 4px 12px rgba(16, 185, 129, 0.2)' : 'none'
-            }}
+      <div className="category-pills">
+        {categories.map(cat => (
+          <button 
+            key={cat.value}
+            className={`pill ${filter === cat.value ? 'active' : ''}`}
+            onClick={() => setFilter(cat.value)}
           >
-            All Transports
+            {cat.label}
           </button>
-          {transportTypesList.map(type => (
-            <button
-              key={type}
-              className={`sub-pill ${subFilter === type ? 'active' : ''}`}
-              onClick={() => setSubFilter(type)}
-              style={{ 
-                padding: '8px 18px', 
-                borderRadius: '100px', 
-                fontSize: '0.85rem', 
-                fontWeight: 700, 
-                border: subFilter === type ? '1px solid var(--primary)' : '1px solid var(--border)', 
-                background: subFilter === type ? 'var(--primary)' : 'white', 
-                color: subFilter === type ? 'white' : 'var(--text-main)', 
-                cursor: 'pointer', 
-                whiteSpace: 'nowrap', 
-                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                boxShadow: subFilter === type ? '0 4px 12px rgba(16, 185, 129, 0.2)' : 'none'
-              }}
-            >
-              {type}
-            </button>
-          ))}
-        </div>
-      )}
+        ))}
+      </div>
 
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '100px 0' }}>
@@ -378,7 +294,7 @@ const Services: React.FC = () => {
         <div className="assets-grid">
           <AnimatePresence>
             {filteredItems.map((item) => (
-              <motion.div
+              <motion.div 
                 key={item.id}
                 layout
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -524,8 +440,8 @@ const Services: React.FC = () => {
                               <span style={{ fontWeight: 600, color: '#475569' }}>
                                 {r.taskName.charAt(0).toUpperCase() + r.taskName.slice(1)}
                               </span>
-                              <span style={{
-                                fontWeight: 800,
+                              <span style={{ 
+                                fontWeight: 800, 
                                 fontSize: '0.75rem',
                                 color: r.gender === 'MALE' ? '#0284c7' : '#db2777',
                                 display: 'flex',
@@ -552,7 +468,7 @@ const Services: React.FC = () => {
                     <div className="price-tag">
                       <span className="amount">{item.price}</span>
                     </div>
-                    <button
+                    <button 
                       className="btn-book"
                       onClick={() => {
                         if (!isAuthenticated) {
@@ -661,5 +577,5 @@ const Services: React.FC = () => {
   );
 };
 
-export default Services;
+export default Transport;
 

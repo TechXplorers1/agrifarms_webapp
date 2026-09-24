@@ -9,6 +9,7 @@ import {
   CheckCircle2, Clock3, XCircle, AlertCircle, RefreshCcw, Loader2, Star
 } from 'lucide-react';
 import ReviewModal from '../components/ReviewModal';
+import ReportModal from '../components/ReportModal';
 
 interface Booking {
   id: string;
@@ -45,6 +46,7 @@ const Activity: React.FC = () => {
   
   const [reviewBookingId, setReviewBookingId] = useState<string | null>(null);
   const [reviewAssetId, setReviewAssetId] = useState<string | null>(null);
+  const [reportBooking, setReportBooking] = useState<Booking | null>(null);
 
   const handleStatusUpdate = async (bookingId: string, status: string, cancelledBy?: string, cancellationReason?: string) => {
     try {
@@ -268,9 +270,30 @@ const Activity: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="booking-status-badge" style={{ backgroundColor: style.bg, color: style.fg }}>
-                        <style.icon size={14} />
-                        <span>{t('activity.status.' + booking.status.toLowerCase())}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div className="booking-status-badge" style={{ backgroundColor: style.bg, color: style.fg }}>
+                          <style.icon size={14} />
+                          <span>{t('activity.status.' + booking.status.toLowerCase())}</span>
+                        </div>
+                        <button
+                          onClick={() => setReportBooking(booking)}
+                          title="Report this booking"
+                          style={{
+                            background: '#fef2f2',
+                            border: '1px solid #fee2e2',
+                            borderRadius: '8px',
+                            padding: '6px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s',
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = '#fee2e2'}
+                          onMouseOut={(e) => e.currentTarget.style.background = '#fef2f2'}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+                        </button>
                       </div>
                     </div>
 
@@ -662,6 +685,20 @@ const Activity: React.FC = () => {
             setReviewBookingId(null);
             setReviewAssetId(null);
             setBookings(prev => prev.map(b => b.id === reviewBookingId ? { ...b, isReviewed: true } : b));
+          }}
+        />
+      )}
+
+      {reportBooking && (
+        <ReportModal
+          itemId={reportBooking.id}
+          itemName={reportBooking.assetName}
+          providerId={reportBooking.roleInBooking === 'farmer' ? reportBooking.providerId : reportBooking.farmerId}
+          providerName={reportBooking.providerName || 'Provider'}
+          onClose={() => setReportBooking(null)}
+          onSuccess={() => {
+            setReportBooking(null);
+            alert('Report submitted successfully. This listing and provider will be reviewed.');
           }}
         />
       )}
