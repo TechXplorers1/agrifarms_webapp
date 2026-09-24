@@ -62,12 +62,30 @@ const Services: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const [items, setItems] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState(location.state?.initialFilter || 'All');
+  const transportTypesList = ['Trucks', 'Tractors with Trolley', 'Mini Trucks', 'Loaders'];
+
+  const initialMainFilter = transportTypesList.includes(location.state?.initialFilter)
+    ? 'Transport'
+    : (location.state?.initialFilter || 'All');
+
+  const initialSubFilter = transportTypesList.includes(location.state?.initialFilter)
+    ? location.state?.initialFilter
+    : 'All';
+
+  const [filter, setFilter] = useState(initialMainFilter);
+  const [subFilter, setSubFilter] = useState(initialSubFilter);
   const [searchQuery, setSearchQuery] = useState(location.state?.initialSearch || '');
 
   // Re-apply filter whenever navigation state changes (e.g. clicking Services in navbar while already on this page)
   useEffect(() => {
-    setFilter(location.state?.initialFilter || 'All');
+    const initF = location.state?.initialFilter;
+    if (transportTypesList.includes(initF)) {
+      setFilter('Transport');
+      setSubFilter(initF);
+    } else {
+      setFilter(initF || 'All');
+      setSubFilter('All');
+    }
   }, [location.state?.initialFilter, location.key]);
   const [_userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [maxDistance, setMaxDistance] = useState<number | 'All'>('All');
@@ -244,7 +262,7 @@ const Services: React.FC = () => {
   const filteredItems = items.filter(item => {
     const matchesFilter = filter === 'All' ||
       (filter === 'Services' && item.type === 'Service') ||
-      (filter === 'Transport' && item.type === 'Transport') ||
+      (filter === 'Transport' && item.type === 'Transport' && (subFilter === 'All' || item.category === subFilter)) ||
       (filter === 'Workers' && item.type === 'Worker');
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.category.toLowerCase().includes(searchQuery.toLowerCase());
@@ -267,8 +285,8 @@ const Services: React.FC = () => {
     <div className="services-page container fade-in">
       <div className="page-header">
         <div>
-          <h1 className="text-3xl font-bold">{t('services.title')}</h1>
-          <p className="text-slate-500">{t('services.desc')}</p>
+          <h1 className="text-3xl font-bold">{filter === 'Transport' ? 'Transports' : t('services.title')}</h1>
+          <p className="text-slate-500">{filter === 'Transport' ? 'Hire professional transport services' : t('services.desc')}</p>
         </div>
         <button
           className="btn-primary"
@@ -307,17 +325,77 @@ const Services: React.FC = () => {
         </div>
       </div>
 
-      <div className="category-pills">
-        {categories.map(cat => (
+      {filter !== 'Transport' && (
+        <div className="category-pills">
+          {categories.map(cat => (
+            <button
+              key={cat.value}
+              className={`pill ${filter === cat.value ? 'active' : ''}`}
+              onClick={() => {
+                setFilter(cat.value);
+                setSubFilter('All');
+              }}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {filter === 'Transport' && (
+        <div className="sub-category-tabs" style={{ 
+          display: 'flex', 
+          gap: '10px', 
+          padding: '0 20px', 
+          marginBottom: '24px', 
+          overflowX: 'auto', 
+          msOverflowStyle: 'none', 
+          scrollbarWidth: 'none',
+          WebkitOverflowScrolling: 'touch'
+        }}>
           <button
-            key={cat.value}
-            className={`pill ${filter === cat.value ? 'active' : ''}`}
-            onClick={() => setFilter(cat.value)}
+            className={`sub-pill ${subFilter === 'All' ? 'active' : ''}`}
+            onClick={() => setSubFilter('All')}
+            style={{ 
+              padding: '8px 18px', 
+              borderRadius: '100px', 
+              fontSize: '0.85rem', 
+              fontWeight: 700, 
+              border: subFilter === 'All' ? '1px solid var(--primary)' : '1px solid var(--border)', 
+              background: subFilter === 'All' ? 'var(--primary)' : 'white', 
+              color: subFilter === 'All' ? 'white' : 'var(--text-main)', 
+              cursor: 'pointer', 
+              whiteSpace: 'nowrap', 
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              boxShadow: subFilter === 'All' ? '0 4px 12px rgba(16, 185, 129, 0.2)' : 'none'
+            }}
           >
-            {cat.label}
+            All Transports
           </button>
-        ))}
-      </div>
+          {transportTypesList.map(type => (
+            <button
+              key={type}
+              className={`sub-pill ${subFilter === type ? 'active' : ''}`}
+              onClick={() => setSubFilter(type)}
+              style={{ 
+                padding: '8px 18px', 
+                borderRadius: '100px', 
+                fontSize: '0.85rem', 
+                fontWeight: 700, 
+                border: subFilter === type ? '1px solid var(--primary)' : '1px solid var(--border)', 
+                background: subFilter === type ? 'var(--primary)' : 'white', 
+                color: subFilter === type ? 'white' : 'var(--text-main)', 
+                cursor: 'pointer', 
+                whiteSpace: 'nowrap', 
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: subFilter === type ? '0 4px 12px rgba(16, 185, 129, 0.2)' : 'none'
+              }}
+            >
+              {type}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '100px 0' }}>
