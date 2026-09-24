@@ -251,7 +251,7 @@ const Home: React.FC = () => {
   ];
 
   const serviceItems: ServiceItem[] = [
-    { name: 'Plowing', icon: Tractor, image: '/plowing_tractor.jpg', subtitle: 'Field Preparation', color: '#e8f5e9', iconColor: '#2e7d32', category: 'Services' },
+    { name: 'Ploughing', icon: Tractor, image: '/Ploughing_tractor.jpg', subtitle: 'Field Preparation', color: '#e8f5e9', iconColor: '#2e7d32', category: 'Services' },
     { name: 'Harvesting', icon: Sprout, image: '/green_harvester.jpg', subtitle: 'Crop Gathering', color: '#fff9c4', iconColor: '#f9a825', category: 'Services' },
     { name: 'Drone Spraying', icon: CloudSun, image: '/drone_sprayer.jpg', subtitle: 'Precision Agriculture', color: '#e3f2fd', iconColor: '#1565c0', category: 'Services' },
     { name: 'Seeding', icon: Sprout, image: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&q=80&w=600', subtitle: 'Planting Seeds', color: '#fff3e0', iconColor: '#e65100', category: 'Services' },
@@ -709,7 +709,7 @@ const Home: React.FC = () => {
                 }}
                 onClick={() => {
                   let filterVal = item.name;
-                  if (item.name === 'Plowing') filterVal = 'Ploughing';
+                  if (item.name === 'Ploughing') filterVal = 'Ploughing';
                   if (item.name === 'Seeding') filterVal = 'Sowing/Seeding';
                   navigate('/services', { state: { initialFilter: filterVal } });
                 }}

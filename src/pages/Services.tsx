@@ -62,7 +62,7 @@ const Services: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const [items, setItems] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const transportTypesList = ['Trucks', 'Tractors with Trolley', 'Mini Trucks', 'Loaders'];
+  const transportTypesList = ['Mini Trucks', 'Tractors with Trolley', 'Trucks', 'Containers'];
 
   const initialMainFilter = transportTypesList.includes(location.state?.initialFilter)
     ? 'Transport'
@@ -93,10 +93,11 @@ const Services: React.FC = () => {
 
   const categories = [
     { value: 'All', label: 'All Services' },
-    { value: 'Ploughing', label: 'Plowing' },
+    { value: 'Ploughing', label: 'Ploughing' },
+    { value: 'Electricians', label: 'Electricians' },
     { value: 'Harvesting', label: 'Harvesting' },
-    { value: 'Drone Spraying', label: 'Drone Spraying' },
-    { value: 'Sowing/Seeding', label: 'Seeding' }
+    { value: 'Farm workers', label: 'Farm workers' },
+    { value: 'Drone Spraying', label: 'Drone spraying' }
   ];
 
   useEffect(() => {
@@ -231,10 +232,9 @@ const Services: React.FC = () => {
 
   const filteredItems = processedItems.filter(item => {
     const matchesFilter = filter === 'All' ||
-      (filter === 'Services' && item.type === 'Service') ||
       (filter === 'Transport' && item.type === 'Transport' && (subFilter === 'All' || item.category === subFilter)) ||
-      (filter === 'Workers' && item.type === 'Worker');
-    
+      (filter !== 'All' && filter !== 'Transport' && item.category.toLowerCase() === filter.toLowerCase());
+
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.category.toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -316,29 +316,29 @@ const Services: React.FC = () => {
       )}
 
       {filter === 'Transport' && (
-        <div className="sub-category-tabs" style={{ 
-          display: 'flex', 
-          gap: '10px', 
-          padding: '0 20px', 
-          marginBottom: '24px', 
-          overflowX: 'auto', 
-          msOverflowStyle: 'none', 
+        <div className="sub-category-tabs" style={{
+          display: 'flex',
+          gap: '10px',
+          padding: '0 20px',
+          marginBottom: '24px',
+          overflowX: 'auto',
+          msOverflowStyle: 'none',
           scrollbarWidth: 'none',
           WebkitOverflowScrolling: 'touch'
         }}>
           <button
             className={`sub-pill ${subFilter === 'All' ? 'active' : ''}`}
             onClick={() => setSubFilter('All')}
-            style={{ 
-              padding: '8px 18px', 
-              borderRadius: '100px', 
-              fontSize: '0.85rem', 
-              fontWeight: 700, 
-              border: subFilter === 'All' ? '1px solid var(--primary)' : '1px solid var(--border)', 
-              background: subFilter === 'All' ? 'var(--primary)' : 'white', 
-              color: subFilter === 'All' ? 'white' : 'var(--text-main)', 
-              cursor: 'pointer', 
-              whiteSpace: 'nowrap', 
+            style={{
+              padding: '8px 18px',
+              borderRadius: '100px',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              border: subFilter === 'All' ? '1px solid var(--primary)' : '1px solid var(--border)',
+              background: subFilter === 'All' ? 'var(--primary)' : 'white',
+              color: subFilter === 'All' ? 'white' : 'var(--text-main)',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
               transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
               boxShadow: subFilter === 'All' ? '0 4px 12px rgba(16, 185, 129, 0.2)' : 'none'
             }}
@@ -350,16 +350,16 @@ const Services: React.FC = () => {
               key={type}
               className={`sub-pill ${subFilter === type ? 'active' : ''}`}
               onClick={() => setSubFilter(type)}
-              style={{ 
-                padding: '8px 18px', 
-                borderRadius: '100px', 
-                fontSize: '0.85rem', 
-                fontWeight: 700, 
-                border: subFilter === type ? '1px solid var(--primary)' : '1px solid var(--border)', 
-                background: subFilter === type ? 'var(--primary)' : 'white', 
-                color: subFilter === type ? 'white' : 'var(--text-main)', 
-                cursor: 'pointer', 
-                whiteSpace: 'nowrap', 
+              style={{
+                padding: '8px 18px',
+                borderRadius: '100px',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                border: subFilter === type ? '1px solid var(--primary)' : '1px solid var(--border)',
+                background: subFilter === type ? 'var(--primary)' : 'white',
+                color: subFilter === type ? 'white' : 'var(--text-main)',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 boxShadow: subFilter === type ? '0 4px 12px rgba(16, 185, 129, 0.2)' : 'none'
               }}
@@ -373,6 +373,12 @@ const Services: React.FC = () => {
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '100px 0' }}>
           <Loader2 className="animate-spin" size={48} color="var(--primary)" />
+        </div>
+      ) : subFilter === 'Containers' ? (
+        <div className="empty-state">
+          <Info size={48} className="text-slate-300" />
+          <h3>Coming Soon!</h3>
+          <p>Container transport services will be available shortly.</p>
         </div>
       ) : (
         <div className="assets-grid">
@@ -584,7 +590,7 @@ const Services: React.FC = () => {
         </div>
       )}
 
-      {!loading && filteredItems.length === 0 && (
+      {!loading && subFilter !== 'Containers' && filteredItems.length === 0 && (
         <div className="empty-state">
           <Info size={48} className="text-slate-300" />
           <h3>{t('services.empty')}</h3>

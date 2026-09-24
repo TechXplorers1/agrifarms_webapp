@@ -324,8 +324,13 @@ const UploadItem: React.FC = () => {
     const errors: Record<string, string> = {};
 
     // Common location fields
+    if (!formData.houseNo?.trim()) errors.houseNo = 'House No is required';
+    if (!formData.street?.trim()) errors.street = 'Street / Area is required';
     if (!formData.village?.trim()) errors.village = 'Village / City is required';
+    if (!formData.mandal?.trim()) errors.mandal = 'Mandal is required';
     if (!formData.district?.trim()) errors.district = 'District is required';
+    if (!formData.state?.trim()) errors.state = 'State is required';
+    if (!formData.pincode?.trim()) errors.pincode = 'Pincode is required';
 
     if (category === 'Equipment') {
       if (!formData.category) errors.category = 'Please select an equipment category';
@@ -363,9 +368,25 @@ const UploadItem: React.FC = () => {
     }
 
     if (category === 'Workers') {
-      if (!formData.groupName?.trim()) errors.groupName = 'Group name is required';
-      if (!formData.maleCount && !formData.femaleCount) errors.maleCount = 'Enter at least one worker count (male or female)';
-      if (!formData.pricePerMale && !formData.pricePerFemale) errors.pricePerMale = 'At least one rate (male or female) is required';
+      if (!formData.groupName?.trim()) errors.groupName = 'Group Name / Leader Name is required';
+      
+      const maleCount = Number(formData.maleCount || 0);
+      const femaleCount = Number(formData.femaleCount || 0);
+
+      if (maleCount === 0 && femaleCount === 0) {
+        errors.maleCount = 'Enter at least one male or female worker count';
+        errors.femaleCount = 'Enter at least one male or female worker count';
+      }
+
+      if (maleCount > 0) {
+        if (!formData.pricePerMale) errors.pricePerMale = 'Daily wage is required';
+        if (!formData.pricePerMaleHourly) errors.pricePerMaleHourly = 'Hourly rate is required';
+      }
+
+      if (femaleCount > 0) {
+        if (!formData.pricePerFemale) errors.pricePerFemale = 'Daily wage is required';
+        if (!formData.pricePerFemaleHourly) errors.pricePerFemaleHourly = 'Hourly rate is required';
+      }
     }
 
     setFieldErrors(errors);
@@ -1517,10 +1538,20 @@ const UploadItem: React.FC = () => {
       case 'Workers':
         return (
           <div className="form-fields">
-            {/* Row 1: Group Name + Counts */}
-            <div className="grid-2" style={{ marginBottom: '24px' }}>
+            {/* Group Identity */}
+            <div style={{
+              background: 'white', borderRadius: '20px', padding: '24px', 
+              boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9', marginBottom: '24px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                <div style={{ background: 'linear-gradient(135deg, #00aa55, #00cc66)', borderRadius: '10px', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Users size={18} color="white" />
+                </div>
+                <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#1a2e1a' }}>Group Identity</span>
+              </div>
+              
               <div className="input-group" data-error={!!fieldErrors.groupName}>
-                <label>Group Name *</label>
+                <label>Group Name / Leader Name *</label>
                 <input
                   name="groupName"
                   value={formData.groupName || ''}
@@ -1529,80 +1560,104 @@ const UploadItem: React.FC = () => {
                   style={{ border: fieldErrors.groupName ? '2px solid #dc2626' : undefined }} />
                 {errMsg('groupName')}
               </div>
-              <div className="grid-2">
+            </div>
+
+            {/* Staffing & Wages */}
+            <div style={{
+              background: 'white', borderRadius: '20px', padding: '24px', 
+              boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9', marginBottom: '24px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                <div style={{ background: 'linear-gradient(135deg, #00aa55, #00cc66)', borderRadius: '10px', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Plus size={18} color="white" />
+                </div>
+                <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#1a2e1a' }}>Staffing & Wages</span>
+              </div>
+
+              <div className="grid-2" style={{ marginBottom: '16px' }}>
                 <div className="input-group" data-error={!!fieldErrors.maleCount}>
-                  <label>Male Count</label>
+                  <label>Male Workers Count</label>
                   <input
                     type="number" name="maleCount"
                     value={formData.maleCount || ''}
-                    placeholder="0"
+                    placeholder="Count"
                     onChange={handleInputChange}
                     style={{ border: fieldErrors.maleCount ? '2px solid #dc2626' : undefined }} />
                   {errMsg('maleCount')}
                 </div>
-                <div className="input-group">
-                  <label>Female Count</label>
-                  <input type="number" name="femaleCount" value={formData.femaleCount || ''} placeholder="0" onChange={handleInputChange} />
-                </div>
-              </div>
-            </div>
-
-            {/* Male Pricing */}
-            <div className="worker-pricing-block" style={{
-              background: 'linear-gradient(135deg, #e3f2fd 0%, #f0f8ff 100%)',
-              borderRadius: '16px',
-              padding: '20px',
-              marginBottom: '16px',
-              border: '1px solid #bbdefb'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                <span style={{ fontSize: '1.2rem' }}>👨‍🌾</span>
-                <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#1565c0' }}>Male Worker Rates</span>
-              </div>
-              <div className="grid-2">
                 <div className="input-group" data-error={!!fieldErrors.pricePerMale}>
-                  <label>Daily Rate per Male (₹/day) *</label>
+                  <label>Daily Wage (Male) *</label>
                   <input
                     type="number" name="pricePerMale"
                     value={formData.pricePerMale || ''}
-                    placeholder="e.g. 500"
+                    placeholder="Daily Wage"
                     onChange={handleInputChange}
                     style={{ border: fieldErrors.pricePerMale ? '2px solid #dc2626' : undefined }} />
                   {errMsg('pricePerMale')}
                 </div>
-                <div className="input-group">
-                  <label>Hourly Rate per Male (₹/hr)</label>
-                  <input type="number" name="pricePerMaleHourly" value={formData.pricePerMaleHourly || ''} placeholder="e.g. 80" onChange={handleInputChange} />
+              </div>
+
+              <div className="grid-2" style={{ marginBottom: '16px' }}>
+                <div className="input-group" data-error={!!fieldErrors.femaleCount}>
+                  <label>Female Workers Count</label>
+                  <input
+                    type="number" name="femaleCount"
+                    value={formData.femaleCount || ''}
+                    placeholder="Count"
+                    onChange={handleInputChange}
+                    style={{ border: fieldErrors.femaleCount ? '2px solid #dc2626' : undefined }} />
+                  {errMsg('femaleCount')}
+                </div>
+                <div className="input-group" data-error={!!fieldErrors.pricePerFemale}>
+                  <label>Daily Wage (Female)</label>
+                  <input
+                    type="number" name="pricePerFemale"
+                    value={formData.pricePerFemale || ''}
+                    placeholder="Daily Wage"
+                    onChange={handleInputChange}
+                    style={{ border: fieldErrors.pricePerFemale ? '2px solid #dc2626' : undefined }} />
+                  {errMsg('pricePerFemale')}
                 </div>
               </div>
-            </div>
 
-            {/* Female Pricing */}
-            <div className="worker-pricing-block" style={{
-              background: 'linear-gradient(135deg, #fce4ec 0%, #fff0f5 100%)',
-              borderRadius: '16px',
-              padding: '20px',
-              marginBottom: '16px',
-              border: '1px solid #f8bbd0'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                <span style={{ fontSize: '1.2rem' }}>👩‍🌾</span>
-                <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#880e4f' }}>Female Worker Rates</span>
-              </div>
               <div className="grid-2">
-                <div className="input-group">
-                  <label>Daily Rate per Female (₹/day)</label>
-                  <input type="number" name="pricePerFemale" value={formData.pricePerFemale || ''} placeholder="e.g. 400" onChange={handleInputChange} />
+                <div className="input-group" data-error={!!fieldErrors.pricePerMaleHourly}>
+                  <label>Hourly Rate (Male) *</label>
+                  <input
+                    type="number" name="pricePerMaleHourly"
+                    value={formData.pricePerMaleHourly || ''}
+                    placeholder="e.g. 50/hr"
+                    onChange={handleInputChange}
+                    style={{ border: fieldErrors.pricePerMaleHourly ? '2px solid #dc2626' : undefined }} />
+                  {errMsg('pricePerMaleHourly')}
                 </div>
-                <div className="input-group">
-                  <label>Hourly Rate per Female (₹/hr)</label>
-                  <input type="number" name="pricePerFemaleHourly" value={formData.pricePerFemaleHourly || ''} placeholder="e.g. 65" onChange={handleInputChange} />
+                <div className="input-group" data-error={!!fieldErrors.pricePerFemaleHourly}>
+                  <label>Hourly Rate (Female) *</label>
+                  <input
+                    type="number" name="pricePerFemaleHourly"
+                    value={formData.pricePerFemaleHourly || ''}
+                    placeholder="e.g. 40/hr"
+                    onChange={handleInputChange}
+                    style={{ border: fieldErrors.pricePerFemaleHourly ? '2px solid #dc2626' : undefined }} />
+                  {errMsg('pricePerFemaleHourly')}
                 </div>
               </div>
             </div>
 
-            {/* Skills Dropdown with custom styling */}
-            <div className="input-group" style={{ marginTop: '8px', position: 'relative' }}>
+            {/* Role Allocation */}
+            <div style={{
+              background: 'white', borderRadius: '20px', padding: '24px', 
+              boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9', marginBottom: '24px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                <div style={{ background: 'linear-gradient(135deg, #00aa55, #00cc66)', borderRadius: '10px', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Check size={18} color="white" />
+                </div>
+                <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#1a2e1a' }}>Role Allocation</span>
+              </div>
+
+              {/* Skills Dropdown with custom styling */}
+              <div className="input-group" style={{ position: 'relative' }}>
               <label>Skills / Expertise</label>
               <div style={{ position: 'relative' }}>
                 <button
@@ -1902,6 +1957,7 @@ const UploadItem: React.FC = () => {
                 </div>
               );
             })()}
+            </div>
           </div>
         );
       case 'Services': {
@@ -2359,13 +2415,25 @@ const UploadItem: React.FC = () => {
                   </button>
                 </div>
                 <div className="grid-2" style={{ gap: '16px 24px' }}>
-                  <div className="input-group">
-                    <label>House No / Flat / Plot</label>
-                    <input name="houseNo" value={formData.houseNo || ''} placeholder="e.g. D-14" onChange={handleInputChange} />
+                  <div className="input-group" data-error={!!fieldErrors.houseNo}>
+                    <label>House No / Flat / Plot *</label>
+                    <input
+                      name="houseNo"
+                      value={formData.houseNo || ''}
+                      placeholder="e.g. D-14"
+                      onChange={handleInputChange}
+                      style={{ border: fieldErrors.houseNo ? '2px solid #dc2626' : undefined }} />
+                    {errMsg('houseNo')}
                   </div>
-                  <div className="input-group">
-                    <label>Street / Area / Colony</label>
-                    <input name="street" value={formData.street || ''} placeholder="e.g. Main Road" onChange={handleInputChange} />
+                  <div className="input-group" data-error={!!fieldErrors.street}>
+                    <label>Street / Area / Colony *</label>
+                    <input
+                      name="street"
+                      value={formData.street || ''}
+                      placeholder="e.g. Main Road"
+                      onChange={handleInputChange}
+                      style={{ border: fieldErrors.street ? '2px solid #dc2626' : undefined }} />
+                    {errMsg('street')}
                   </div>
                   <div className="input-group" data-error={!!fieldErrors.village}>
                     <label>Village / City / Town *</label>
@@ -2377,13 +2445,15 @@ const UploadItem: React.FC = () => {
                       style={{ border: fieldErrors.village ? '2px solid #dc2626' : undefined }} />
                     {errMsg('village')}
                   </div>
-                  <div className="input-group">
-                    <label>Mandal</label>
+                  <div className="input-group" data-error={!!fieldErrors.mandal}>
+                    <label>Mandal *</label>
                     <input
                       name="mandal"
                       value={formData.mandal || ''}
                       placeholder="Enter Mandal"
-                      onChange={handleInputChange} />
+                      onChange={handleInputChange}
+                      style={{ border: fieldErrors.mandal ? '2px solid #dc2626' : undefined }} />
+                    {errMsg('mandal')}
                   </div>
                   <div className="input-group" data-error={!!fieldErrors.district}>
                     <label>District *</label>
@@ -2395,13 +2465,25 @@ const UploadItem: React.FC = () => {
                       style={{ border: fieldErrors.district ? '2px solid #dc2626' : undefined }} />
                     {errMsg('district')}
                   </div>
-                  <div className="input-group">
-                    <label>State</label>
-                    <input name="state" value={formData.state || ''} placeholder="Enter State" onChange={handleInputChange} />
+                  <div className="input-group" data-error={!!fieldErrors.state}>
+                    <label>State *</label>
+                    <input
+                      name="state"
+                      value={formData.state || ''}
+                      placeholder="Enter State"
+                      onChange={handleInputChange}
+                      style={{ border: fieldErrors.state ? '2px solid #dc2626' : undefined }} />
+                    {errMsg('state')}
                   </div>
-                  <div className="input-group">
-                    <label>Pincode</label>
-                    <input name="pincode" value={formData.pincode || ''} placeholder="Enter Pincode" onChange={handleInputChange} />
+                  <div className="input-group" data-error={!!fieldErrors.pincode}>
+                    <label>Pincode *</label>
+                    <input
+                      name="pincode"
+                      value={formData.pincode || ''}
+                      placeholder="Enter Pincode"
+                      onChange={handleInputChange}
+                      style={{ border: fieldErrors.pincode ? '2px solid #dc2626' : undefined }} />
+                    {errMsg('pincode')}
                   </div>
                 </div>
               </div>
