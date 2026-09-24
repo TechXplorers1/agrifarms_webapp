@@ -70,7 +70,7 @@ const Services: React.FC = () => {
     setFilter(location.state?.initialFilter || 'All');
   }, [location.state?.initialFilter, location.key]);
   const [_userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [maxDistance, setMaxDistance] = useState<number | 'All'>('All');
+  const [maxDistance, setMaxDistance] = useState<number | 'All'>(50);
   const [targetLocation, setTargetLocation] = useState<LocationTarget | null>(null);
 
   const categories = [
@@ -200,23 +200,37 @@ const Services: React.FC = () => {
     longitude: item.longitude,
   })), [items]);
 
-  const filteredItems = items.filter(item => {
+  const processedItems = items.map(item => {
+    const refLat = targetLocation?.latitude ?? _userCoords?.latitude;
+    const refLon = targetLocation?.longitude ?? _userCoords?.longitude;
+
+    let computedDist = item.distance;
+    if (refLat && refLon && item.latitude && item.longitude) {
+      computedDist = calculateHaversine(refLat, refLon, parseFloat(String(item.latitude)), parseFloat(String(item.longitude)));
+    }
+    return { ...item, computedDist };
+  });
+
+  const filteredItems = processedItems.filter(item => {
     const matchesFilter = filter === 'All' ||
       (filter === 'Services' && item.type === 'Service') ||
       (filter === 'Transport' && item.type === 'Transport') ||
       (filter === 'Workers' && item.type === 'Worker');
+    
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.category.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesDistance = maxDistance === 'All' ||
-      (item.distance !== undefined && item.distance <= maxDistance);
 
-    // Location filter: if a custom target is selected, match by location string OR by distance (if coords available)
+    const matchesDistance = maxDistance === 'All' ||
+      (item.computedDist !== undefined && item.computedDist <= maxDistance) ||
+      (item.computedDist === undefined && targetLocation && !targetLocation.isCurrentLocation);
+
+    // Location filter: if a custom target is selected and we couldn't calculate distance, match by string
     let matchesLocation = true;
-    if (targetLocation && !targetLocation.isCurrentLocation) {
+    if (targetLocation && !targetLocation.isCurrentLocation && item.computedDist === undefined) {
       const tLoc = (targetLocation.village || targetLocation.name || '').toLowerCase();
       const tDistrict = (targetLocation.district || '').toLowerCase();
       const iLoc = (item.location || '').toLowerCase();
-      matchesLocation = (tLoc && iLoc.includes(tLoc)) || (tDistrict && iLoc.includes(tDistrict));
+      matchesLocation = !!((tLoc && iLoc.includes(tLoc)) || (tDistrict && iLoc.includes(tDistrict)));
     }
 
     return matchesFilter && matchesSearch && matchesDistance && matchesLocation;
@@ -452,7 +466,7 @@ const Services: React.FC = () => {
                       <MapPin size={14} />
                       <span>
                         {item.location || 'Local'}
-                        {item.distance !== undefined ? ` • ${item.distance.toFixed(1)} km away` : ''}
+                        {item.computedDist !== undefined ? ` • ${item.computedDist.toFixed(1)} km away` : ''}
                       </span>
                     </div>
                   </div>

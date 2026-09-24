@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
 import { apiService } from '../services/apiService';
@@ -51,7 +51,7 @@ const Rentals: React.FC = () => {
   const [filter, setFilter] = useState(initialFilter);
   const [searchQuery, setSearchQuery] = useState(location.state?.initialSearch || '');
   const [_userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [maxDistance, setMaxDistance] = useState<number | 'All'>('All');
+  const [maxDistance, setMaxDistance] = useState<number | 'All'>(50);
   const [targetLocation, setTargetLocation] = useState<LocationTarget | null>(null);
 
   // Re-apply filter whenever navigation state changes
@@ -178,7 +178,18 @@ const Rentals: React.FC = () => {
     longitude: item.longitude,
   })), [equipment]);
 
-  const filteredEquipment = equipment.filter(item => {
+  const processedEquipment = equipment.map(item => {
+    const refLat = targetLocation?.latitude ?? _userCoords?.latitude;
+    const refLon = targetLocation?.longitude ?? _userCoords?.longitude;
+
+    let computedDist = item.distance;
+    if (refLat && refLon && item.latitude && item.longitude) {
+      computedDist = calculateHaversine(refLat, refLon, parseFloat(String(item.latitude)), parseFloat(String(item.longitude)));
+    }
+    return { ...item, computedDist };
+  });
+
+  const filteredEquipment = processedEquipment.filter(item => {
     if (user?.id && item.ownerId === user.id) return false;
 
     const itemCat = item.category.toLowerCase();
@@ -195,17 +206,18 @@ const Rentals: React.FC = () => {
       item.category.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesDistance = maxDistance === 'All' ||
-      (item.distance !== undefined && item.distance <= maxDistance);
+      (item.computedDist !== undefined && item.computedDist <= maxDistance) ||
+      (item.computedDist === undefined && targetLocation && !targetLocation.isCurrentLocation);
 
     let matchesLocation = true;
-    if (targetLocation && !targetLocation.isCurrentLocation) {
+    if (targetLocation && !targetLocation.isCurrentLocation && item.computedDist === undefined) {
       const tLoc = (targetLocation.village || targetLocation.name || '').toLowerCase();
       const tDistrict = (targetLocation.district || '').toLowerCase();
       const iVill = ((item as any).village || '').toLowerCase();
       const iDist = ((item as any).district || '').toLowerCase();
       
-      matchesLocation = (tLoc && (iVill.includes(tLoc) || iDist.includes(tLoc))) || 
-                        (tDistrict && (iVill.includes(tDistrict) || iDist.includes(tDistrict)));
+      matchesLocation = !!((tLoc && (iVill.includes(tLoc) || iDist.includes(tLoc))) || 
+                        (tDistrict && (iVill.includes(tDistrict) || iDist.includes(tDistrict))));
     }
 
     return matchesFilter && matchesSearch && matchesDistance && matchesLocation;
@@ -290,7 +302,7 @@ const Rentals: React.FC = () => {
                       <MapPin size={14} />
                       <span>
                         {item.village || 'Local'}
-                        {item.distance !== undefined ? ` • ${item.distance.toFixed(1)} km away` : ''}
+                        {item.computedDist !== undefined ? ` • ${item.computedDist.toFixed(1)} km away` : ''}
                       </span>
                     </div>
                   </div>

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * LocationFilterBar — mirrors the mobile app's ServiceProvidersScreen location filter:
  *   Location bar + Change button → bottom-sheet modal with:
  *     1. Use My GPS
@@ -39,6 +39,22 @@ interface NominatimResult {
 }
 
 function getUserStoredLocation(): LocationTarget {
+  const selected = localStorage.getItem('agrifarm_selected_location');
+  if (selected) {
+    try {
+      const s = JSON.parse(selected);
+      if (s.village || s.district || s.name) {
+        return {
+          name: s.village || s.district || s.name,
+          displayName: s.displayName || [s.village, s.district].filter(Boolean).join(', ') || s.name,
+          latitude: s.latitude ? parseFloat(s.latitude) : undefined,
+          longitude: s.longitude ? parseFloat(s.longitude) : undefined,
+          village: s.village, district: s.district, isCurrentLocation: s.isCurrentLocation || false,
+        };
+      }
+    } catch { /**/ }
+  }
+
   const stored = localStorage.getItem('agrifarm_user');
   if (stored) {
     try {
@@ -310,7 +326,10 @@ export const LocationFilterBar: React.FC<LocationFilterBarProps> = ({ allItems, 
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const handleReset = useCallback(() => { onLocationChange(getUserStoredLocation()); }, [onLocationChange]);
+  const handleReset = useCallback(() => { 
+    localStorage.removeItem('agrifarm_selected_location');
+    onLocationChange(getUserStoredLocation()); 
+  }, [onLocationChange]);
 
   return (
     <>
@@ -379,7 +398,25 @@ export const LocationFilterBar: React.FC<LocationFilterBarProps> = ({ allItems, 
       )}
 
       {showModal && (
-        <LocationSelectorModal onClose={() => setShowModal(false)} currentLocation={targetLocation} allItems={allItems} onSelect={loc => { onLocationChange(loc); }} />
+        <LocationSelectorModal 
+          onClose={() => setShowModal(false)} 
+          currentLocation={targetLocation} 
+          allItems={allItems} 
+          onSelect={loc => { 
+            if (loc) {
+              localStorage.setItem('agrifarm_selected_location', JSON.stringify({
+                name: loc.name,
+                displayName: loc.displayName,
+                village: loc.village,
+                district: loc.district,
+                latitude: loc.latitude,
+                longitude: loc.longitude,
+                isCurrentLocation: loc.isCurrentLocation
+              }));
+            }
+            onLocationChange(loc); 
+          }} 
+        />
       )}
     </>
   );

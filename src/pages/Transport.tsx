@@ -4,7 +4,8 @@ import { useAuth } from '../services/AuthContext';
 import { apiService } from '../services/apiService';
 import { useLanguage } from '../services/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Star, MapPin, Info, Hammer, Truck, Users, SlidersHorizontal, Loader2 } from 'lucide-react';
+import { Search, Star, MapPin, Info, Hammer, Truck, Users, Loader2 } from 'lucide-react';
+import { LocationFilterBar, type LocationTarget } from '../components/LocationFilterBar';
 
 
 interface ServiceItem {
@@ -71,8 +72,8 @@ const Transport: React.FC = () => {
     }
   }, [location.state?.initialFilter]);
   const [_userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [showDistanceDropdown, setShowDistanceDropdown] = useState(false);
-  const [maxDistance, setMaxDistance] = useState<number | 'All'>('All');
+  const [maxDistance, setMaxDistance] = useState<number | 'All'>(50);
+  const [targetLocation, setTargetLocation] = useState<LocationTarget | null>(null);
 
   const categories = [
     { value: 'All', label: 'All Transport' },
@@ -199,7 +200,25 @@ const Transport: React.FC = () => {
     fetchServicesAndCoords();
   }, [isAuthenticated]);
 
-  const filteredItems = items.filter(item => {
+  // Derive location filter items for the LocationFilterBar
+  const locationItems = React.useMemo(() => items.map(item => ({
+    location: item.location,
+    latitude: item.latitude,
+    longitude: item.longitude,
+  })), [items]);
+
+  const processedItems = items.map(item => {
+    const refLat = targetLocation?.latitude ?? _userCoords?.latitude;
+    const refLon = targetLocation?.longitude ?? _userCoords?.longitude;
+
+    let computedDist = item.distance;
+    if (refLat && refLon && item.latitude && item.longitude) {
+      computedDist = calculateHaversine(refLat, refLon, parseFloat(String(item.latitude)), parseFloat(String(item.longitude)));
+    }
+    return { ...item, computedDist };
+  });
+
+  const filteredItems = processedItems.filter(item => {
     let matchesFilter = filter === 'All';
     if (!matchesFilter) {
       if (filter === 'Trucks' && item.category?.toLowerCase().includes('truck') && !item.category?.toLowerCase().includes('mini')) matchesFilter = true;
@@ -210,9 +229,20 @@ const Transport: React.FC = () => {
     }
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           item.category.toLowerCase().includes(searchQuery.toLowerCase());
+    
     const matchesDistance = maxDistance === 'All' || 
-                            (item.distance !== undefined && item.distance <= maxDistance);
-    return matchesFilter && matchesSearch && matchesDistance;
+                            (item.computedDist !== undefined && item.computedDist <= maxDistance) ||
+                            (item.computedDist === undefined && targetLocation && !targetLocation.isCurrentLocation);
+                            
+    let matchesLocation = true;
+    if (targetLocation && !targetLocation.isCurrentLocation && item.computedDist === undefined) {
+      const tLoc = (targetLocation.village || targetLocation.name || '').toLowerCase();
+      const tDistrict = (targetLocation.district || '').toLowerCase();
+      const iLoc = (item.location || '').toLowerCase();
+      matchesLocation = !!((tLoc && iLoc.includes(tLoc)) || (tDistrict && iLoc.includes(tDistrict)));
+    }
+    
+    return matchesFilter && matchesSearch && matchesDistance && matchesLocation;
   });
 
   return (
@@ -222,102 +252,15 @@ const Transport: React.FC = () => {
           <h1 className="text-3xl font-bold">Agri Transport</h1>
           <p className="text-slate-500">Hire professional agricultural transport and vehicles</p>
         </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative', flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative' }}>
-            <button 
-              onClick={() => setShowDistanceDropdown(!showDistanceDropdown)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 20px',
-                borderRadius: '12px',
-                fontSize: '0.95rem',
-                fontWeight: 700,
-                border: '1px solid var(--border)',
-                background: 'white',
-                color: 'var(--text-main)',
-                cursor: 'pointer'
-              }}
-            >
-              <SlidersHorizontal size={18} />
-              <span>{maxDistance === 'All' ? 'Distance Filter' : `Distance: ${maxDistance} km`}</span>
-            </button>
-            {showDistanceDropdown && (
-              <div style={{
-                position: 'absolute',
-                top: '100%',
-                right: 0,
-                marginTop: '8px',
-                background: 'white',
-                borderRadius: '16px',
-                boxShadow: 'var(--shadow-lg)',
-                border: '1px solid var(--border)',
-                padding: '8px',
-                zIndex: 100,
-                minWidth: '180px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '4px'
-              }}>
-                {[
-                  { label: 'All Distances', value: 'All' },
-                  { label: 'Within 5 km', value: 5 },
-                  { label: 'Within 10 km', value: 10 },
-                  { label: 'Within 25 km', value: 25 },
-                  { label: 'Within 50 km', value: 50 },
-                  { label: 'Within 100 km', value: 100 }
-                ].map(opt => (
-                  <button
-                    key={opt.value}
-                    onClick={() => {
-                      setMaxDistance(opt.value as any);
-                      setShowDistanceDropdown(false);
-                    }}
-                    style={{
-                      padding: '10px 14px',
-                      borderRadius: '10px',
-                      textAlign: 'left',
-                      fontWeight: 700,
-                      fontSize: '0.9rem',
-                      background: maxDistance === opt.value ? 'var(--bg-main)' : 'transparent',
-                      color: maxDistance === opt.value ? 'var(--primary)' : 'var(--text-main)',
-                      border: 'none',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      whiteSpace: 'nowrap'
-                    }}
-                    onMouseOver={(e) => {
-                      if (maxDistance !== opt.value) e.currentTarget.style.background = '#f8fafc';
-                    }}
-                    onMouseOut={(e) => {
-                      if (maxDistance !== opt.value) e.currentTarget.style.background = 'transparent';
-                    }}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          
-          <button 
-            className="btn-primary" 
-            onClick={() => navigate('/upload-item')}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '8px', 
-              padding: '10px 20px', 
-              borderRadius: '12px',
-              fontSize: '0.95rem',
-              fontWeight: 700
-            }}
-          >
-            <span>{t('services.addBtn')}</span>
-          </button>
-        </div>
       </div>
+      
+      <LocationFilterBar
+        allItems={locationItems}
+        targetLocation={targetLocation}
+        onLocationChange={setTargetLocation}
+        maxDistance={maxDistance}
+        onDistanceChange={setMaxDistance}
+      />
 
       <div className="search-bar-row">
         <div className="search-box">
@@ -517,7 +460,7 @@ const Transport: React.FC = () => {
                       <MapPin size={14} />
                       <span>
                         {item.location || 'Local'}
-                        {item.distance !== undefined ? ` • ${item.distance.toFixed(1)} km away` : ''}
+                        {item.computedDist !== undefined ? ` • ${item.computedDist.toFixed(1)} km away` : ''}
                       </span>
                     </div>
                   </div>
