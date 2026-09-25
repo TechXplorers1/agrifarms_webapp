@@ -330,7 +330,8 @@ const Rentals: React.FC = () => {
                           imageUrl: item.imageUrl,
                           type: 'Equipment',
                           operatorPrice: item.operatorPrice,
-                          operatorAvailable: item.operatorAvailable
+                          operatorAvailable: item.operatorAvailable,
+                          details: item
                         };
                         navigate('/book', { state: { asset: assetData } });
                       }}

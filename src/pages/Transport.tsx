@@ -485,7 +485,8 @@ const Transport: React.FC = () => {
                           imageUrl: item.imageUrl,
                           type: item.type,
                           operatorPrice: item.operatorPrice,
-                          operatorAvailable: item.operatorAvailable
+                          operatorAvailable: item.operatorAvailable,
+                          details: item
                         };
                         navigate('/book', { state: { asset: assetData } });
                       }}

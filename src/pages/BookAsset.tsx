@@ -20,6 +20,7 @@ interface Asset {
   type: string;
   operatorPrice?: number;
   operatorAvailable?: boolean;
+  details?: any;
 }
 
 const BookAsset: React.FC = () => {
@@ -566,7 +567,7 @@ const BookAsset: React.FC = () => {
 
             <div className="verification-notice">
               <Info size={16} />
-              <p>The owner will review this request. You can cancel with no charge before approval.</p>
+              <p>The owner will review this request.</p>
             </div>
 
             <div className="wizard-actions dual">
@@ -679,6 +680,61 @@ const BookAsset: React.FC = () => {
                     <p className="owner-name-sub">Provided by <strong>{asset.providerName}</strong></p>
                   </div>
                 </div>
+
+                {asset.details && (
+                  <div className="asset-extended-details">
+                    {asset.details.attachedEquipments && (
+                      <div className="detail-row">
+                        <span className="detail-label">Attached Equipment:</span>
+                        <span className="detail-val">{asset.details.attachedEquipments}</span>
+                      </div>
+                    )}
+                    {asset.details.equipmentUsed && (
+                      <div className="detail-row">
+                        <span className="detail-label">Equipment Used:</span>
+                        <span className="detail-val">{asset.details.equipmentUsed}</span>
+                      </div>
+                    )}
+                    {asset.details.brand && asset.details.model && (
+                      <div className="detail-row">
+                        <span className="detail-label">Make & Model:</span>
+                        <span className="detail-val">{asset.details.brand} {asset.details.model}</span>
+                      </div>
+                    )}
+                    {asset.details.description && (
+                      <div className="detail-row">
+                        <span className="detail-label">Description:</span>
+                        <span className="detail-val">{asset.details.description}</span>
+                      </div>
+                    )}
+                    {asset.details.vehicleNumber && (
+                      <div className="detail-row">
+                        <span className="detail-label">Vehicle/Reg Number:</span>
+                        <span className="detail-val">{asset.details.vehicleNumber}</span>
+                      </div>
+                    )}
+                    {asset.details.serviceName && (
+                      <div className="detail-row">
+                        <span className="detail-label">Service:</span>
+                        <span className="detail-val">{asset.details.serviceName}</span>
+                      </div>
+                    )}
+                    {asset.details.experienceYears !== undefined && (
+                      <div className="detail-row">
+                        <span className="detail-label">Experience:</span>
+                        <span className="detail-val">{asset.details.experienceYears} Years</span>
+                      </div>
+                    )}
+                    {(asset.details.village || asset.details.district) && (
+                      <div className="detail-row">
+                        <span className="detail-label">Location:</span>
+                        <span className="detail-val">
+                          {[asset.details.village, asset.details.district, asset.details.state].filter(Boolean).join(', ')}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="pricing-bill-breakdown">
                   <h4>Price Details</h4>
@@ -1407,6 +1463,35 @@ const BookAsset: React.FC = () => {
         .sidebar-asset-desc {
           display: flex;
           flex-direction: column;
+        }
+        .asset-extended-details {
+          margin-top: 16px;
+          padding: 16px;
+          background: #f8fafc;
+          border-radius: 12px;
+          border: 1px solid #e2e8f0;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .detail-row {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .detail-label {
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .detail-val {
+          font-size: 0.9rem;
+          color: #1e293b;
+          font-weight: 500;
+          line-height: 1.4;
+        }
           gap: 3px;
         }
 
