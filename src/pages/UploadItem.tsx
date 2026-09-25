@@ -201,11 +201,52 @@ const UploadItem: React.FC = () => {
 
   useEffect(() => {
     if (editData) {
-      setFormData(editData);
+      const mappedData = { ...editData };
+      
+      // Map back Mandal if we appended it to Village
+      if (mappedData.village && mappedData.village.includes(' Mandal')) {
+         const parts = mappedData.village.split(', ');
+         const potentialMandal = parts[parts.length - 1];
+         if (potentialMandal.endsWith(' Mandal')) {
+            mappedData.mandal = potentialMandal.replace(' Mandal', '');
+            mappedData.village = parts.slice(0, parts.length - 1).join(', ');
+         }
+      }
+      
+      // Map backend keys to frontend form keys for Services
+      if (mappedData.serviceId || initialCategory === 'Services') {
+        mappedData.serviceName = mappedData.serviceType || mappedData.serviceName;
+        mappedData.pricePerDay = mappedData.priceRate || mappedData.pricePerDay;
+        
+        if (mappedData.equipmentUsed) {
+          const items = mappedData.equipmentUsed.split(' | ');
+          const sType = mappedData.serviceName;
+          const map: Record<string, string[]> = {};
+          
+          items.forEach((item: string) => {
+            const parts = item.split(' - ');
+            if (parts.length >= 2) {
+              const type = parts[0].trim();
+              let caps = parts.slice(1).join(' - ').trim();
+              if (sType === 'Drone Spraying' || sType === 'Pesticide Spraying') {
+                 caps = caps.replace(' L', '');
+              }
+              const capArray = caps.split('/').map((c: string) => c.trim());
+              map[type] = capArray;
+            }
+          });
+
+          if (sType === 'Ploughing') setPloughCapacitiesMap(map);
+          else if (sType === 'Harvesting') setHarvestCapacitiesMap(map);
+          else if (sType === 'Drone Spraying' || sType === 'Pesticide Spraying') setSprayerCapacitiesMap(map);
+        }
+      }
+      
+      setFormData(mappedData);
       if (initialCategory) setCategory(initialCategory);
 
-      if (editData.brandModel && !editData.brand) {
-        const parts = editData.brandModel.split(' ');
+      if (mappedData.brandModel && !mappedData.brand) {
+        const parts = mappedData.brandModel.split(' ');
         if (parts.length > 1) {
           const brandVal = parts[0];
           const modelVal = parts.slice(1).join(' ');
@@ -217,7 +258,7 @@ const UploadItem: React.FC = () => {
         } else {
           setFormData((prev: any) => ({
             ...prev,
-            brand: editData.brandModel,
+            brand: mappedData.brandModel,
             model: ''
           }));
         }
@@ -490,6 +531,11 @@ const UploadItem: React.FC = () => {
     try {
       const id = user?.id || JSON.parse(localStorage.getItem('agrifarm_user') || '{}').id;
       let finalPayload = { ...formData, ownerId: id };
+      
+      // Append Mandal to village for storage if it exists, since API has no Mandal column
+      if (finalPayload.mandal) {
+         finalPayload.village = `${finalPayload.village}, ${finalPayload.mandal} Mandal`;
+      }
 
       if (category === 'Workers') {
         const totalMaleAllocated = selectedSkills.reduce((sum, skill) => {
@@ -579,19 +625,31 @@ const UploadItem: React.FC = () => {
 
       if (category === 'Services') {
         const sType = formData.serviceName;
+        finalPayload.serviceType = formData.serviceName;
+        finalPayload.priceRate = formData.pricePerDay;
+        
+        let equipString = '';
+
         if (sType === 'Ploughing') {
           if (Object.keys(ploughCapacitiesMap).length > 0) {
             finalPayload.ploughCapacities = Object.entries(ploughCapacitiesMap).map(([k, v]) => `${k} - ${v.join('/')}`);
+            equipString = finalPayload.ploughCapacities.join(' | ');
           }
         } else if (sType === 'Harvesting') {
           if (Object.keys(harvestCapacitiesMap).length > 0) {
             finalPayload.harvestCapacities = Object.entries(harvestCapacitiesMap).map(([k, v]) => `${k} - ${v.join('/')}`);
+            equipString = finalPayload.harvestCapacities.join(' | ');
           }
         } else if (sType === 'Drone Spraying' || sType === 'Pesticide Spraying') {
           finalPayload.sprayerTypes = Object.entries(sprayerCapacitiesMap).map(([k, v]) => `${k} - ${v.join('/')} L`);
           const allCaps: string[] = [];
           Object.values(sprayerCapacitiesMap).forEach(list => allCaps.push(...list));
           finalPayload.sprayerCapacities = Array.from(new Set(allCaps));
+          equipString = finalPayload.sprayerTypes.join(' | ');
+        }
+        
+        if (equipString) {
+          finalPayload.equipmentUsed = equipString;
         }
       }
 
@@ -1993,21 +2051,18 @@ const UploadItem: React.FC = () => {
                 name="serviceName"
                 value={formData.serviceName || ''}
                 onChange={handleInputChange}
-                style={{ border: fieldErrors.serviceName ? '2px solid #dc2626' : undefined }}>
+                disabled={!!editData}
+                style={{ 
+                  border: fieldErrors.serviceName ? '2px solid #dc2626' : undefined,
+                  backgroundColor: editData ? '#f1f5f9' : undefined,
+                  cursor: editData ? 'not-allowed' : undefined
+                }}>
                 <option value="">Select Service Type</option>
                 <option value="Ploughing">Ploughing</option>
-                <option value="Harvesting">Harvesting</option>
-                <option value="Drone Spraying">Drone Spraying</option>
-                <option value="Vet Care">Vet Care</option>
                 <option value="Electricians">Electricians</option>
-                <option value="Mechanics">Mechanics</option>
-                <option value="Land Levelling">Land Levelling</option>
-                <option value="Sowing/Seeding">Sowing/Seeding</option>
-                <option value="Pesticide Spraying">Pesticide Spraying</option>
-                <option value="Irrigation Service">Irrigation Service</option>
-                <option value="Soil Testing">Soil Testing</option>
-                <option value="Crop Advisory">Crop Advisory</option>
-                <option value="Other Service">Other Service</option>
+                <option value="Harvesting">Harvesting</option>
+                <option value="Farm workers">Farm workers</option>
+                <option value="Drone Spraying">Drone Spraying</option>
               </select>
               {errMsg('serviceName')}
             </div>

@@ -59,7 +59,7 @@ const Transport: React.FC = () => {
   const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [items, setItems] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState(location.state?.initialFilter || 'All');
@@ -221,14 +221,14 @@ const Transport: React.FC = () => {
   const filteredItems = processedItems.filter(item => {
     let matchesFilter = filter === 'All';
     if (!matchesFilter) {
-      if (filter === 'Trucks' && item.category?.toLowerCase().includes('truck') && !item.category?.toLowerCase().includes('mini')) matchesFilter = true;
-      else if (filter === 'Tractors with Trolley' && item.category?.toLowerCase().includes('tractor')) matchesFilter = true;
-      else if (filter === 'Mini Trucks' && (item.category?.toLowerCase().includes('mini') || item.category?.toLowerCase().includes('pick up'))) matchesFilter = true;
-      else if (filter === 'Loaders' && (item.category?.toLowerCase().includes('jcb') || item.category?.toLowerCase().includes('loader'))) matchesFilter = true;
+      if (filter === 'Trucks' && (item.category || '').toLowerCase().includes('truck') && !(item.category || '').toLowerCase().includes('mini')) matchesFilter = true;
+      else if (filter === 'Tractors with Trolley' && (item.category || '').toLowerCase().includes('tractor')) matchesFilter = true;
+      else if (filter === 'Mini Trucks' && ((item.category || '').toLowerCase().includes('mini') || (item.category || '').toLowerCase().includes('pick up'))) matchesFilter = true;
+      else if (filter === 'Loaders' && ((item.category || '').toLowerCase().includes('jcb') || (item.category || '').toLowerCase().includes('loader'))) matchesFilter = true;
       else if (item.category === filter) matchesFilter = true;
     }
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          item.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = (item.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (item.category || '').toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesDistance = maxDistance === 'All' || 
                             (item.computedDist !== undefined && item.computedDist <= maxDistance) ||
@@ -247,11 +247,29 @@ const Transport: React.FC = () => {
 
   return (
     <div className="services-page container fade-in">
-      <div className="page-header">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 className="text-3xl font-bold">Agri Transport</h1>
           <p className="text-slate-500">Hire professional agricultural transport and vehicles</p>
         </div>
+        {isAuthenticated && user?.role !== 'FARMER' && (
+          <button
+            className="btn-primary"
+            onClick={() => navigate('/upload-item', { state: { category: 'Vehicles' } })}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 20px',
+              borderRadius: '12px',
+              fontSize: '0.95rem',
+              fontWeight: 700
+            }}
+          >
+            <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>+</span>
+            <span>Add New Transport</span>
+          </button>
+        )}
       </div>
       
       <LocationFilterBar

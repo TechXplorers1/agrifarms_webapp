@@ -59,7 +59,7 @@ const Services: React.FC = () => {
   const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [items, setItems] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const transportTypesList = ['Mini Trucks', 'Tractors with Trolley', 'Trucks', 'Containers'];
@@ -160,7 +160,7 @@ const Services: React.FC = () => {
       setUserCoords(coords);
 
       try {
-        const [serv] = await Promise.all([
+        const [serv, veh, work] = await Promise.all([
           apiService.getServices(),
           apiService.getVehicles(),
           apiService.getWorkerGroups()
@@ -169,11 +169,11 @@ const Services: React.FC = () => {
         const normalized: ServiceItem[] = [
           ...(serv.data || []).map((s: any) => ({
             id: s.serviceId,
-            name: s.businessName,
-            category: s.serviceType,
+            name: s.businessName || 'Unknown Service',
+            category: s.serviceType || 'General',
             price: `₹${s.priceRate}`,
             imageUrl: s.imageUrl,
-            type: 'Service',
+            type: 'Service' as const,
             location: s.village,
             providerId: s.ownerId,
             providerName: s.ownerName,
@@ -181,6 +181,44 @@ const Services: React.FC = () => {
             operatorAvailable: s.operatorIncluded,
             latitude: s.latitude,
             longitude: s.longitude
+          })),
+          ...(veh.data || []).map((v: any) => ({
+            id: v.vehicleId,
+            name: v.brand ? `${v.brand} ${v.model || ''}`.trim() : v.category || 'Vehicle',
+            category: v.category || 'Vehicle',
+            price: v.pricePerHour ? `₹${v.pricePerHour}/hr` : (v.pricePerKm ? `₹${v.pricePerKm}/km` : '₹0'),
+            imageUrl: v.imageUrl,
+            type: 'Transport' as const,
+            location: v.village,
+            providerId: v.ownerId,
+            providerName: v.ownerName,
+            latitude: v.latitude,
+            longitude: v.longitude,
+            pricePerKm: v.pricePerKm,
+            pricePerHour: v.pricePerHour,
+            brand: v.brand,
+            model: v.model,
+            vehicleCondition: v.vehicleCondition,
+          })),
+          ...(work.data || []).map((w: any) => ({
+            id: w.groupId,
+            name: w.groupName || 'Worker Group',
+            category: 'Farm workers',
+            price: `₹${w.pricePerMale || w.pricePerFemale || 0}/day`,
+            imageUrl: w.imageUrl,
+            type: 'Worker' as const,
+            location: w.village,
+            providerId: w.ownerId,
+            providerName: w.ownerName,
+            latitude: w.latitude,
+            longitude: w.longitude,
+            pricePerMale: w.pricePerMale,
+            pricePerFemale: w.pricePerFemale,
+            pricePerMaleHourly: w.pricePerMaleHourly,
+            pricePerFemaleHourly: w.pricePerFemaleHourly,
+            maleCount: w.maleCount,
+            femaleCount: w.femaleCount,
+            roles: w.roles
           }))
         ];
 
@@ -231,12 +269,17 @@ const Services: React.FC = () => {
   });
 
   const filteredItems = processedItems.filter(item => {
-    const matchesFilter = filter === 'All' ||
-      (filter === 'Transport' && item.type === 'Transport' && (subFilter === 'All' || item.category === subFilter)) ||
-      (filter !== 'All' && filter !== 'Transport' && item.category.toLowerCase() === filter.toLowerCase());
+    const itemCat = item.category || '';
+    const itemName = item.name || '';
+    const searchQ = searchQuery || '';
+    const filterQ = filter || 'All';
 
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filterQ === 'All' ||
+      (filterQ === 'Transport' && item.type === 'Transport' && (subFilter === 'All' || itemCat === subFilter)) ||
+      (filterQ !== 'All' && filterQ !== 'Transport' && itemCat.toLowerCase() === filterQ.toLowerCase());
+
+    const matchesSearch = itemName.toLowerCase().includes(searchQ.toLowerCase()) ||
+      itemCat.toLowerCase().includes(searchQ.toLowerCase());
 
     const matchesDistance = maxDistance === 'All' ||
       (item.computedDist !== undefined && item.computedDist <= maxDistance) ||
@@ -256,26 +299,29 @@ const Services: React.FC = () => {
 
   return (
     <div className="services-page container fade-in">
-      <div className="page-header">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 className="text-3xl font-bold">{filter === 'Transport' ? 'Transports' : t('services.title')}</h1>
           <p className="text-slate-500">{filter === 'Transport' ? 'Hire professional transport services' : t('services.desc')}</p>
         </div>
-        <button
-          className="btn-primary"
-          onClick={() => navigate('/upload-item')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 20px',
-            borderRadius: '12px',
-            fontSize: '0.95rem',
-            fontWeight: 700
-          }}
-        >
-          <span>{t('services.addBtn')}</span>
-        </button>
+        {isAuthenticated && user?.role !== 'FARMER' && (
+          <button
+            className="btn-primary"
+            onClick={() => navigate('/upload-item', { state: { category: filter === 'Transport' ? 'Vehicles' : 'Services' } })}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 20px',
+              borderRadius: '12px',
+              fontSize: '0.95rem',
+              fontWeight: 700
+            }}
+          >
+            <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>+</span>
+            <span>{filter === 'Transport' ? 'Add New Transport' : 'Add New Service'}</span>
+          </button>
+        )}
       </div>
 
       <LocationFilterBar

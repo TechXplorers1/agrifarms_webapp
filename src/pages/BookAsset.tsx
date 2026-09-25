@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Calendar, MapPin, CheckCircle, Plus, Minus,
   ChevronRight, Info, ShieldAlert, Award, FileText, Check,
-  Home, Building, Hash, UserCheck, Edit3, AlertTriangle
+  Home, Building, Hash, UserCheck, Edit3, AlertTriangle, Loader2
 } from 'lucide-react';
 import { apiService } from '../services/apiService';
 import { useAuth } from '../services/AuthContext';
@@ -54,6 +54,7 @@ const BookAsset: React.FC = () => {
   } | null>(null);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [success, setSuccess] = useState(false);
   const [existingBookings, setExistingBookings] = useState<any[]>([]);
 
@@ -128,6 +129,8 @@ const BookAsset: React.FC = () => {
         setExistingBookings(res.data.filter((b: any) => b.assetId === asset.id));
       } catch (e) {
         console.error('Error fetching existing bookings', e);
+      } finally {
+        setPageLoading(false);
       }
     };
     fetchUserProfileAndBookings();
@@ -587,6 +590,14 @@ const BookAsset: React.FC = () => {
         return null;
     }
   };
+
+  if (pageLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+        <Loader2 className="animate-spin" size={48} color="var(--primary)" />
+      </div>
+    );
+  }
 
   return (
     <div className="booking-page-layout">

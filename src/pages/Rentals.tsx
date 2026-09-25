@@ -192,7 +192,7 @@ const Rentals: React.FC = () => {
   const filteredEquipment = processedEquipment.filter(item => {
     if (user?.id && item.ownerId === user.id) return false;
 
-    const itemCat = item.category.toLowerCase();
+    const itemCat = (item.category || '').toLowerCase();
     const activeFilter = filter.toLowerCase();
 
     const matchesFilter = filter === 'All' ||
@@ -202,8 +202,8 @@ const Rentals: React.FC = () => {
       itemCat.includes(activeFilter) ||
       activeFilter.includes(itemCat);
 
-    const matchesSearch = item.brandModel.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = (item.brandModel || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.category || '').toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesDistance = maxDistance === 'All' ||
       (item.computedDist !== undefined && item.computedDist <= maxDistance) ||
@@ -225,11 +225,29 @@ const Rentals: React.FC = () => {
 
   return (
     <div className="rentals-page container fade-in">
-      <div className="page-header">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 className="text-3xl font-bold">{t('rentals.title')}</h1>
           <p className="text-slate-500">{t('rentals.desc')}</p>
         </div>
+        {isAuthenticated && user?.role !== 'FARMER' && (
+          <button
+            className="btn-primary"
+            onClick={() => navigate('/upload-item', { state: { category: 'Equipment' } })}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 20px',
+              borderRadius: '12px',
+              fontSize: '0.95rem',
+              fontWeight: 700
+            }}
+          >
+            <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>+</span>
+            <span>Add New Equipment</span>
+          </button>
+        )}
       </div>
 
       <LocationFilterBar
