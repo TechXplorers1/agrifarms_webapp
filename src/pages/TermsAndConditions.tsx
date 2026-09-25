@@ -116,7 +116,7 @@ const TermsAndConditions: React.FC = () => {
           <ul style={{ lineHeight: '1.8', fontSize: '1rem', color: 'var(--text-muted)', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <li><strong>Booking Confirmation:</strong> Bookings are subject to asset availability and provider confirmation.</li>
             <li><strong>Pricing:</strong> Rental rates per hour, day, or acre are specified in listing details. Explicit asset rental terms set by the owner take precedence.</li>
-            <li><strong>Cancellations:</strong> Either party may cancel a request prior to dispatch. Excessive last-minute cancellations may incur account penalties or service fees.</li>
+            <li><strong>Cancellations:</strong> Either party may cancel a request prior to dispatch. Excessive last-minute cancellations may incur account penalties.</li>
           </ul>
         </section>
 

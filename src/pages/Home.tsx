@@ -894,6 +894,7 @@ const Home: React.FC = () => {
         </section>
 
         {/* Earn Section - WOW Layout */}
+        {(!user || user.role !== 'FARMER') && (
         <section className="section" style={{ marginBottom: '0', paddingBottom: '0' }}>
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -1045,6 +1046,7 @@ const Home: React.FC = () => {
             </div>
           </motion.div>
         </section>
+        )}
 
         {/* Floating Action Button for Add Asset - Shown Only for Non-Farmers */}
         {(!user || user.role !== 'FARMER') && createPortal(

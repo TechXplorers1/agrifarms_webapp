@@ -2359,7 +2359,7 @@ const UploadItem: React.FC = () => {
             )}
 
             <div className="input-group" data-error={!!fieldErrors.pricePerDay}>
-              <label>Base Price Rate (₹) *</label>
+              <label>{formData.serviceName === 'Electricians' ? 'Visiting Charge (₹) *' : 'Base Price Rate (₹/hr) *'}</label>
               <input
                 type="number" name="pricePerDay"
                 value={formData.pricePerDay || ''}

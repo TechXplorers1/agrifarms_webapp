@@ -180,7 +180,9 @@ const Services: React.FC = () => {
             operatorPrice: s.operatorPrice,
             operatorAvailable: s.operatorIncluded,
             latitude: s.latitude,
-            longitude: s.longitude
+            longitude: s.longitude,
+            equipmentUsed: s.equipmentUsed,
+            description: s.description
           })),
           ...(veh.data || []).map((v: any) => ({
             id: v.vehicleId,

@@ -184,7 +184,7 @@ const BookAsset: React.FC = () => {
 
   const calculateBaseTotal = () => asset.price * duration;
   const calculateOperatorTotal = () => includeOperator ? (operatorRate * duration) : 0;
-  const calculateTaxTotal = () => Math.round((calculateBaseTotal() + calculateOperatorTotal()) * 0.02); // 2% service charge
+  const calculateTaxTotal = () => 0; // Free of cost platform
   const calculateGrandTotal = () => calculateBaseTotal() + calculateOperatorTotal() + calculateTaxTotal();
 
   const handleBookingSubmit = async () => {
@@ -702,8 +702,22 @@ const BookAsset: React.FC = () => {
                     )}
                     {asset.details.equipmentUsed && (
                       <div className="detail-row">
-                        <span className="detail-label">Equipment Used:</span>
-                        <span className="detail-val">{asset.details.equipmentUsed}</span>
+                        <span className="detail-label" style={{ color: 'var(--primary)', fontWeight: 900 }}>Included Equipment:</span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                          {asset.details.equipmentUsed.split(' | ').map((eq: string, idx: number) => (
+                            <span key={idx} style={{
+                              background: '#ecfdf5',
+                              color: '#047857',
+                              padding: '6px 10px',
+                              borderRadius: '8px',
+                              fontSize: '0.8rem',
+                              fontWeight: 800,
+                              border: '1px solid #a7f3d0'
+                            }}>
+                              🚜 {eq}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     )}
                     {asset.details.brand && asset.details.model && (
@@ -774,10 +788,7 @@ const BookAsset: React.FC = () => {
                     </div>
                   )}
 
-                  <div className="bill-item tax">
-                    <span className="item-label">AgriFarm Service Charge (2%)</span>
-                    <span className="item-val">₹{calculateTaxTotal()}</span>
-                  </div>
+
 
                   <div className="bill-item divider-thick" />
 

@@ -133,10 +133,12 @@ const ManageAssets: React.FC = () => {
           <h1>{t('manage.title')}</h1>
           <p>{t('manage.subtitle')}</p>
         </div>
-        <button className="btn-primary" onClick={() => navigate('/upload-item')}>
-          <Plus size={20} />
-          <span>{t('manage.addBtn')}</span>
-        </button>
+        {user?.role !== 'FARMER' && (
+          <button className="btn-primary" onClick={() => navigate('/upload-item')}>
+            <Plus size={20} />
+            <span>{t('manage.addBtn')}</span>
+          </button>
+        )}
       </div>
 
       {/* Tabs */}

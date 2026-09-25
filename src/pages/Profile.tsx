@@ -395,12 +395,16 @@ const Profile: React.FC = () => {
     );
   }
 
-  const menuItems = [
-    { name: t('profile.myAssets'), desc: t('profile.myAssetsDesc'), icon: Package, color: '#e8f5e9', fg: '#2e7d32', path: '/manage-assets' },
+  const allMenuItems = [
+    { name: t('profile.myAssets'), desc: t('profile.myAssetsDesc'), icon: Package, color: '#e8f5e9', fg: '#2e7d32', path: '/manage-assets', hideForFarmer: true },
     { name: t('nav.activity'), desc: t('profile.activityDesc'), icon: Calendar, color: '#e3f2fd', fg: '#1565c0', path: '/activity' },
     { name: t('profile.settings'), desc: t('profile.settingsDesc'), icon: Settings, color: '#fff3e0', fg: '#e65100', path: '/settings' },
     { name: t('profile.security'), desc: t('profile.securityDesc'), icon: Shield, color: '#f3e5f5', fg: '#6a1b9a', path: '/profile' },
   ];
+
+  const menuItems = allMenuItems.filter(item => 
+    !(item.hideForFarmer && (user?.role === 'FARMER' || profile?.userType === 'FARMER' || profile?.userType?.toLowerCase() === 'farmer'))
+  );
 
   return (
     <div className="profile-page container fade-in">

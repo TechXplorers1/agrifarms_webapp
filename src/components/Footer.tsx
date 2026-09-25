@@ -1,8 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin } from 'lucide-react';
+import { useAuth } from '../services/AuthContext';
 
 const Footer: React.FC = () => {
+  const { user } = useAuth();
 
   return (
     <footer className="footer" style={{
@@ -68,7 +70,9 @@ const Footer: React.FC = () => {
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <li><Link to="/rentals" className="footer-nav-link">Rent Equipment</Link></li>
               <li><Link to="/services" className="footer-nav-link">Find Services</Link></li>
-              <li><Link to="/upload-item" className="footer-nav-link">List an Asset</Link></li>
+              {user?.role !== 'FARMER' && (
+                <li><Link to="/upload-item" className="footer-nav-link">List an Asset</Link></li>
+              )}
               <li><Link to="/terms" className="footer-nav-link">Terms & Conditions</Link></li>
               <li><Link to="/privacy-policy" className="footer-nav-link">Privacy Policy</Link></li>
             </ul>
