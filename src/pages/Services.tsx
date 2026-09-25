@@ -171,7 +171,7 @@ const Services: React.FC = () => {
             id: s.serviceId,
             name: s.businessName || 'Unknown Service',
             category: s.serviceType || 'General',
-            price: `₹${s.priceRate}`,
+            price: s.serviceType === 'Electricians' ? `₹${s.priceRate}/visit` : `₹${s.priceRate}/hr`,
             imageUrl: s.imageUrl,
             type: 'Service' as const,
             location: s.village,

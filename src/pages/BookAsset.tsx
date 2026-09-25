@@ -66,7 +66,7 @@ const BookAsset: React.FC = () => {
     switch (asset?.type) {
       case 'Transport': return 'Base Hourly Rate';
       case 'Worker': return 'Hourly Wage Rate';
-      case 'Service': return 'Base Service Rate';
+      case 'Service': return asset?.category === 'Electricians' ? 'Visiting Charge' : 'Base Service Rate';
       default: return 'Base Hourly Rate';
     }
   };
@@ -275,7 +275,7 @@ const BookAsset: React.FC = () => {
               </div>
             )}
 
-            {selectedHour !== null && (
+            {selectedHour !== null && asset.category !== 'Electricians' && (
               <div className="duration-picker-box">
                 <div className="duration-header">
                   <div className="duration-text">
@@ -766,13 +766,21 @@ const BookAsset: React.FC = () => {
 
                   <div className="bill-item">
                     <span className="item-label">{getBaseRateLabel()}</span>
-                    <span className="item-val">₹{asset.price}/hr</span>
+                    <span className="item-val">₹{asset.price}{asset.category === 'Electricians' ? '/visit' : '/hr'}</span>
                   </div>
 
-                  <div className="bill-item">
-                    <span className="item-label">Duration Selection</span>
-                    <span className="item-val">{duration} hour(s)</span>
-                  </div>
+                  {asset.category !== 'Electricians' && (
+                    <div className="bill-item">
+                      <span className="item-label">Duration Selection</span>
+                      <span className="item-val">{duration} hour(s)</span>
+                    </div>
+                  )}
+                  {asset.category === 'Electricians' && (
+                    <div className="bill-item">
+                      <span className="item-label">Booking Type</span>
+                      <span className="item-val">Single Visit</span>
+                    </div>
+                  )}
 
                   <div className="bill-item divider" />
 
