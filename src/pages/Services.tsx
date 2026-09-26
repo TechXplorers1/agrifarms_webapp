@@ -205,7 +205,7 @@ const Services: React.FC = () => {
           ...(work.data || []).map((w: any) => ({
             id: w.groupId,
             name: w.groupName || 'Worker Group',
-            category: 'Farm workers',
+            category: 'Farm Workers',
             price: `₹${w.pricePerMale || w.pricePerFemale || 0}/day`,
             imageUrl: w.imageUrl,
             type: 'Worker' as const,

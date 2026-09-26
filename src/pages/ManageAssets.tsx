@@ -33,7 +33,7 @@ const ManageAssets: React.FC = () => {
   const assetIdToHighlight = new URLSearchParams(location.search).get('assetId');
 
   useEffect(() => {
-    if (targetTab && ['Vehicles', 'Equipment', 'Services', 'Workers'].includes(targetTab)) {
+    if (targetTab && ['Vehicles', 'Equipment', 'Services'].includes(targetTab)) {
       setActiveTab(targetTab as AssetType);
     }
   }, [location.state, location.search]);
@@ -66,8 +66,8 @@ const ManageAssets: React.FC = () => {
       const allAssets = {
         'Vehicles': veh.data || [],
         'Equipment': equip.data || [],
-        'Services': serv.data || [],
-        'Workers': work.data || []
+        'Services': [...(serv.data || []), ...(work.data || [])],
+        'Workers': []
       };
 
       setAssets((allAssets as any)[activeTab]);
@@ -89,8 +89,14 @@ const ManageAssets: React.FC = () => {
     try {
       if (activeTab === 'Vehicles') await apiService.deleteVehicle(id);
       else if (activeTab === 'Equipment') await apiService.deleteEquipment(id);
-      else if (activeTab === 'Services') await apiService.deleteService(id);
-      else if (activeTab === 'Workers') await apiService.deleteWorkerGroup(id);
+      else if (activeTab === 'Services') {
+        const isWorker = assets.find(a => (a.groupId || a.serviceId) === id)?.groupId != null;
+        if (isWorker) {
+          await apiService.deleteWorkerGroup(id);
+        } else {
+          await apiService.deleteService(id);
+        }
+      }
       
       fetchAssets();
     } catch (error) {
@@ -122,8 +128,7 @@ const ManageAssets: React.FC = () => {
   const tabs = [
     { value: 'Vehicles', label: t('manage.tab.vehicles') },
     { value: 'Equipment', label: t('manage.tab.equipment') },
-    { value: 'Services', label: t('manage.tab.services') },
-    { value: 'Workers', label: t('manage.tab.workers') }
+    { value: 'Services', label: t('manage.tab.services') }
   ];
 
   return (
@@ -168,16 +173,25 @@ const ManageAssets: React.FC = () => {
               {assets.map((asset) => {
                 const isVehicle = activeTab === 'Vehicles';
                 const id = asset.vehicleId || asset.equipmentId || asset.serviceId || asset.groupId;
-                const title = isVehicle && asset.brand 
+                const titleText = isVehicle && asset.brand 
                   ? `${asset.brand} ${asset.model || ''}` 
                   : (asset.vehicleType || asset.brandModel || asset.businessName || asset.groupName);
+                const title = asset.yearOfManufacture ? `${titleText} (${asset.yearOfManufacture})` : titleText;
+                
+                const isWorker = asset.groupId != null;
                 const subtitle = isVehicle 
                   ? `${asset.vehicleType || 'Transport'} • ${asset.vehicleNumber || 'No Plate'}` 
-                  : (asset.vehicleNumber || asset.category || asset.serviceType || (activeTab === 'Workers' ? `${asset.maleCount || 0} Men, ${asset.femaleCount || 0} Women` : 'Details unavailable'));
+                  : (isWorker 
+                      ? `Farm Workers • ${asset.maleCount || 0} Men, ${asset.femaleCount || 0} Women` 
+                      : `${asset.category || asset.serviceType || 'Details unavailable'}` + (asset.vehicleNumber ? ` • ${asset.vehicleNumber}` : '') + (asset.attachedEquipments ? ` • ${asset.attachedEquipments}` : '')
+                    );
                 const price = isVehicle 
                   ? `${asset.pricePerKm || 0}/km • ₹${asset.pricePerHour || 0}/hr` 
                   : (asset.pricePerKmOrTrip || asset.pricePerHour || asset.priceRate || asset.pricePerMale);
                 
+                const bName = asset.ownerBusinessName || asset.businessName || asset.groupName;
+                const showBusinessName = !!bName;
+
                 const isHighlighted = assetIdToHighlight === String(id);
                 
                 return (
@@ -205,6 +219,7 @@ const ManageAssets: React.FC = () => {
                       </div>
                       <div className="asset-details-managed">
                         <h4>{title}</h4>
+                        {showBusinessName && <span style={{ display: 'block', fontSize: '0.8rem', color: '#64748b', marginBottom: '4px', fontWeight: 600 }}>{bName}</span>}
                         <p>{subtitle} • ₹{price}</p>
                         {renderStatusBadge(asset.approvalStatus)}
                       </div>

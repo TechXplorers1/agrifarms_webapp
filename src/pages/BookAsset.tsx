@@ -696,8 +696,22 @@ const BookAsset: React.FC = () => {
                   <div className="asset-extended-details">
                     {asset.details.attachedEquipments && (
                       <div className="detail-row">
-                        <span className="detail-label">Attached Equipment:</span>
-                        <span className="detail-val">{asset.details.attachedEquipments}</span>
+                        <span className="detail-label" style={{ color: 'var(--primary)', fontWeight: 900 }}>Attached Equipment:</span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                          {asset.details.attachedEquipments.split(', ').map((eq: string, idx: number) => (
+                            <span key={idx} style={{
+                              background: '#ecfdf5',
+                              color: '#047857',
+                              padding: '6px 10px',
+                              borderRadius: '8px',
+                              fontSize: '0.8rem',
+                              fontWeight: 800,
+                              border: '1px solid #a7f3d0'
+                            }}>
+                              🚜 {eq}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     )}
                     {asset.details.equipmentUsed && (

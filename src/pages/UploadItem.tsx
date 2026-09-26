@@ -117,6 +117,10 @@ const UploadItem: React.FC = () => {
     'Mould Board Plough', 'Disc Plough', 'Rotavator', 'Cultivator', 'Chisel Plough', 'Harrow', 'Other'
   ]);
 
+  const [availableWorkerSkills, setAvailableWorkerSkills] = useState([
+    'Harvesting', 'Sowing', 'Weeding', 'Spraying', 'Sorting & Packing', 'Loading', 'Driving', 'General Labor'
+  ]);
+
   // Operator toggle state for Equipment
   const [operatorAvailable, setOperatorAvailable] = useState(false);
 
@@ -212,10 +216,110 @@ const UploadItem: React.FC = () => {
             mappedData.village = parts.slice(0, parts.length - 1).join(', ');
          }
       }
-      
+
+      if (mappedData.equipmentId || initialCategory === 'Equipment') {
+        mappedData.pricePerDay = mappedData.pricePerHour || mappedData.pricePerDay;
+        mappedData.halfDayPrice = mappedData.pricePerHalfDay || mappedData.halfDayPrice;
+        
+        if (mappedData.attachedEquipments) {
+          if (mappedData.category === 'Harvesters' || mappedData.category === 'Sprayers') {
+            const items = mappedData.attachedEquipments.split(' | ');
+            const map: Record<string, string[]> = {};
+            items.forEach((item: string) => {
+              const parts = item.split(' - ');
+              if (parts.length >= 2) {
+                const type = parts[0].trim();
+                let caps = parts.slice(1).join(' - ').trim();
+                if (mappedData.category === 'Sprayers') caps = caps.replace(' L', '');
+                const capArray = caps.split('/').map((c: string) => c.trim());
+                map[type] = capArray;
+                
+                if (mappedData.category === 'Harvesters') {
+                  setAvailableHarvestTypes((prev: string[]) => {
+                    if (!prev.includes(type)) {
+                      const base = prev.filter(p => p !== 'Other');
+                      return [...base, type, 'Other'];
+                    }
+                    return prev;
+                  });
+                } else if (mappedData.category === 'Sprayers') {
+                  setAvailableSprayerTypes((prev: string[]) => {
+                    if (!prev.includes(type)) {
+                      const base = prev.filter(p => p !== 'Other');
+                      return [...base, type, 'Other'];
+                    }
+                    return prev;
+                  });
+                }
+              }
+            });
+            if (mappedData.category === 'Harvesters') setHarvestCapacitiesMap(map);
+            if (mappedData.category === 'Sprayers') setSprayerCapacitiesMap(map);
+          } else if (mappedData.category === 'Trolleys') {
+            const parsed = mappedData.attachedEquipments.split(', ').map((s: string) => s.trim()).filter(Boolean);
+            setSelectedTrolleyTypes(parsed);
+            setTrolleyTypeOptions((prev: string[]) => {
+               const newOpts = parsed.filter((p: string) => !prev.includes(p));
+               if (newOpts.length > 0) {
+                   const base = prev.filter((p: string) => p !== 'Other');
+                   return [...base, ...newOpts, 'Other'];
+               }
+               return prev;
+            });
+          } else {
+            const parsed = mappedData.attachedEquipments.split(', ').map((s: string) => s.trim()).filter(Boolean);
+            setSelectedAttachedEquipments(parsed);
+            setAttachedEquipmentOptions((prev: string[]) => {
+               const newOpts = parsed.filter((p: string) => !prev.includes(p));
+               if (newOpts.length > 0) {
+                   const base = prev.filter((p: string) => p !== 'Other');
+                   return [...base, ...newOpts, 'Other'];
+               }
+               return prev;
+            });
+          }
+        }
+        if (mappedData.trolleyTypes) {
+          const parsed = mappedData.trolleyTypes.split(', ').map((s: string) => s.trim()).filter(Boolean);
+          setSelectedTrolleyTypes(parsed);
+          setTrolleyTypeOptions((prev: string[]) => {
+             const newOpts = parsed.filter((p: string) => !prev.includes(p));
+             if (newOpts.length > 0) {
+                 const base = prev.filter((p: string) => p !== 'Other');
+                 return [...base, ...newOpts, 'Other'];
+             }
+             return prev;
+          });
+        }
+        if (mappedData.operatorAvailable) {
+          setOperatorAvailable(true);
+        }
+      }
+
       // Map backend keys to frontend form keys for Services
-      if (mappedData.serviceId || initialCategory === 'Services') {
-        mappedData.serviceName = mappedData.serviceType || mappedData.serviceName;
+      if (mappedData.serviceId || mappedData.groupId || initialCategory === 'Services') {
+        if (mappedData.groupId) {
+          mappedData.serviceName = 'Farm Workers';
+          
+          if (mappedData.skills) {
+            const skillList = mappedData.skills.split(', ').map((s: string) => s.trim()).filter(Boolean);
+            setSelectedSkills(skillList);
+          }
+          if (mappedData.roles && Array.isArray(mappedData.roles)) {
+            const allocations: Record<string, { male: number | string; female: number | string }> = {};
+            mappedData.roles.forEach((r: any) => {
+              if (r.taskName) {
+                const task = r.taskName.charAt(0).toUpperCase() + r.taskName.slice(1);
+                if (!allocations[task]) allocations[task] = { male: '', female: '' };
+                if (r.gender === 'MALE') allocations[task].male = r.count;
+                if (r.gender === 'FEMALE') allocations[task].female = r.count;
+              }
+            });
+            setSkillAllocations(allocations);
+          }
+        } else {
+          mappedData.serviceName = mappedData.serviceType || mappedData.serviceName;
+        }
         mappedData.pricePerDay = mappedData.priceRate || mappedData.pricePerDay;
         
         if (mappedData.equipmentUsed) {
@@ -233,12 +337,34 @@ const UploadItem: React.FC = () => {
               }
               const capArray = caps.split('/').map((c: string) => c.trim());
               map[type] = capArray;
+            } else if (parts.length === 1 && parts[0].trim().length > 0) {
+              const type = parts[0].trim();
+              map[type] = ['Unknown'];
             }
           });
 
-          if (sType === 'Ploughing') setPloughCapacitiesMap(map);
-          else if (sType === 'Harvesting') setHarvestCapacitiesMap(map);
-          else if (sType === 'Drone Spraying' || sType === 'Pesticide Spraying') setSprayerCapacitiesMap(map);
+          if (sType === 'Ploughing') {
+            setPloughCapacitiesMap(map);
+            setAvailablePloughTypes(prev => {
+              const newOpts = Object.keys(map).filter(k => !prev.includes(k));
+              if (newOpts.length > 0) return [...prev.filter(p => p !== 'Other'), ...newOpts, 'Other'];
+              return prev;
+            });
+          } else if (sType === 'Harvesting') {
+            setHarvestCapacitiesMap(map);
+            setAvailableHarvestTypes(prev => {
+              const newOpts = Object.keys(map).filter(k => !prev.includes(k));
+              if (newOpts.length > 0) return [...prev.filter(p => p !== 'Other'), ...newOpts, 'Other'];
+              return prev;
+            });
+          } else if (sType === 'Drone Spraying' || sType === 'Pesticide Spraying') {
+            setSprayerCapacitiesMap(map);
+            setAvailableSprayerTypes(prev => {
+              const newOpts = Object.keys(map).filter(k => !prev.includes(k));
+              if (newOpts.length > 0) return [...prev.filter(p => p !== 'Other'), ...newOpts, 'Other'];
+              return prev;
+            });
+          }
         }
       }
       
@@ -255,12 +381,20 @@ const UploadItem: React.FC = () => {
             brand: brandVal,
             model: modelVal
           }));
+          setSelectedEquipMake(brandVal);
+          setSelectedEquipModel(modelVal);
         } else {
           setFormData((prev: any) => ({
             ...prev,
             brand: mappedData.brandModel,
             model: ''
           }));
+          setSelectedEquipMake(mappedData.brandModel);
+        }
+      } else if (mappedData.brand) {
+        setSelectedEquipMake(mappedData.brand);
+        if (mappedData.model) {
+           setSelectedEquipModel(mappedData.model);
         }
       }
     }
@@ -364,6 +498,8 @@ const UploadItem: React.FC = () => {
   const validate = (): boolean => {
     const errors: Record<string, string> = {};
 
+    if (!formData.imageUrl?.trim()) errors.imageUrl = 'Image is required';
+
     // Common location fields
     if (!formData.houseNo?.trim()) errors.houseNo = 'House No is required';
     if (!formData.street?.trim()) errors.street = 'Street / Area is required';
@@ -405,30 +541,31 @@ const UploadItem: React.FC = () => {
 
     if (category === 'Services') {
       if (!formData.serviceName?.trim()) errors.serviceName = 'Service name is required';
-      if (!formData.pricePerDay) errors.pricePerDay = 'Price is required';
-    }
-
-    if (category === 'Workers') {
-      if (!formData.groupName?.trim()) errors.groupName = 'Group Name / Leader Name is required';
       
-      const maleCount = Number(formData.maleCount || 0);
-      const femaleCount = Number(formData.femaleCount || 0);
+      if (formData.serviceName === 'Farm Workers') {
+        if (!formData.groupName?.trim()) errors.groupName = 'Group Name / Leader Name is required';
+        
+        const maleCount = Number(formData.maleCount || 0);
+        const femaleCount = Number(formData.femaleCount || 0);
 
-      if (maleCount === 0 && femaleCount === 0) {
-        errors.maleCount = 'Enter at least one male or female worker count';
-        errors.femaleCount = 'Enter at least one male or female worker count';
-      }
+        if (maleCount === 0 && femaleCount === 0) {
+          errors.maleCount = 'Enter at least one male or female worker count';
+          errors.femaleCount = 'Enter at least one male or female worker count';
+        }
 
-      if (maleCount > 0) {
-        if (!formData.pricePerMale) errors.pricePerMale = 'Daily wage is required';
-        if (!formData.pricePerMaleHourly) errors.pricePerMaleHourly = 'Hourly rate is required';
-      }
+        if (maleCount > 0) {
+          if (!formData.pricePerMale) errors.pricePerMale = 'Daily wage is required';
+        }
 
-      if (femaleCount > 0) {
-        if (!formData.pricePerFemale) errors.pricePerFemale = 'Daily wage is required';
-        if (!formData.pricePerFemaleHourly) errors.pricePerFemaleHourly = 'Hourly rate is required';
+        if (femaleCount > 0) {
+          if (!formData.pricePerFemale) errors.pricePerFemale = 'Daily wage is required';
+        }
+      } else {
+        if (!formData.pricePerDay) errors.pricePerDay = 'Price is required';
       }
     }
+
+
 
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
@@ -592,13 +729,15 @@ const UploadItem: React.FC = () => {
 
       if (category === 'Equipment') {
         finalPayload.operatorAvailable = operatorAvailable;
+        if (finalPayload.pricePerDay) {
+          finalPayload.pricePerHour = finalPayload.pricePerDay; // Map back to pricePerHour for API
+        }
+        if (finalPayload.halfDayPrice) {
+          finalPayload.pricePerHalfDay = finalPayload.halfDayPrice;
+        }
         // Encode attached equipments and trolley types into description/notes
-        if (selectedAttachedEquipments.length > 0) {
-          finalPayload.attachedEquipments = selectedAttachedEquipments.join(', ');
-        }
-        if (selectedTrolleyTypes.length > 0) {
-          finalPayload.trolleyTypes = selectedTrolleyTypes.join(', ');
-        }
+        finalPayload.attachedEquipments = selectedAttachedEquipments.length > 0 ? selectedAttachedEquipments.join(', ') : '';
+        finalPayload.trolleyTypes = selectedTrolleyTypes.length > 0 ? selectedTrolleyTypes.join(', ') : '';
 
         const equipCat = formData.category;
 
@@ -607,12 +746,20 @@ const UploadItem: React.FC = () => {
           const allCaps: string[] = [];
           Object.values(sprayerCapacitiesMap).forEach(list => allCaps.push(...list));
           finalPayload.sprayerCapacities = Array.from(new Set(allCaps));
+          finalPayload.attachedEquipments = finalPayload.sprayerTypes.join(' | ');
         }
 
         if (equipCat === 'Harvesters') {
           if (Object.keys(harvestCapacitiesMap).length > 0) {
             finalPayload.harvestCapacities = Object.entries(harvestCapacitiesMap).map(([k, v]) => `${k} - ${v.join('/')}`);
+            finalPayload.attachedEquipments = finalPayload.harvestCapacities.join(' | ');
+          } else {
+            finalPayload.attachedEquipments = '';
           }
+        }
+
+        if (equipCat === 'Trolleys') {
+          finalPayload.attachedEquipments = finalPayload.trolleyTypes;
         }
 
         // Set brandModel from Make + Model if selected from dropdowns
@@ -625,31 +772,48 @@ const UploadItem: React.FC = () => {
 
       if (category === 'Services') {
         const sType = formData.serviceName;
-        finalPayload.serviceType = formData.serviceName;
-        finalPayload.priceRate = formData.pricePerDay;
         
-        let equipString = '';
+        if (sType === 'Farm Workers') {
+          finalPayload.skills = selectedSkills.join(', ');
+          
+          const roles: any[] = [];
+          Object.keys(skillAllocations).forEach(skill => {
+            const alloc = skillAllocations[skill];
+            if (alloc.male && Number(alloc.male) > 0) {
+              roles.push({ taskName: skill.toLowerCase(), gender: 'MALE', count: Number(alloc.male) });
+            }
+            if (alloc.female && Number(alloc.female) > 0) {
+              roles.push({ taskName: skill.toLowerCase(), gender: 'FEMALE', count: Number(alloc.female) });
+            }
+          });
+          finalPayload.roles = roles;
+        } else {
+          finalPayload.serviceType = formData.serviceName;
+          finalPayload.priceRate = formData.pricePerDay;
+          
+          let equipString = '';
 
-        if (sType === 'Ploughing') {
-          if (Object.keys(ploughCapacitiesMap).length > 0) {
-            finalPayload.ploughCapacities = Object.entries(ploughCapacitiesMap).map(([k, v]) => `${k} - ${v.join('/')}`);
-            equipString = finalPayload.ploughCapacities.join(' | ');
+          if (sType === 'Ploughing') {
+            if (Object.keys(ploughCapacitiesMap).length > 0) {
+              finalPayload.ploughCapacities = Object.entries(ploughCapacitiesMap).map(([k, v]) => `${k} - ${v.join('/')}`);
+              equipString = finalPayload.ploughCapacities.join(' | ');
+            }
+          } else if (sType === 'Harvesting') {
+            if (Object.keys(harvestCapacitiesMap).length > 0) {
+              finalPayload.harvestCapacities = Object.entries(harvestCapacitiesMap).map(([k, v]) => `${k} - ${v.join('/')}`);
+              equipString = finalPayload.harvestCapacities.join(' | ');
+            }
+          } else if (sType === 'Drone Spraying' || sType === 'Pesticide Spraying') {
+            finalPayload.sprayerTypes = Object.entries(sprayerCapacitiesMap).map(([k, v]) => `${k} - ${v.join('/')} L`);
+            const allCaps: string[] = [];
+            Object.values(sprayerCapacitiesMap).forEach(list => allCaps.push(...list));
+            finalPayload.sprayerCapacities = Array.from(new Set(allCaps));
+            equipString = finalPayload.sprayerTypes.join(' | ');
           }
-        } else if (sType === 'Harvesting') {
-          if (Object.keys(harvestCapacitiesMap).length > 0) {
-            finalPayload.harvestCapacities = Object.entries(harvestCapacitiesMap).map(([k, v]) => `${k} - ${v.join('/')}`);
-            equipString = finalPayload.harvestCapacities.join(' | ');
+          
+          if (equipString) {
+            finalPayload.equipmentUsed = equipString;
           }
-        } else if (sType === 'Drone Spraying' || sType === 'Pesticide Spraying') {
-          finalPayload.sprayerTypes = Object.entries(sprayerCapacitiesMap).map(([k, v]) => `${k} - ${v.join('/')} L`);
-          const allCaps: string[] = [];
-          Object.values(sprayerCapacitiesMap).forEach(list => allCaps.push(...list));
-          finalPayload.sprayerCapacities = Array.from(new Set(allCaps));
-          equipString = finalPayload.sprayerTypes.join(' | ');
-        }
-        
-        if (equipString) {
-          finalPayload.equipmentUsed = equipString;
         }
       }
 
@@ -669,14 +833,18 @@ const UploadItem: React.FC = () => {
       if (editData) {
         const assetId = editData.vehicleId || editData.equipmentId || editData.serviceId || editData.groupId;
         if (category === 'Equipment') await apiService.updateEquipment(assetId, finalPayload);
-        else if (category === 'Services') await apiService.updateService(assetId, finalPayload);
         else if (category === 'Vehicles') await apiService.updateVehicle(assetId, finalPayload);
-        else if (category === 'Workers') await apiService.updateWorkerGroup(assetId, finalPayload);
+        else if (category === 'Services') {
+          if (formData.serviceName === 'Farm Workers') await apiService.updateWorkerGroup(assetId, finalPayload);
+          else await apiService.updateService(assetId, finalPayload);
+        }
       } else {
         if (category === 'Equipment') await apiService.createEquipment(finalPayload);
-        else if (category === 'Services') await apiService.createService(finalPayload);
         else if (category === 'Vehicles') await apiService.createVehicle(finalPayload);
-        else if (category === 'Workers') await apiService.createWorkerGroup(finalPayload);
+        else if (category === 'Services') {
+          if (formData.serviceName === 'Farm Workers') await apiService.createWorkerGroup(finalPayload);
+          else await apiService.createService(finalPayload);
+        }
       }
 
       setSuccess(true);
@@ -727,27 +895,44 @@ const UploadItem: React.FC = () => {
                 {/* Category */}
                 <div className="input-group" data-error={!!fieldErrors.category}>
                   <label>Category *</label>
-                  <select
-                    name="category"
-                    value={equipCat}
-                    onChange={(e) => {
-                      clearError('category');
-                      setFormData((prev: any) => ({ ...prev, category: e.target.value, brand: '', model: '' }));
-                      setSelectedEquipMake(null);
-                      setSelectedEquipModel(null);
-                      setSelectedAttachedEquipments([]);
-                      setSelectedTrolleyTypes([]);
-                      setOperatorAvailable(e.target.value === 'Sprayers');
-                    }}
-                    style={{ border: fieldErrors.category ? '2px solid #dc2626' : undefined }}>
-                    <option value="">Select Category</option>
-                    <option value="Tractors">🚜 Tractors</option>
-                    <option value="Harvesters">🌾 Harvesters</option>
-                    <option value="Sprayers">💧 Sprayers</option>
-                    <option value="Trolleys">🪝 Trolleys</option>
-                    <option value="JCB">🏗️ JCB / Excavator</option>
-                  </select>
-                  {errMsg('category')}
+                  {editData ? (
+                    <div style={{
+                      padding: '12px',
+                      background: '#f1f5f9',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      color: '#475569',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}>
+                      {equipCat}
+                    </div>
+                  ) : (
+                    <>
+                      <select
+                        name="category"
+                        value={equipCat}
+                        onChange={(e) => {
+                          clearError('category');
+                          setFormData((prev: any) => ({ ...prev, category: e.target.value, brand: '', model: '' }));
+                          setSelectedEquipMake(null);
+                          setSelectedEquipModel(null);
+                          setSelectedAttachedEquipments([]);
+                          setSelectedTrolleyTypes([]);
+                          setOperatorAvailable(e.target.value === 'Sprayers');
+                        }}
+                        style={{ border: fieldErrors.category ? '2px solid #dc2626' : undefined }}>
+                        <option value="">Select Category</option>
+                        <option value="Tractors">🚜 Tractors</option>
+                        <option value="Harvesters">🌾 Harvesters</option>
+                        <option value="Sprayers">💧 Sprayers</option>
+                        <option value="Trolleys">🪝 Trolleys</option>
+                        <option value="JCB">🏗️ JCB / Excavator</option>
+                      </select>
+                      {errMsg('category')}
+                    </>
+                  )}
                 </div>
 
                 {/* Owner / Business Name */}
@@ -1386,27 +1571,44 @@ const UploadItem: React.FC = () => {
 
               <div className="input-group" style={{ position: 'relative' }} data-error={!!fieldErrors.vehicleType}>
                 <label>Vehicle Type (Category) *</label>
-                <select
-                  name="vehicleType"
-                  value={formData.vehicleType || ''}
-                  onChange={(e) => {
-                    clearError('vehicleType');
-                    const val = e.target.value;
-                    if (val === 'Others') {
-                      setShowCustomCategoryInput(true);
-                      setFormData((prev: any) => ({ ...prev, vehicleType: '' }));
-                    } else {
-                      setShowCustomCategoryInput(false);
-                      setFormData((prev: any) => ({ ...prev, vehicleType: val }));
-                    }
-                  }}
-                  style={{ border: fieldErrors.vehicleType ? '2px solid #dc2626' : undefined }}>
-                  <option value="">Select Category</option>
-                  {dbVehicleCategories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                  <option value="Others">Others (Add custom category)</option>
-                </select>
+                {editData ? (
+                  <div style={{
+                    padding: '12px',
+                    background: '#f1f5f9',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    color: '#475569',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    {formData.vehicleType}
+                  </div>
+                ) : (
+                  <>
+                    <select
+                      name="vehicleType"
+                      value={formData.vehicleType || ''}
+                      onChange={(e) => {
+                        clearError('vehicleType');
+                        const val = e.target.value;
+                        if (val === 'Others') {
+                          setShowCustomCategoryInput(true);
+                          setFormData((prev: any) => ({ ...prev, vehicleType: '' }));
+                        } else {
+                          setShowCustomCategoryInput(false);
+                          setFormData((prev: any) => ({ ...prev, vehicleType: val }));
+                        }
+                      }}
+                      style={{ border: fieldErrors.vehicleType ? '2px solid #dc2626' : undefined }}>
+                      <option value="">Select Category</option>
+                      {dbVehicleCategories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                      <option value="Others">Others (Add custom category)</option>
+                    </select>
+                  </>
+                )}
 
                 {showCustomCategoryInput && (
                   <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
@@ -1502,6 +1704,18 @@ const UploadItem: React.FC = () => {
                   onChange={handleInputChange}
                   style={{ border: fieldErrors.vehicleNumber ? '2px solid #dc2626' : undefined }} />
                 {errMsg('vehicleNumber')}
+              </div>
+
+              <div className="input-group" data-error={!!fieldErrors.yearOfManufacture}>
+                <label>Year of Manufacture</label>
+                <input
+                  type="number"
+                  name="yearOfManufacture"
+                  value={formData.yearOfManufacture || ''}
+                  placeholder="e.g. 2020"
+                  onChange={handleInputChange}
+                  style={{ border: fieldErrors.yearOfManufacture ? '2px solid #dc2626' : undefined }} />
+                {errMsg('yearOfManufacture')}
               </div>
 
               <div className="input-group" data-error={!!fieldErrors.loadCapacity}>
@@ -2047,29 +2261,397 @@ const UploadItem: React.FC = () => {
           <div className="form-fields grid-2">
             <div className="input-group" data-error={!!fieldErrors.serviceName}>
               <label>Service Type *</label>
-              <select
-                name="serviceName"
-                value={formData.serviceName || ''}
-                onChange={handleInputChange}
-                disabled={!!editData}
-                style={{ 
-                  border: fieldErrors.serviceName ? '2px solid #dc2626' : undefined,
-                  backgroundColor: editData ? '#f1f5f9' : undefined,
-                  cursor: editData ? 'not-allowed' : undefined
+              {editData ? (
+                <div style={{
+                  padding: '12px',
+                  background: '#f1f5f9',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  color: '#475569',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center'
                 }}>
-                <option value="">Select Service Type</option>
-                <option value="Ploughing">Ploughing</option>
-                <option value="Electricians">Electricians</option>
-                <option value="Harvesting">Harvesting</option>
-                <option value="Farm workers">Farm workers</option>
-                <option value="Drone Spraying">Drone Spraying</option>
-              </select>
-              {errMsg('serviceName')}
+                  {formData.serviceName}
+                </div>
+              ) : (
+                <>
+                  <select
+                    name="serviceName"
+                    value={formData.serviceName || ''}
+                    onChange={handleInputChange}
+                    style={{ border: fieldErrors.serviceName ? '2px solid #dc2626' : undefined }}>
+                    <option value="">Select Service Type</option>
+                    <option value="Ploughing">Ploughing</option>
+                    <option value="Electricians">Electricians</option>
+                    <option value="Harvesting">Harvesting</option>
+                    <option value="Farm Workers">Farm Workers</option>
+                    <option value="Drone Spraying">Drone Spraying</option>
+                  </select>
+                  {errMsg('serviceName')}
+                </>
+              )}
             </div>
-            <div className="input-group">
-              <label>{nameLabel}</label>
-              <input name="businessName" value={formData.businessName || ''} onChange={handleInputChange} placeholder={namePlaceholder} />
-            </div>
+            
+            {sType === 'Farm Workers' && (
+              <div className="span-2" style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginTop: '16px' }}>
+                {/* Group Identity */}
+                <div style={{
+                  background: 'white', borderRadius: '20px', padding: '24px', 
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                    <div style={{ background: 'linear-gradient(135deg, #00aa55, #00cc66)', borderRadius: '10px', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Users size={18} color="white" />
+                    </div>
+                    <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#1a2e1a' }}>Group Identity</span>
+                  </div>
+                  
+                  <div className="input-group" data-error={!!fieldErrors.groupName}>
+                    <label>Group Name / Leader Name *</label>
+                    <input
+                      name="groupName"
+                      value={formData.groupName || ''}
+                      placeholder="e.g. Skilled Harvest Team"
+                      onChange={handleInputChange}
+                      style={{ border: fieldErrors.groupName ? '2px solid #dc2626' : undefined }} />
+                    {errMsg('groupName')}
+                  </div>
+                </div>
+
+                {/* Staffing & Wages */}
+                <div style={{
+                  background: 'white', borderRadius: '20px', padding: '24px', 
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                    <div style={{ background: 'linear-gradient(135deg, #00aa55, #00cc66)', borderRadius: '10px', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Plus size={18} color="white" />
+                    </div>
+                    <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#1a2e1a' }}>Staffing & Wages</span>
+                  </div>
+
+                  <div className="grid-2" style={{ marginBottom: '16px' }}>
+                    <div className="input-group" data-error={!!fieldErrors.maleCount}>
+                      <label>Male Workers Count</label>
+                      <input
+                        type="number" name="maleCount"
+                        value={formData.maleCount || ''}
+                        placeholder="Count"
+                        onChange={handleInputChange}
+                        style={{ border: fieldErrors.maleCount ? '2px solid #dc2626' : undefined }} />
+                      {errMsg('maleCount')}
+                    </div>
+                    <div className="input-group" data-error={!!fieldErrors.pricePerMale}>
+                      <label>Daily Wage (Male) *</label>
+                      <input
+                        type="number" name="pricePerMale"
+                        value={formData.pricePerMale || ''}
+                        placeholder="Daily Wage"
+                        onChange={handleInputChange}
+                        style={{ border: fieldErrors.pricePerMale ? '2px solid #dc2626' : undefined }} />
+                      {errMsg('pricePerMale')}
+                    </div>
+                  </div>
+
+                  <div className="grid-2">
+                    <div className="input-group" data-error={!!fieldErrors.femaleCount}>
+                      <label>Female Workers Count</label>
+                      <input
+                        type="number" name="femaleCount"
+                        value={formData.femaleCount || ''}
+                        placeholder="Count"
+                        onChange={handleInputChange}
+                        style={{ border: fieldErrors.femaleCount ? '2px solid #dc2626' : undefined }} />
+                      {errMsg('femaleCount')}
+                    </div>
+                    <div className="input-group" data-error={!!fieldErrors.pricePerFemale}>
+                      <label>Daily Wage (Female) *</label>
+                      <input
+                        type="number" name="pricePerFemale"
+                        value={formData.pricePerFemale || ''}
+                        placeholder="Daily Wage"
+                        onChange={handleInputChange}
+                        style={{ border: fieldErrors.pricePerFemale ? '2px solid #dc2626' : undefined }} />
+                      {errMsg('pricePerFemale')}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Skills Specialization */}
+                <div style={{
+                  background: 'white', borderRadius: '20px', padding: '24px', 
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                    <div style={{ background: 'linear-gradient(135deg, #00aa55, #00cc66)', borderRadius: '10px', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Check size={18} color="white" />
+                    </div>
+                    <div>
+                      <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#1a2e1a', display: 'block' }}>Skills & Specializations</span>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Select all types of work this group can perform</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
+                    {availableWorkerSkills.map(skill => {
+                      const isSelected = selectedSkills.includes(skill);
+                      return (
+                        <div
+                          key={skill}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedSkills(prev => prev.filter(s => s !== skill));
+                              setSkillAllocations(prev => {
+                                const newAlloc = { ...prev };
+                                delete newAlloc[skill];
+                                return newAlloc;
+                              });
+                            } else {
+                              setSelectedSkills(prev => [...prev, skill]);
+                            }
+                          }}
+                          style={{
+                            padding: '10px 18px',
+                            borderRadius: '100px',
+                            border: `2px solid ${isSelected ? '#16a34a' : '#e2e8f0'}`,
+                            background: isSelected ? '#f0fdf4' : 'white',
+                            color: isSelected ? '#16a34a' : '#64748b',
+                            fontWeight: 600,
+                            fontSize: '0.9rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}
+                        >
+                          {isSelected && <Check size={16} />}
+                          {skill}
+                        </div>
+                      );
+                    })}
+                    
+                    {/* Add Custom Skill Option */}
+                    {!showCustomSkillInput ? (
+                      <div
+                        onClick={() => setShowCustomSkillInput(true)}
+                        style={{
+                          padding: '10px 18px',
+                          borderRadius: '100px',
+                          border: '2px dashed #cbd5e1',
+                          background: 'white',
+                          color: '#64748b',
+                          fontWeight: 600,
+                          fontSize: '0.9rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <Plus size={16} />
+                        Other
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <input
+                          type="text"
+                          value={newSkillName}
+                          onChange={(e) => setNewSkillName(e.target.value)}
+                          placeholder="Enter skill name..."
+                          style={{
+                            padding: '10px 14px',
+                            borderRadius: '100px',
+                            border: '2px solid #16a34a',
+                            fontSize: '0.9rem',
+                            outline: 'none',
+                            width: '180px'
+                          }}
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (newSkillName.trim() && !availableWorkerSkills.includes(newSkillName.trim())) {
+                                setAvailableWorkerSkills(prev => [...prev, newSkillName.trim()]);
+                                setSelectedSkills(prev => [...prev, newSkillName.trim()]);
+                                setNewSkillName('');
+                                setShowCustomSkillInput(false);
+                              }
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (newSkillName.trim() && !availableWorkerSkills.includes(newSkillName.trim())) {
+                              setAvailableWorkerSkills(prev => [...prev, newSkillName.trim()]);
+                              setSelectedSkills(prev => [...prev, newSkillName.trim()]);
+                            }
+                            setNewSkillName('');
+                            setShowCustomSkillInput(false);
+                          }}
+                          style={{
+                            padding: '10px 14px',
+                            borderRadius: '100px',
+                            background: '#16a34a',
+                            color: 'white',
+                            border: 'none',
+                            fontWeight: 600,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Add
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewSkillName('');
+                            setShowCustomSkillInput(false);
+                          }}
+                          style={{
+                            padding: '10px',
+                            borderRadius: '50%',
+                            background: '#f1f5f9',
+                            color: '#64748b',
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedSkills.length > 0 && (
+                    <div style={{ marginTop: '24px', borderTop: '1px solid #f1f5f9', paddingTop: '24px' }}>
+                      <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#334155', marginBottom: '16px' }}>Specify workers per skill (Optional but recommended)</h4>
+                      {selectedSkills.map(skill => {
+                        const mAlloc = skillAllocations[skill]?.male ?? '';
+                        const fAlloc = skillAllocations[skill]?.female ?? '';
+                        
+                        return (
+                          <div key={skill} style={{ 
+                            background: '#f8fafc', padding: '16px', borderRadius: '12px', marginBottom: '12px',
+                            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', alignItems: 'center'
+                          }}>
+                            <div style={{ fontWeight: 700, color: '#0f172a' }}>{skill}</div>
+                            
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', fontWeight: 600, color: '#334155' }}>
+                                <span style={{ fontSize: '1.2rem' }}>👨‍🌾</span> Male
+                              </span>
+                              <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                                <input
+                                  type="number"
+                                  style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', width: '100%' }}
+                                  value={mAlloc}
+                                  onChange={(e) => {
+                                    const valStr = e.target.value;
+                                    const val = valStr === '' ? '' : Math.max(0, parseInt(valStr) || 0);
+                                    setSkillAllocations(prev => ({
+                                      ...prev,
+                                      [skill]: { ...prev[skill], male: val }
+                                    }));
+                                  }}
+                                  placeholder="0"
+                                />
+                                <span style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '4px' }}>
+                                  Max available: {formData.maleCount || 0}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', fontWeight: 600, color: '#334155' }}>
+                                <span style={{ fontSize: '1.2rem' }}>👩‍🌾</span> Female
+                              </span>
+                              <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                                <input
+                                  type="number"
+                                  style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', width: '100%' }}
+                                  value={fAlloc}
+                                  onChange={(e) => {
+                                    const valStr = e.target.value;
+                                    const val = valStr === '' ? '' : Math.max(0, parseInt(valStr) || 0);
+                                    setSkillAllocations(prev => ({
+                                      ...prev,
+                                      [skill]: { ...prev[skill], female: val }
+                                    }));
+                                  }}
+                                  placeholder="0"
+                                />
+                                <span style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '4px' }}>
+                                  Max available: {formData.femaleCount || 0}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Allocation Summary */}
+                  {selectedSkills.length > 0 && (() => {
+                    const totalMaleAllocated = selectedSkills.reduce((sum, skill) => {
+                      const alloc = skillAllocations[skill] || { male: '' };
+                      return sum + (String(alloc.male) === '' ? 0 : Number(alloc.male));
+                    }, 0);
+
+                    const totalFemaleAllocated = selectedSkills.reduce((sum, skill) => {
+                      const alloc = skillAllocations[skill] || { female: '' };
+                      return sum + (String(alloc.female) === '' ? 0 : Number(alloc.female));
+                    }, 0);
+
+                    const maleExpected = Number(formData.maleCount || 0);
+                    const femaleExpected = Number(formData.femaleCount || 0);
+
+                    return (
+                      <div style={{
+                        marginTop: '20px',
+                        padding: '16px',
+                        borderRadius: '16px',
+                        background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                        border: '1px solid var(--border)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px'
+                      }}>
+                        <div style={{ fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                          Allocation Summary
+                        </div>
+                        <div className="grid-2" style={{ gap: '16px', fontSize: '0.9rem', fontWeight: 800 }}>
+                          <div style={{ color: totalMaleAllocated === maleExpected ? '#16a34a' : '#dc2626' }}>
+                            👨‍🌾 Male: {totalMaleAllocated} / {maleExpected} allocated
+                          </div>
+                          <div style={{ color: totalFemaleAllocated === femaleExpected ? '#16a34a' : '#dc2626' }}>
+                            👩‍🌾 Female: {totalFemaleAllocated} / {femaleExpected} allocated
+                          </div>
+                        </div>
+                        {(totalMaleAllocated !== maleExpected || totalFemaleAllocated !== femaleExpected) && (
+                          <div style={{ fontSize: '0.75rem', color: '#dc2626', fontWeight: 600, marginTop: '4px' }}>
+                            * Note: The sum of allocated workers per skill must match your total Male/Female counts exactly before submitting.
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+            
+            {sType !== 'Farm Workers' && (
+              <div className="input-group">
+                <label>{nameLabel}</label>
+                <input name="businessName" value={formData.businessName || ''} onChange={handleInputChange} placeholder={namePlaceholder} />
+              </div>
+            )}
 
             {/* Specialized Capacity Sections */}
             {sType === 'Ploughing' && (
@@ -2358,23 +2940,27 @@ const UploadItem: React.FC = () => {
               </div>
             )}
 
-            <div className="input-group" data-error={!!fieldErrors.pricePerDay}>
-              <label>{formData.serviceName === 'Electricians' ? 'Visiting Charge (₹) *' : 'Base Price Rate (₹/hr) *'}</label>
-              <input
-                type="number" name="pricePerDay"
-                value={formData.pricePerDay || ''}
-                onChange={handleInputChange}
-                style={{ border: fieldErrors.pricePerDay ? '2px solid #dc2626' : undefined }} />
-              {errMsg('pricePerDay')}
-            </div>
-            <div className="input-group">
-              <label>Operator Price (₹/hr)</label>
-              <input type="number" name="operatorPrice" value={formData.operatorPrice || ''} onChange={handleInputChange} />
-            </div>
-            <div className="input-group span-2">
-              <label>{descLabel}</label>
-              <textarea name="description" value={formData.description || ''} onChange={handleInputChange} placeholder={descPlaceholder}></textarea>
-            </div>
+            {sType !== 'Farm Workers' && (
+              <>
+                <div className="input-group" data-error={!!fieldErrors.pricePerDay}>
+                  <label>{formData.serviceName === 'Electricians' ? 'Visiting Charge (₹) *' : 'Base Price Rate (₹/hr) *'}</label>
+                  <input
+                    type="number" name="pricePerDay"
+                    value={formData.pricePerDay || ''}
+                    onChange={handleInputChange}
+                    style={{ border: fieldErrors.pricePerDay ? '2px solid #dc2626' : undefined }} />
+                  {errMsg('pricePerDay')}
+                </div>
+                <div className="input-group">
+                  <label>Operator Price (₹/hr)</label>
+                  <input type="number" name="operatorPrice" value={formData.operatorPrice || ''} onChange={handleInputChange} />
+                </div>
+                <div className="input-group span-2">
+                  <label>{descLabel}</label>
+                  <textarea name="description" value={formData.description || ''} onChange={handleInputChange} placeholder={descPlaceholder}></textarea>
+                </div>
+              </>
+            )}
           </div>
         );
       }
@@ -2397,7 +2983,6 @@ const UploadItem: React.FC = () => {
           {[
             { id: 'Equipment', icon: Tractor, label: 'Equipment', color: '#e8f5e9', fg: '#2e7d32' },
             { id: 'Vehicles', icon: Truck, label: 'Transport', color: '#e3f2fd', fg: '#1565c0' },
-            { id: 'Workers', icon: Users, label: 'Workers', color: '#f3e5f5', fg: '#6a1b9a' },
             { id: 'Services', icon: Sprout, label: 'Service', color: '#fff3e0', fg: '#e65100' },
           ].map((item) => (
             <motion.div
@@ -2543,7 +3128,7 @@ const UploadItem: React.FC = () => {
                 </div>
               </div>
 
-              <div className="form-section">
+              <div className="form-section" data-error={!!fieldErrors.imageUrl}>
                 <h3><Upload size={18} /> Media</h3>
                 <div
                   className="image-upload-box"
@@ -2556,8 +3141,8 @@ const UploadItem: React.FC = () => {
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    border: formData.imageUrl ? '2px solid var(--primary-light)' : '2px dashed var(--border)',
-                    background: formData.imageUrl ? 'rgba(0,0,0,0.02)' : 'transparent',
+                    border: fieldErrors.imageUrl ? '2px dashed #dc2626' : (formData.imageUrl ? '2px solid var(--primary-light)' : '2px dashed var(--border)'),
+                    background: fieldErrors.imageUrl ? '#fef2f2' : (formData.imageUrl ? 'rgba(0,0,0,0.02)' : 'transparent'),
                     cursor: 'pointer'
                   }}
                 >
@@ -2612,6 +3197,7 @@ const UploadItem: React.FC = () => {
                   accept="image/*"
                   style={{ display: 'none' }}
                 />
+                {errMsg('imageUrl')}
               </div>
 
               <div className="form-footer">
