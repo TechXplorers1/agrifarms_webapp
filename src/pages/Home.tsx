@@ -237,24 +237,25 @@ const Home: React.FC = () => {
   };
 
   const rentalItems: ServiceItem[] = [
-    { name: 'Tractors', icon: Tractor, image: '/red_tractor.jpg', subtitle: 'Plough & Cultivate', color: '#e8f5e9', iconColor: '#2e7d32', category: 'Rentals' },
-    { name: 'Harvesters', icon: Sprout, image: '/green_harvester.jpg', subtitle: 'Wheat & Paddy Harvest', color: '#fff9c4', iconColor: '#f9a825', category: 'Rentals' },
-    { name: 'Sprayers', icon: Droplets, image: '/crop_sprayer.jpg', subtitle: 'Drone & Pest Control', color: '#e3f2fd', iconColor: '#1565c0', category: 'Rentals' },
+    { name: 'Tractor', icon: Tractor, image: '/red_tractor.jpg', subtitle: 'Plough & Cultivate', color: '#e8f5e9', iconColor: '#2e7d32', category: 'Rentals' },
+    { name: 'Harvester', icon: Sprout, image: '/green_harvester.jpg', subtitle: 'Wheat & Paddy Harvest', color: '#fff9c4', iconColor: '#f9a825', category: 'Rentals' },
+    { name: 'Sprayer', icon: Droplets, image: '/crop_sprayer.jpg', subtitle: 'Drone & Pest Control', color: '#e3f2fd', iconColor: '#1565c0', category: 'Rentals' },
     { name: 'JCB', icon: Construction, image: '/jcb_loader.jpg', subtitle: 'Digging & Leveling', color: '#fff3e0', iconColor: '#e65100', category: 'Rentals' },
+    { name: 'Trolley', icon: Truck, image: '/tractor_trolley.jpg', subtitle: 'Transportation & Hauling', color: '#f3e5f5', iconColor: '#7b1fa2', category: 'Rentals' },
   ];
 
   const transportItems: ServiceItem[] = [
     { name: 'Trucks', icon: Truck, image: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=600', subtitle: 'Heavy Load Transport', color: '#fff3e0', iconColor: '#e65100', category: 'Transport' },
     { name: 'Tractors with Trolley', icon: Tractor, image: '/tractor_trolley.jpg', subtitle: 'Farm to Market', color: '#e8f5e9', iconColor: '#2e7d32', category: 'Transport' },
-    { name: 'Mini Trucks', icon: Truck, image: '/mini_truck.jpg', subtitle: 'Local Delivery', color: '#e3f2fd', iconColor: '#1565c0', category: 'Transport' },
-    { name: 'Loaders', icon: Truck, image: '/jcb_loader.jpg', subtitle: 'Material Handling', color: '#fff9c4', iconColor: '#f9a825', category: 'Transport' },
+    { name: 'Mini Trucks', icon: Truck, image: '/mini_truck.jpg', subtitle: 'Local Delivery', color: '#e3f2fd', iconColor: '#1565c0', category: 'Transport' }
   ];
 
   const serviceItems: ServiceItem[] = [
     { name: 'Ploughing', icon: Tractor, image: '/Ploughing_tractor.jpg', subtitle: 'Field Preparation', color: '#e8f5e9', iconColor: '#2e7d32', category: 'Services' },
-    { name: 'Harvesting', icon: Sprout, image: '/green_harvester.jpg', subtitle: 'Crop Gathering', color: '#fff9c4', iconColor: '#f9a825', category: 'Services' },
-    { name: 'Drone Spraying', icon: CloudSun, image: '/drone_sprayer.jpg', subtitle: 'Precision Agriculture', color: '#e3f2fd', iconColor: '#1565c0', category: 'Services' },
-    { name: 'Seeding', icon: Sprout, image: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&q=80&w=600', subtitle: 'Planting Seeds', color: '#fff3e0', iconColor: '#e65100', category: 'Services' },
+    { name: 'Electricians', icon: LifeBuoy, image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=600', subtitle: 'Repairs & Maintenance', color: '#fff9c4', iconColor: '#f9a825', category: 'Services' },
+    { name: 'Harvesting', icon: Sprout, image: '/green_harvester.jpg', subtitle: 'Crop Gathering', color: '#fff3e0', iconColor: '#e65100', category: 'Services' },
+    { name: 'Farm workers', icon: Tractor, image: '/mini_truck.jpg', subtitle: 'Daily & Contract Labor', color: '#e3f2fd', iconColor: '#1565c0', category: 'Services' },
+    { name: 'Drone Spraying', icon: CloudSun, image: '/drone_sprayer.jpg', subtitle: 'Precision Agriculture', color: '#e8f5e9', iconColor: '#2e7d32', category: 'Services' }
   ];
 
 
@@ -557,7 +558,7 @@ const Home: React.FC = () => {
           </div>
 
           <div className="categories-grid responsive-grid-4" style={{ gap: '24px' }}>
-            {rentalItems.map((item, idx) => (
+            {rentalItems.slice(0, 4).map((item, idx) => (
               <motion.div
                 key={item.name}
                 initial={{ opacity: 0 }}
@@ -682,7 +683,7 @@ const Home: React.FC = () => {
           </div>
 
           <div className="categories-grid responsive-grid-4" style={{ gap: '24px' }}>
-            {serviceItems.map((item, idx) => (
+            {serviceItems.slice(0, 4).map((item, idx) => (
               <motion.div
                 key={item.name}
                 initial={{ opacity: 0, y: 40 }}
@@ -809,7 +810,7 @@ const Home: React.FC = () => {
           </div>
 
           <div className="categories-grid responsive-grid-4" style={{ gap: '24px' }}>
-            {transportItems.map((item, idx) => (
+            {transportItems.slice(0, 4).map((item, idx) => (
               <motion.div
                 key={item.name}
                 initial={{ opacity: 0, y: 40 }}
@@ -1070,111 +1071,7 @@ const Home: React.FC = () => {
           document.body
         )}
 
-        {/* Quick Tools Row (Upgraded to Cards) */}
-        <section className="section" style={{ marginTop: '40px', marginBottom: '20px', paddingBottom: '0px' }}>
-          <div className="section-header" style={{ marginBottom: '28px' }}>
-            <div className="flex items-center gap-3">
-              <div style={{
-                background: '#e0f2fe',
-                padding: '12px',
-                borderRadius: '16px',
-                boxShadow: 'inset 0 2px 4px rgba(2,132,199,0.06)'
-              }}>
-                <TrendingUp size={26} color="#0284c7" />
-              </div>
-              <h3 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>{t('quickTools', 'Quick Tools')}</h3>
-            </div>
-          </div>
 
-          <div className="categories-grid responsive-grid-4" style={{ gap: '24px' }}>
-            {tools.map((tool, idx) => (
-              <motion.div
-                key={tool.name}
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 80,
-                  damping: 16,
-                  delay: 0.08 * idx
-                }}
-                whileHover={{
-                  y: -10,
-                  transition: { type: 'spring', stiffness: 300, damping: 15 }
-                }}
-                whileTap={{ scale: 0.98 }}
-                className="premium-card visual-card"
-                style={{
-                  height: '280px',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  borderRadius: '28px',
-                  boxShadow: '0 12px 30px -10px rgba(15, 23, 42, 0.08)'
-                }}
-                onClick={() => {
-                  if (tool.name === 'Community') navigate('/community');
-                  else if (tool.name === 'Crop Advisory') navigate('/crop-advisory');
-                  else if (tool.name === 'Calculators') navigate('/calculators');
-                  else navigate('/help');
-                }}
-              >
-                <img
-                  src={tool.image}
-                  alt={tool.name}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    position: 'absolute',
-                    top: 0, left: 0
-                  }}
-                />
-
-                <div className="overlay" style={{
-                  padding: '28px 24px',
-                  position: 'absolute',
-                  bottom: 0, left: 0, right: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
-                  height: '100%',
-                  zIndex: 2
-                }}>
-                  <span style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    letterSpacing: '1.5px',
-                    opacity: 0.85,
-                    marginBottom: '6px',
-                    color: 'rgba(255,255,255,0.9)'
-                  }}>{tool.subtitle}</span>
-
-                  <h4 style={{
-                    fontSize: '1.65rem',
-                    color: 'white',
-                    fontWeight: 900,
-                    letterSpacing: '-0.3px',
-                    lineHeight: '1.2'
-                  }}>{tool.label}</h4>
-
-                  <div className="rent-badge-btn" style={{
-                    marginTop: '14px',
-                    background: 'rgba(255,255,255,0.2)',
-                    width: 'fit-content',
-                    padding: '6px 16px',
-                    borderRadius: '100px',
-                    backdropFilter: 'blur(8px)',
-                    border: '1px solid rgba(255,255,255,0.15)'
-                  }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'white' }}>Open</span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </section>
       </div>
 
       {/* Location Selector Modal */}

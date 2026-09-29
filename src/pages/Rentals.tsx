@@ -25,6 +25,7 @@ interface Equipment {
   latitude?: string | number;
   longitude?: string | number;
   distance?: number;
+  isBlocked?: boolean;
 }
 
 const calculateHaversine = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -128,6 +129,30 @@ const Rentals: React.FC = () => {
       setUserCoords(coords);
 
       try {
+        let reportsRes: any = { data: [] };
+        if (isAuthenticated && coords) {
+          const storedUser = localStorage.getItem('agrifarm_user');
+          if (storedUser) {
+            try {
+              const parsed = JSON.parse(storedUser);
+              if (parsed.id) {
+                reportsRes = await apiService.getUserReports(parsed.id).catch(() => ({ data: [] }));
+              }
+            } catch (err) {}
+          }
+        }
+        
+        const blockedItemIds = new Set<string>();
+        const blockedProviderIds = new Set<string>();
+        if (reportsRes.data && Array.isArray(reportsRes.data)) {
+          reportsRes.data.forEach((r: any) => {
+            if (r.blocked) {
+              if (r.reportedItemId) blockedItemIds.add(r.reportedItemId);
+              if (r.reportedProviderId) blockedProviderIds.add(r.reportedProviderId);
+            }
+          });
+        }
+
         const [equipRes, vehRes] = await Promise.all([
           apiService.getEquipment(),
           apiService.getVehicles()
@@ -141,7 +166,11 @@ const Rentals: React.FC = () => {
           pricePerHour: v.pricePerHour || v.pricePerKm,
           operatorAvailable: v.driverIncluded
         }));
-        const rawItems = [...rawEquip, ...rawVeh];
+        const rawItems = [...rawEquip, ...rawVeh].map(v => ({
+          ...v,
+          id: v.equipmentId,
+          isBlocked: blockedItemIds.has(v.equipmentId) || blockedProviderIds.has(v.ownerId),
+        }));
 
         // Calculate distances
         const processedItems = rawItems.map((item: any) => {
@@ -300,6 +329,23 @@ const Rentals: React.FC = () => {
               >
                 <div className="asset-image">
                   <img src={item.imageUrl || 'https://images.unsplash.com/photo-1594913785162-e6785b493bd2?auto=format&fit=crop&q=80&w=400'} alt={item.brandModel} />
+                  {item.isBlocked && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '12px',
+                      right: '12px',
+                      backgroundColor: 'rgba(239, 68, 68, 0.95)',
+                      color: 'white',
+                      padding: '4px 10px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      backdropFilter: 'blur(4px)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                    }}>
+                      Reported
+                    </div>
+                  )}
                   {!item.isAvailable && <div className="status-badge busy">{t('rentals.booked')}</div>}
                   {item.isAvailable && <div className="status-badge available">{t('rentals.available')}</div>}
                 </div>

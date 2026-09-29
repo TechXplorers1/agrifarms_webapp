@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { X, Loader2, Flag } from 'lucide-react';
 import { apiService } from '../services/apiService';
@@ -56,7 +57,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ itemId, itemName, providerId,
     }
   };
 
-  return (
+  return createPortal(
     <div style={{
       position: 'fixed',
       top: 0,
@@ -222,7 +223,8 @@ const ReportModal: React.FC<ReportModalProps> = ({ itemId, itemName, providerId,
           </form>
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

@@ -173,12 +173,12 @@ const ManageAssets: React.FC = () => {
               {assets.map((asset) => {
                 const isVehicle = activeTab === 'Vehicles';
                 const id = asset.vehicleId || asset.equipmentId || asset.serviceId || asset.groupId;
-                const titleText = isVehicle && asset.brand 
-                  ? `${asset.brand} ${asset.model || ''}` 
-                  : (asset.vehicleType || asset.brandModel || asset.businessName || asset.groupName);
-                const title = asset.yearOfManufacture ? `${titleText} (${asset.yearOfManufacture})` : titleText;
-                
                 const isWorker = asset.groupId != null;
+                const titleText = isVehicle 
+                  ? (asset.name || (asset.brand ? `${asset.brand} ${asset.model || ''}` : asset.vehicleType))
+                  : (asset.vehicleType || asset.brandModel || asset.businessName || asset.groupName);
+                const title = asset.yearOfManufacture && !isWorker ? `${titleText} (${asset.yearOfManufacture})` : titleText;
+                
                 const subtitle = isVehicle 
                   ? `${asset.vehicleType || 'Transport'} • ${asset.vehicleNumber || 'No Plate'}` 
                   : (isWorker 

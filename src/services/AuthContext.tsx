@@ -226,6 +226,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setUser(activeUser);
         localStorage.setItem('agrifarm_user', JSON.stringify(activeUser));
+        if (authResponseData.access_token) {
+          localStorage.setItem('agrifarm_token', authResponseData.access_token);
+        }
         setIsVerifyingOtp(false);
         setPendingPhone('');
         setPendingFullName('');
@@ -253,6 +256,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     setUser(null);
     localStorage.removeItem('agrifarm_user');
+    localStorage.removeItem('agrifarm_token');
     setIsVerifyingOtp(false);
     setPendingPhone('');
     setPendingFullName('');

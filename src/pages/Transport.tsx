@@ -41,6 +41,7 @@ interface ServiceItem {
   yearOfManufacture?: number;
   vehicleCondition?: string;
   ownerBusinessName?: string;
+  isBlocked?: boolean;
 }
 
 const calculateHaversine = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -79,8 +80,7 @@ const Transport: React.FC = () => {
     { value: 'All', label: 'All Transport' },
     { value: 'Trucks', label: 'Trucks' },
     { value: 'Tractors with Trolley', label: 'Tractors with Trolley' },
-    { value: 'Mini Trucks', label: 'Mini Trucks' },
-    { value: 'Loaders', label: 'Loaders' }
+    { value: 'Mini Trucks', label: 'Mini Trucks' }
   ];
 
   useEffect(() => {
@@ -143,6 +143,30 @@ const Transport: React.FC = () => {
       setUserCoords(coords);
 
       try {
+        let reportsRes: any = { data: [] };
+        if (isAuthenticated && coords) {
+          const storedUser = localStorage.getItem('agrifarm_user');
+          if (storedUser) {
+            try {
+              const parsed = JSON.parse(storedUser);
+              if (parsed.id) {
+                reportsRes = await apiService.getUserReports(parsed.id).catch(() => ({ data: [] }));
+              }
+            } catch (err) {}
+          }
+        }
+        
+        const blockedItemIds = new Set<string>();
+        const blockedProviderIds = new Set<string>();
+        if (reportsRes.data && Array.isArray(reportsRes.data)) {
+          reportsRes.data.forEach((r: any) => {
+            if (r.blocked) {
+              if (r.reportedItemId) blockedItemIds.add(r.reportedItemId);
+              if (r.reportedProviderId) blockedProviderIds.add(r.reportedProviderId);
+            }
+          });
+        }
+
         const [veh] = await Promise.all([
           apiService.getVehicles(),
           new Promise(resolve => setTimeout(resolve, 1000))
@@ -151,7 +175,7 @@ const Transport: React.FC = () => {
         const normalized: ServiceItem[] = [
           ...(veh.data || []).map((v: any) => ({
             id: v.vehicleId,
-            name: v.brand && v.model ? `${v.brand} ${v.model}` : (v.vehicleType || 'Transport'),
+            name: v.name || (v.brand && v.model ? `${v.brand} ${v.model}` : (v.vehicleType || 'Transport')),
             category: v.vehicleType || 'Transport',
             price: v.pricePerHour ? `₹${v.pricePerHour}/hr` : (v.pricePerKm ? `₹${v.pricePerKm}/km` : `₹${v.pricePerKmOrTrip || 0}`),
             imageUrl: v.imageUrl,
@@ -168,7 +192,8 @@ const Transport: React.FC = () => {
             model: v.model,
             yearOfManufacture: v.yearOfManufacture,
             vehicleCondition: v.vehicleCondition,
-            ownerBusinessName: v.ownerBusinessName
+            ownerBusinessName: v.ownerBusinessName,
+            isBlocked: blockedItemIds.has(v.vehicleId) || blockedProviderIds.has(v.ownerId),
           }))
         ];
 
@@ -322,6 +347,23 @@ const Transport: React.FC = () => {
               >
                 <div className="asset-image">
                   <img src={apiService.getFullImageUrl(item.imageUrl) || 'https://images.unsplash.com/photo-1594913785162-e6785b493bd2?auto=format&fit=crop&q=80&w=400'} alt={item.name} />
+                  {item.isBlocked && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '12px',
+                      right: '12px',
+                      backgroundColor: 'rgba(239, 68, 68, 0.95)',
+                      color: 'white',
+                      padding: '4px 10px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      backdropFilter: 'blur(4px)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                    }}>
+                      Reported
+                    </div>
+                  )}
                   <div className="category-tag">
                     {item.type === 'Service' && <Hammer size={12} />}
                     {item.type === 'Transport' && <Truck size={12} />}

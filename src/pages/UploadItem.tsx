@@ -58,7 +58,7 @@ const UploadItem: React.FC = () => {
   const [showDropdown, setShowDropdown] = useState(false);
 
   // Vehicle Category States
-  const [dbVehicleCategories, setDbVehicleCategories] = useState<string[]>([]);
+  const [dbVehicleCategories, setDbVehicleCategories] = useState<string[]>(['Trucks', 'Tractors with Trolley', 'Mini Trucks']);
   const [newVehicleCategoryName, setNewVehicleCategoryName] = useState('');
   const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false);
 
@@ -205,6 +205,7 @@ const UploadItem: React.FC = () => {
 
   useEffect(() => {
     if (editData) {
+      console.log('UPLOAD_ITEM - editData received:', editData);
       const mappedData = { ...editData };
       
       // Map back Mandal if we appended it to Village
@@ -397,6 +398,7 @@ const UploadItem: React.FC = () => {
            setSelectedEquipModel(mappedData.model);
         }
       }
+      console.log('UPLOAD_ITEM - formData set to:', mappedData);
     }
   }, [editData, initialCategory]);
 
@@ -416,7 +418,12 @@ const UploadItem: React.FC = () => {
       try {
         const res = await apiService.getVehicleCategories();
         if (res && res.data) {
-          setDbVehicleCategories(res.data.map((vc: any) => vc.name));
+          const fetchedCategories = res.data.map((vc: any) => vc.name);
+          const oldCategoriesToHide = ['Tractor', 'Harvester', 'JCB', 'Mini Truck', 'Tractor Trolley', 'Pickup Truck', 'Loaders', 'Others'];
+          const baseCategories = ['Trucks', 'Tractors with Trolley', 'Mini Trucks'];
+          const filteredDbCategories = fetchedCategories.filter((c: string) => !oldCategoriesToHide.includes(c) && !baseCategories.includes(c));
+          
+          setDbVehicleCategories([...baseCategories, ...filteredDbCategories]);
         }
       } catch (err) {
         console.error('Failed to fetch vehicle categories:', err);
@@ -527,6 +534,7 @@ const UploadItem: React.FC = () => {
     }
 
     if (category === 'Vehicles') {
+      if (!formData.name?.trim()) errors.name = 'Vehicle Name is required';
       if (!formData.ownerBusinessName?.trim()) errors.ownerBusinessName = 'Owner / Business Name is required';
       if (!formData.vehicleType?.trim()) errors.vehicleType = 'Vehicle type / category is required';
       if (!formData.brand?.trim()) errors.brand = 'Brand is required';
@@ -535,7 +543,6 @@ const UploadItem: React.FC = () => {
       if (!formData.loadCapacity) errors.loadCapacity = 'Load capacity is required';
       if (!formData.vehicleCondition) errors.vehicleCondition = 'Condition is required';
       if (!formData.pricePerKm) errors.pricePerKm = 'Price per KM is required';
-      if (!formData.pricePerHour) errors.pricePerHour = 'Price per hour is required';
       if (formData.driverIncluded && !formData.operatorPrice) errors.operatorPrice = 'Operator price is required';
     }
 
@@ -1557,253 +1564,297 @@ const UploadItem: React.FC = () => {
         {
           const isDriverIncluded = formData.driverIncluded === true;
           return (
-            <div className="form-fields grid-2">
-              <div className="input-group" data-error={!!fieldErrors.ownerBusinessName}>
-                <label>Owner / Business Name *</label>
-                <input
-                  name="ownerBusinessName"
-                  value={formData.ownerBusinessName || ''}
-                  placeholder="e.g. Ram Singh Transports"
-                  onChange={handleInputChange}
-                  style={{ border: fieldErrors.ownerBusinessName ? '2px solid #dc2626' : undefined }} />
-                {errMsg('ownerBusinessName')}
-              </div>
-
-              <div className="input-group" style={{ position: 'relative' }} data-error={!!fieldErrors.vehicleType}>
-                <label>Vehicle Type (Category) *</label>
-                {editData ? (
-                  <div style={{
-                    padding: '12px',
-                    background: '#f1f5f9',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    color: '#475569',
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
-                    {formData.vehicleType}
+            <div className="form-fields">
+              
+              {/* Basic Information Section */}
+              <div style={{
+                background: 'white', borderRadius: '20px', padding: '24px', 
+                boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9', marginBottom: '24px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ background: 'linear-gradient(135deg, #00aa55, #00cc66)', borderRadius: '10px', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Truck size={18} color="white" />
                   </div>
-                ) : (
-                  <>
-                    <select
-                      name="vehicleType"
-                      value={formData.vehicleType || ''}
-                      onChange={(e) => {
-                        clearError('vehicleType');
-                        const val = e.target.value;
-                        if (val === 'Others') {
-                          setShowCustomCategoryInput(true);
-                          setFormData((prev: any) => ({ ...prev, vehicleType: '' }));
-                        } else {
-                          setShowCustomCategoryInput(false);
-                          setFormData((prev: any) => ({ ...prev, vehicleType: val }));
-                        }
-                      }}
-                      style={{ border: fieldErrors.vehicleType ? '2px solid #dc2626' : undefined }}>
-                      <option value="">Select Category</option>
-                      {dbVehicleCategories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                      <option value="Others">Others (Add custom category)</option>
-                    </select>
-                  </>
-                )}
-
-                {showCustomCategoryInput && (
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                  <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#1a2e1a' }}>Basic Information</span>
+                </div>
+                <div className="grid-2">
+                  <div className="input-group" data-error={!!fieldErrors.name}>
+                    <label>Vehicle Name *</label>
                     <input
-                      type="text"
-                      placeholder="Type new category..."
-                      value={newVehicleCategoryName}
-                      onChange={(e) => setNewVehicleCategoryName(e.target.value)}
-                      style={{
-                        flex: 1,
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border)',
-                        fontSize: '0.85rem'
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const trimmed = newVehicleCategoryName.trim();
-                        if (!trimmed) return;
-                        try {
-                          const res = await apiService.createVehicleCategory({ name: trimmed });
-                          if (res && res.data) {
-                            const addedName = res.data.name;
-                            if (!dbVehicleCategories.includes(addedName)) {
-                              setDbVehicleCategories(prev => [...prev, addedName]);
-                            }
-                            setFormData((prev: any) => ({ ...prev, vehicleType: addedName }));
-                            setNewVehicleCategoryName('');
-                            setShowCustomCategoryInput(false);
-                          }
-                        } catch (err) {
-                          console.error('Failed to add custom category:', err);
-                          alert('Failed to add category. It might already exist.');
-                        }
-                      }}
-                      className="btn-primary"
-                      style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700 }}
-                    >
-                      Add
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowCustomCategoryInput(false);
-                        setNewVehicleCategoryName('');
-                      }}
-                      style={{
+                      name="name"
+                      value={formData.name || ''}
+                      placeholder="e.g. My Mini Truck"
+                      onChange={handleInputChange}
+                      style={{ border: fieldErrors.name ? '2px solid #dc2626' : undefined }} />
+                    {errMsg('name')}
+                  </div>
+
+                  <div className="input-group" data-error={!!fieldErrors.ownerBusinessName}>
+                    <label>Owner / Business Name *</label>
+                    <input
+                      name="ownerBusinessName"
+                      value={formData.ownerBusinessName || ''}
+                      placeholder="e.g. Ram Singh Transports"
+                      onChange={handleInputChange}
+                      style={{ border: fieldErrors.ownerBusinessName ? '2px solid #dc2626' : undefined }} />
+                    {errMsg('ownerBusinessName')}
+                  </div>
+
+                  <div className="input-group span-2" style={{ position: 'relative' }} data-error={!!fieldErrors.vehicleType}>
+                    <label>Vehicle Type (Category) *</label>
+                    {editData ? (
+                      <div style={{
+                        padding: '12px',
                         background: '#f1f5f9',
-                        border: 'none',
-                        color: '#64748b',
-                        padding: '8px',
+                        border: '1px solid #e2e8f0',
                         borderRadius: '8px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <X size={16} />
-                    </button>
+                        color: '#475569',
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}>
+                        {formData.vehicleType}
+                      </div>
+                    ) : (
+                      <>
+                        <select
+                          name="vehicleType"
+                          value={formData.vehicleType || ''}
+                          onChange={(e) => {
+                            clearError('vehicleType');
+                            const val = e.target.value;
+                            if (val === 'Others') {
+                              setShowCustomCategoryInput(true);
+                              setFormData((prev: any) => ({ ...prev, vehicleType: '' }));
+                            } else {
+                              setShowCustomCategoryInput(false);
+                              setFormData((prev: any) => ({ ...prev, vehicleType: val }));
+                            }
+                          }}
+                          style={{ border: fieldErrors.vehicleType ? '2px solid #dc2626' : undefined }}>
+                          <option value="">Select Category</option>
+                          {dbVehicleCategories.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                          <option value="Others">Others (Add custom category)</option>
+                        </select>
+                      </>
+                    )}
+
+                    {showCustomCategoryInput && (
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                        <input
+                          type="text"
+                          placeholder="Type new category..."
+                          value={newVehicleCategoryName}
+                          onChange={(e) => setNewVehicleCategoryName(e.target.value)}
+                          style={{
+                            flex: 1,
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            border: '1px solid var(--border)',
+                            fontSize: '0.85rem'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const trimmed = newVehicleCategoryName.trim();
+                            if (!trimmed) return;
+                            try {
+                              const res = await apiService.createVehicleCategory({ name: trimmed });
+                              if (res && res.data) {
+                                const addedName = res.data.name;
+                                if (!dbVehicleCategories.includes(addedName)) {
+                                  setDbVehicleCategories(prev => [...prev, addedName]);
+                                }
+                                setFormData((prev: any) => ({ ...prev, vehicleType: addedName }));
+                                setNewVehicleCategoryName('');
+                                setShowCustomCategoryInput(false);
+                              }
+                            } catch (err) {
+                              console.error('Failed to add custom category:', err);
+                              alert('Failed to add category. It might already exist.');
+                            }
+                          }}
+                          className="btn-primary"
+                          style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700 }}
+                        >
+                          Add
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowCustomCategoryInput(false);
+                            setNewVehicleCategoryName('');
+                          }}
+                          style={{
+                            background: '#f1f5f9',
+                            border: 'none',
+                            color: '#64748b',
+                            padding: '8px',
+                            borderRadius: '8px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    )}
+                    {errMsg('vehicleType')}
                   </div>
-                )}
-                {errMsg('vehicleType')}
-              </div>
-
-              <div className="input-group" data-error={!!fieldErrors.brand}>
-                <label>Brand *</label>
-                <input
-                  name="brand"
-                  value={formData.brand || ''}
-                  placeholder="e.g. Tata, Mahindra"
-                  onChange={handleInputChange}
-                  style={{ border: fieldErrors.brand ? '2px solid #dc2626' : undefined }} />
-                {errMsg('brand')}
-              </div>
-
-              <div className="input-group" data-error={!!fieldErrors.model}>
-                <label>Model *</label>
-                <input
-                  name="model"
-                  value={formData.model || ''}
-                  placeholder="e.g. Ace Gold, Bolero Pikup"
-                  onChange={handleInputChange}
-                  style={{ border: fieldErrors.model ? '2px solid #dc2626' : undefined }} />
-                {errMsg('model')}
-              </div>
-
-              <div className="input-group" data-error={!!fieldErrors.vehicleNumber}>
-                <label>Vehicle Number *</label>
-                <input
-                  name="vehicleNumber"
-                  value={formData.vehicleNumber || ''}
-                  placeholder="PB-XX-XXXX"
-                  onChange={handleInputChange}
-                  style={{ border: fieldErrors.vehicleNumber ? '2px solid #dc2626' : undefined }} />
-                {errMsg('vehicleNumber')}
-              </div>
-
-              <div className="input-group" data-error={!!fieldErrors.yearOfManufacture}>
-                <label>Year of Manufacture</label>
-                <input
-                  type="number"
-                  name="yearOfManufacture"
-                  value={formData.yearOfManufacture || ''}
-                  placeholder="e.g. 2020"
-                  onChange={handleInputChange}
-                  style={{ border: fieldErrors.yearOfManufacture ? '2px solid #dc2626' : undefined }} />
-                {errMsg('yearOfManufacture')}
-              </div>
-
-              <div className="input-group" data-error={!!fieldErrors.loadCapacity}>
-                <label>Load Capacity (Tons) *</label>
-                <input
-                  type="number" name="loadCapacity"
-                  value={formData.loadCapacity || ''}
-                  placeholder="2"
-                  onChange={handleInputChange}
-                  style={{ border: fieldErrors.loadCapacity ? '2px solid #dc2626' : undefined }} />
-                {errMsg('loadCapacity')}
-              </div>
-
-              <div className="input-group" data-error={!!fieldErrors.vehicleCondition}>
-                <label>Vehicle Condition *</label>
-                <select
-                  name="vehicleCondition"
-                  value={formData.vehicleCondition || ''}
-                  onChange={handleInputChange}
-                  style={{ border: fieldErrors.vehicleCondition ? '2px solid #dc2626' : undefined }}>
-                  <option value="">Select Condition</option>
-                  <option value="NEW">New</option>
-                  <option value="GOOD">Good</option>
-                  <option value="MANAGABLE">Manageable</option>
-                  <option value="AVERAGE">Average</option>
-                </select>
-                {errMsg('vehicleCondition')}
-              </div>
-
-              <div className="input-group" data-error={!!fieldErrors.pricePerKm}>
-                <label>Price Per KM (₹) *</label>
-                <input
-                  type="number"
-                  name="pricePerKm"
-                  value={formData.pricePerKm || ''}
-                  placeholder="e.g. 15"
-                  onChange={handleInputChange}
-                  style={{ border: fieldErrors.pricePerKm ? '2px solid #dc2626' : undefined }} />
-                {errMsg('pricePerKm')}
-              </div>
-
-              <div className="input-group" data-error={!!fieldErrors.pricePerHour}>
-                <label>Price Per Hour (₹) *</label>
-                <input
-                  type="number"
-                  name="pricePerHour"
-                  value={formData.pricePerHour || ''}
-                  placeholder="e.g. 300"
-                  onChange={handleInputChange}
-                  style={{ border: fieldErrors.pricePerHour ? '2px solid #dc2626' : undefined }} />
-                {errMsg('pricePerHour')}
-              </div>
-
-              <div className="input-group" style={{ gridColumn: 'span 2' }}>
-                <label style={{ display: 'block', fontWeight: 800, marginBottom: '8px' }}>Operator Option</label>
-                <div style={{ display: 'flex', gap: '24px', marginTop: '4px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
-                    <input
-                      type="radio"
-                      name="driverIncluded"
-                      checked={!isDriverIncluded}
-                      onChange={() => setFormData((prev: any) => ({ ...prev, driverIncluded: false, operatorPrice: '' }))}
-                    />
-                    <span>Without Operator (Self Drive)</span>
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
-                    <input
-                      type="radio"
-                      name="driverIncluded"
-                      checked={isDriverIncluded}
-                      onChange={() => setFormData((prev: any) => ({ ...prev, driverIncluded: true }))}
-                    />
-                    <span>With Operator</span>
-                  </label>
                 </div>
               </div>
 
-              {isDriverIncluded && (
-                <div className="input-group" style={{ gridColumn: 'span 2' }}>
-                  <label>Operator Price (₹/trip or km)</label>
-                  <input
-                    type="number"
-                    name="operatorPrice"
-                    value={formData.operatorPrice || ''}
-                    placeholder="e.g. 500"
-                    onChange={handleInputChange} />
+              {/* Vehicle Specifications Section */}
+              <div style={{
+                background: 'white', borderRadius: '20px', padding: '24px', 
+                boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9', marginBottom: '24px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ background: 'linear-gradient(135deg, #00aa55, #00cc66)', borderRadius: '10px', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Plus size={18} color="white" />
+                  </div>
+                  <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#1a2e1a' }}>Vehicle Specifications</span>
                 </div>
-              )}
+                <div className="grid-2">
+                  <div className="input-group" data-error={!!fieldErrors.brand}>
+                    <label>Brand *</label>
+                    <input
+                      name="brand"
+                      value={formData.brand || ''}
+                      placeholder="e.g. Tata, Mahindra"
+                      onChange={handleInputChange}
+                      style={{ border: fieldErrors.brand ? '2px solid #dc2626' : undefined }} />
+                    {errMsg('brand')}
+                  </div>
+
+                  <div className="input-group" data-error={!!fieldErrors.model}>
+                    <label>Model *</label>
+                    <input
+                      name="model"
+                      value={formData.model || ''}
+                      placeholder="e.g. Ace Gold, Bolero Pikup"
+                      onChange={handleInputChange}
+                      style={{ border: fieldErrors.model ? '2px solid #dc2626' : undefined }} />
+                    {errMsg('model')}
+                  </div>
+
+                  <div className="input-group" data-error={!!fieldErrors.vehicleNumber}>
+                    <label>Vehicle Number *</label>
+                    <input
+                      name="vehicleNumber"
+                      value={formData.vehicleNumber || ''}
+                      placeholder="PB-XX-XXXX"
+                      onChange={handleInputChange}
+                      style={{ border: fieldErrors.vehicleNumber ? '2px solid #dc2626' : undefined }} />
+                    {errMsg('vehicleNumber')}
+                  </div>
+
+                  <div className="input-group" data-error={!!fieldErrors.yearOfManufacture}>
+                    <label>Year of Manufacture</label>
+                    <input
+                      type="number"
+                      name="yearOfManufacture"
+                      value={formData.yearOfManufacture || ''}
+                      placeholder="e.g. 2020"
+                      onChange={handleInputChange}
+                      style={{ border: fieldErrors.yearOfManufacture ? '2px solid #dc2626' : undefined }} />
+                    {errMsg('yearOfManufacture')}
+                  </div>
+
+                  <div className="input-group" data-error={!!fieldErrors.loadCapacity}>
+                    <label>Load Capacity (Tons) *</label>
+                    <input
+                      type="number" name="loadCapacity"
+                      value={formData.loadCapacity || ''}
+                      placeholder="2"
+                      onChange={handleInputChange}
+                      style={{ border: fieldErrors.loadCapacity ? '2px solid #dc2626' : undefined }} />
+                    {errMsg('loadCapacity')}
+                  </div>
+
+                  <div className="input-group" data-error={!!fieldErrors.vehicleCondition}>
+                    <label>Vehicle Condition *</label>
+                    <select
+                      name="vehicleCondition"
+                      value={formData.vehicleCondition || ''}
+                      onChange={handleInputChange}
+                      style={{ border: fieldErrors.vehicleCondition ? '2px solid #dc2626' : undefined }}>
+                      <option value="">Select Condition</option>
+                      <option value="NEW">New</option>
+                      <option value="GOOD">Good</option>
+                      <option value="MANAGABLE">Manageable</option>
+                      <option value="AVERAGE">Average</option>
+                    </select>
+                    {errMsg('vehicleCondition')}
+                  </div>
+                </div>
+              </div>
+
+              {/* Pricing Details Section */}
+              <div style={{
+                background: 'white', borderRadius: '20px', padding: '24px', 
+                boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ background: 'linear-gradient(135deg, #00aa55, #00cc66)', borderRadius: '10px', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontWeight: 900, color: 'white', fontSize: '14px', padding: '0 2px' }}>₹</span>
+                  </div>
+                  <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#1a2e1a' }}>Pricing Details</span>
+                </div>
+                <div className="grid-2">
+                  <div className="input-group" data-error={!!fieldErrors.pricePerKm}>
+                    <label>Price Per KM (₹) *</label>
+                    <input
+                      type="number"
+                      name="pricePerKm"
+                      value={formData.pricePerKm || ''}
+                      placeholder="e.g. 15"
+                      onChange={handleInputChange}
+                      style={{ border: fieldErrors.pricePerKm ? '2px solid #dc2626' : undefined }} />
+                    {errMsg('pricePerKm')}
+                  </div>
+
+
+
+                  <div className="input-group" style={{ gridColumn: 'span 2' }}>
+                    <label style={{ display: 'block', fontWeight: 800, marginBottom: '8px' }}>Operator Option</label>
+                    <div style={{ display: 'flex', gap: '24px', marginTop: '4px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                        <input
+                          type="radio"
+                          name="driverIncluded"
+                          checked={!isDriverIncluded}
+                          onChange={() => setFormData((prev: any) => ({ ...prev, driverIncluded: false, operatorPrice: '' }))}
+                        />
+                        <span>Without Operator (Self Drive)</span>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                        <input
+                          type="radio"
+                          name="driverIncluded"
+                          checked={isDriverIncluded}
+                          onChange={() => setFormData((prev: any) => ({ ...prev, driverIncluded: true }))}
+                        />
+                        <span>With Operator</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {isDriverIncluded && (
+                    <div className="input-group" style={{ gridColumn: 'span 2' }}>
+                      <label>Operator Price (₹/trip or km)</label>
+                      <input
+                        type="number"
+                        name="operatorPrice"
+                        value={formData.operatorPrice || ''}
+                        placeholder="e.g. 500"
+                        onChange={handleInputChange} />
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           );
         }

@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
+export const IS_PROD = false; // Toggle this to true to connect to production
+
+const BASE_URL = IS_PROD 
+  ? 'https://api-prod.agrifarms.in' 
+  : 'http://localhost:8081';
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -8,6 +12,19 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('agrifarm_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 export const apiService = {
   // Users
@@ -94,6 +111,7 @@ export const apiService = {
 
   // Reports
   submitReport: (reportData: any) => api.post('/api/reports', reportData),
+  getUserReports: (reporterId: string) => api.get(`/api/reports/reporter/${reporterId}`),
 };
 
 export default api;

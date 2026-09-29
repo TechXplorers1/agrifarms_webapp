@@ -41,6 +41,7 @@ interface ServiceItem {
   yearOfManufacture?: number;
   vehicleCondition?: string;
   ownerBusinessName?: string;
+  isBlocked?: boolean;
 }
 
 const calculateHaversine = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -160,6 +161,30 @@ const Services: React.FC = () => {
       setUserCoords(coords);
 
       try {
+        let reportsRes: any = { data: [] };
+        if (isAuthenticated && coords) {
+          const storedUser = localStorage.getItem('agrifarm_user');
+          if (storedUser) {
+            try {
+              const parsed = JSON.parse(storedUser);
+              if (parsed.id) {
+                reportsRes = await apiService.getUserReports(parsed.id).catch(() => ({ data: [] }));
+              }
+            } catch (err) {}
+          }
+        }
+        
+        const blockedItemIds = new Set<string>();
+        const blockedProviderIds = new Set<string>();
+        if (reportsRes.data && Array.isArray(reportsRes.data)) {
+          reportsRes.data.forEach((r: any) => {
+            if (r.blocked) {
+              if (r.reportedItemId) blockedItemIds.add(r.reportedItemId);
+              if (r.reportedProviderId) blockedProviderIds.add(r.reportedProviderId);
+            }
+          });
+        }
+
         const [serv, veh, work] = await Promise.all([
           apiService.getServices(),
           apiService.getVehicles(),
@@ -182,7 +207,8 @@ const Services: React.FC = () => {
             latitude: s.latitude,
             longitude: s.longitude,
             equipmentUsed: s.equipmentUsed,
-            description: s.description
+            description: s.description,
+            isBlocked: blockedItemIds.has(s.serviceId) || blockedProviderIds.has(s.ownerId),
           })),
           ...(veh.data || []).map((v: any) => ({
             id: v.vehicleId,
@@ -199,8 +225,8 @@ const Services: React.FC = () => {
             pricePerKm: v.pricePerKm,
             pricePerHour: v.pricePerHour,
             brand: v.brand,
-            model: v.model,
             vehicleCondition: v.vehicleCondition,
+            isBlocked: blockedItemIds.has(v.vehicleId) || blockedProviderIds.has(v.ownerId),
           })),
           ...(work.data || []).map((w: any) => ({
             id: w.groupId,
@@ -220,7 +246,8 @@ const Services: React.FC = () => {
             pricePerFemaleHourly: w.pricePerFemaleHourly,
             maleCount: w.maleCount,
             femaleCount: w.femaleCount,
-            roles: w.roles
+            roles: w.roles,
+            isBlocked: blockedItemIds.has(w.groupId) || blockedProviderIds.has(w.ownerId),
           }))
         ];
 
@@ -442,6 +469,23 @@ const Services: React.FC = () => {
               >
                 <div className="asset-image">
                   <img src={apiService.getFullImageUrl(item.imageUrl) || 'https://images.unsplash.com/photo-1594913785162-e6785b493bd2?auto=format&fit=crop&q=80&w=400'} alt={item.name} />
+                  {item.isBlocked && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '12px',
+                      right: '12px',
+                      backgroundColor: 'rgba(239, 68, 68, 0.95)',
+                      color: 'white',
+                      padding: '4px 10px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      backdropFilter: 'blur(4px)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                    }}>
+                      Reported
+                    </div>
+                  )}
                   <div className="category-tag">
                     {item.type === 'Service' && <Hammer size={12} />}
                     {item.type === 'Transport' && <Truck size={12} />}

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Calendar, MapPin, CheckCircle, Plus, Minus,
   ChevronRight, Info, ShieldAlert, Award, FileText, Check,
-  Home, Building, Hash, UserCheck, Edit3, AlertTriangle, Loader2
+  Home, Building, Hash, UserCheck, Edit3, AlertTriangle, Loader2, Users
 } from 'lucide-react';
 import { apiService } from '../services/apiService';
 import { useAuth } from '../services/AuthContext';
@@ -57,6 +57,62 @@ const BookAsset: React.FC = () => {
   const [pageLoading, setPageLoading] = useState(true);
   const [success, setSuccess] = useState(false);
   const [existingBookings, setExistingBookings] = useState<any[]>([]);
+
+  const availableRoles = (() => {
+    const rolesSet = new Set<string>();
+
+    if (asset?.details?.roles && Array.isArray(asset.details.roles) && asset.details.roles.length > 0) {
+      asset.details.roles.forEach((r: any) => {
+        const tName = typeof r === 'string' ? r : (r.taskName || r.role || '');
+        if (tName) {
+          tName.split(',').forEach((s: string) => {
+            const trimmed = s.trim();
+            if (trimmed) rolesSet.add(trimmed);
+          });
+        }
+      });
+    }
+
+    if (rolesSet.size === 0 && typeof asset?.details?.skills === 'string') {
+      asset.details.skills.split(',').forEach((s: string) => {
+        const trimmed = s.trim();
+        if (trimmed) rolesSet.add(trimmed);
+      });
+    }
+
+    if (rolesSet.size === 0) {
+      rolesSet.add('General Worker');
+    }
+
+    return Array.from(rolesSet);
+  })();
+
+  const getRoleAllocation = (roleName: string) => {
+    let male = 0;
+    let female = 0;
+
+    if (asset?.details?.roles && Array.isArray(asset.details.roles)) {
+      asset.details.roles.forEach((r: any) => {
+        const tName = typeof r === 'string' ? r : (r.taskName || r.role || 'General Worker');
+        const rolesList = tName.split(',').map((s: string) => s.trim().toLowerCase());
+
+        if (rolesList.includes(roleName.toLowerCase())) {
+          if (typeof r.gender === 'string' && r.gender.toUpperCase() === 'MALE') male += (Number(r.count) || 0);
+          if (typeof r.gender === 'string' && r.gender.toUpperCase() === 'FEMALE') female += (Number(r.count) || 0);
+        }
+      });
+    }
+
+    return { male, female };
+  };
+
+  const [selectedMaleCount, setSelectedMaleCount] = useState(() => (asset?.details?.maleCount > 0 ? 1 : 0));
+  const [selectedFemaleCount, setSelectedFemaleCount] = useState(() => ((!asset?.details?.maleCount || asset?.details?.maleCount === 0) && asset?.details?.femaleCount > 0 ? 1 : 0));
+  const [selectedRole, setSelectedRole] = useState(() => (availableRoles[0] as string || ''));
+
+  const currentAllocation = getRoleAllocation(selectedRole);
+  const maxMale = currentAllocation.male > 0 ? currentAllocation.male : (asset?.details?.maleCount || 0);
+  const maxFemale = currentAllocation.female > 0 ? currentAllocation.female : (asset?.details?.femaleCount || 0);
 
   const startHour = 6;
   const endHour = 20;
@@ -182,7 +238,14 @@ const BookAsset: React.FC = () => {
     });
   };
 
-  const calculateBaseTotal = () => asset.price * duration;
+  const calculateBaseTotal = () => {
+    if (asset.type === 'Worker') {
+      const maleRate = asset.details?.pricePerMaleHourly || (asset.details?.pricePerMale ? asset.details.pricePerMale / 8 : 0);
+      const femaleRate = asset.details?.pricePerFemaleHourly || (asset.details?.pricePerFemale ? asset.details.pricePerFemale / 8 : 0);
+      return (selectedMaleCount * maleRate + selectedFemaleCount * femaleRate) * duration;
+    }
+    return asset.price * duration;
+  };
   const calculateOperatorTotal = () => includeOperator ? (operatorRate * duration) : 0;
   const calculateTaxTotal = () => 0; // Free of cost platform
   const calculateGrandTotal = () => calculateBaseTotal() + calculateOperatorTotal() + calculateTaxTotal();
@@ -210,7 +273,12 @@ const BookAsset: React.FC = () => {
           assetName: asset.name,
           includeOperator,
           duration: `${duration} hours`,
-          providerName: asset.providerName
+          providerName: asset.providerName,
+          ...(asset.type === 'Worker' ? {
+            maleCount: selectedMaleCount,
+            femaleCount: selectedFemaleCount,
+            role: selectedRole
+          } : {})
         })
       };
 
@@ -271,6 +339,83 @@ const BookAsset: React.FC = () => {
                       </button>
                     );
                   })}
+                </div>
+              </div>
+            )}
+
+            {selectedHour !== null && asset.type === 'Worker' && (
+              <div className="worker-selection-box" style={{ marginTop: 24, padding: 24, borderRadius: 16, background: 'white', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                <h4 style={{ fontSize: '18px', fontWeight: 700, marginBottom: 20, color: '#1e293b' }}>Select Worker Requirements</h4>
+
+                {availableRoles.length > 0 && (
+                  <div style={{ marginBottom: 24 }}>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#475569', marginBottom: 12 }}>Specialized Role</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
+                      {availableRoles.map((role: any) => {
+                        const alloc = getRoleAllocation(role);
+                        const isSelected = selectedRole === role;
+                        return (
+                          <div
+                            key={role}
+                            onClick={() => {
+                              setSelectedRole(role);
+                              setSelectedMaleCount(0);
+                              setSelectedFemaleCount(0);
+                            }}
+                            style={{
+                              padding: '12px 16px', borderRadius: 12, cursor: 'pointer',
+                              background: isSelected ? 'var(--primary)' : '#f8fafc',
+                              color: isSelected ? 'white' : '#475569',
+                              border: isSelected ? '1px solid var(--primary)' : '1px solid #cbd5e1',
+                              transition: 'all 0.2s ease-in-out',
+                              display: 'flex', flexDirection: 'column', gap: 6
+                            }}
+                          >
+                            <span style={{ fontSize: '14px', fontWeight: 700 }}>{role}</span>
+                            {(alloc.male > 0 || alloc.female > 0) && (
+                              <div style={{ display: 'flex', gap: 12, fontSize: '12px', opacity: isSelected ? 0.9 : 0.7, fontWeight: 600 }}>
+                                {alloc.male > 0 && <span>👨‍🌾 {alloc.male} Boys</span>}
+                                {alloc.female > 0 && <span>👩‍🌾 {alloc.female} Girls</span>}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {maxMale > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderRadius: 16, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                      <div>
+                        <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '15px' }}>👨‍🌾 Male Workers</div>
+                        <div style={{ fontSize: '13px', color: '#64748b', marginTop: 4 }}>
+                          ₹{asset.details.pricePerMaleHourly || (asset.details.pricePerMale / 8) || 0}/hr <span style={{ opacity: 0.7 }}>• Max available: {maxMale}</span>
+                        </div>
+                      </div>
+                      <div className="duration-control-buttons" style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: '4px 8px' }}>
+                        <button className="ctrl-btn" onClick={() => setSelectedMaleCount(c => Math.max(0, c - 1))}><Minus size={14} /></button>
+                        <span style={{ fontWeight: 800, minWidth: 24, textAlign: 'center', fontSize: '15px' }}>{selectedMaleCount}</span>
+                        <button className="ctrl-btn" onClick={() => setSelectedMaleCount(c => Math.min(maxMale, c + 1))}><Plus size={14} /></button>
+                      </div>
+                    </div>
+                  )}
+                  {maxFemale > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderRadius: 16, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                      <div>
+                        <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '15px' }}>👩‍🌾 Female Workers</div>
+                        <div style={{ fontSize: '13px', color: '#64748b', marginTop: 4 }}>
+                          ₹{asset.details.pricePerFemaleHourly || (asset.details.pricePerFemale / 8) || 0}/hr <span style={{ opacity: 0.7 }}>• Max available: {maxFemale}</span>
+                        </div>
+                      </div>
+                      <div className="duration-control-buttons" style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: '4px 8px' }}>
+                        <button className="ctrl-btn" onClick={() => setSelectedFemaleCount(c => Math.max(0, c - 1))}><Minus size={14} /></button>
+                        <span style={{ fontWeight: 800, minWidth: 24, textAlign: 'center', fontSize: '15px' }}>{selectedFemaleCount}</span>
+                        <button className="ctrl-btn" onClick={() => setSelectedFemaleCount(c => Math.min(maxFemale, c + 1))}><Plus size={14} /></button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -563,6 +708,19 @@ const BookAsset: React.FC = () => {
                   <div className="review-card-details">
                     <h5>Operator Request Included</h5>
                     <p>Yes, operator rate of <strong>₹{operatorRate}/hr</strong> is incorporated.</p>
+                  </div>
+                </div>
+              )}
+
+              {asset.type === 'Worker' && (
+                <div className="review-card" style={{ borderColor: 'var(--primary)', background: '#f0fdf4' }}>
+                  <Users size={18} className="review-card-icon" style={{ color: 'var(--primary)' }} />
+                  <div className="review-card-details">
+                    <h5>Worker Requirements</h5>
+                    <p>
+                      <strong>{selectedMaleCount}</strong> Male(s), <strong>{selectedFemaleCount}</strong> Female(s)
+                      {selectedRole && <span> • Role: <strong>{selectedRole}</strong></span>}
+                    </p>
                   </div>
                 </div>
               )}
