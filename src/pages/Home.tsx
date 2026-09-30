@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Search, MapPin, Tractor, Truck, Plus, Crosshair,
   ChevronRight, Sprout, Droplets, Construction,
-  CloudSun, TrendingUp, Calculator, Loader2,
-  MessageSquare, LifeBuoy
+  CloudSun, Loader2, LifeBuoy
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
@@ -262,12 +261,7 @@ const Home: React.FC = () => {
 
 
 
-  const tools = [
-    { name: 'Community', label: 'Community', icon: MessageSquare, image: 'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&q=80&w=400', subtitle: 'Connect & Share', color: '#e0f2fe', fg: '#0284c7' },
-    { name: 'Crop Advisory', label: 'Crop Advisory', icon: Sprout, image: 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&q=80&w=400', subtitle: 'Expert Farming Tips', color: '#e8f5e9', fg: '#00aa55' },
-    { name: 'Calculators', label: 'Calculators', icon: Calculator, image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&q=80&w=400', subtitle: 'Yield & Profit', color: '#f3e5f5', fg: '#6a1b9a' },
-    { name: 'Help Support', label: 'Help & Support', icon: LifeBuoy, image: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&q=80&w=400', subtitle: '24/7 Assistance', color: '#fee2e2', fg: '#ef4444' },
-  ];
+
 
   React.useEffect(() => {
     if (showLocationModal) {

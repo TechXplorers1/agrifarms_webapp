@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-export const IS_PROD = false; // Toggle this to true to connect to production
+export const IS_PROD = true; // Toggle this to true to connect to production
 
-const BASE_URL = IS_PROD 
-  ? 'https://api-prod.agrifarms.in' 
+const BASE_URL = IS_PROD
+  ? 'https://api-prod.agrifarms.in'
   : 'http://localhost:8081';
 
 const api = axios.create({
